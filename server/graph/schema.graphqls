@@ -1,0 +1,12 @@
+type Query {
+  actions: [Action]!
+}
+
+type Action {
+  ID: String
+  Description: String
+}
+
+type Mutation {
+  runAction(actionId: ID!): String
+}
