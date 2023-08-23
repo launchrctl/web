@@ -69,7 +69,15 @@
     "list": "List",
     "create": "Create",
     "edit": "Edit",
-    "show": "Show"
+    "show": "Show",
+    "actions": "Actions",
+    "fields": {
+      "id": "Id"
+    },
+    "titles": {
+      "list": "Actions",
+      "show": "Show Action"
+    }
   },
   "buttons": {
     "create": "Create",
@@ -108,53 +116,12 @@
   "dashboard": {
     "title": "Dashboard"
   },
-  "blog_posts": {
-    "blog_posts": "Blog Posts",
-    "fields": {
-      "id": "Id",
-      "title": "Title",
-      "content": "Content",
-      "status": "Status",
-      "createdAt": "Created At",
-      "category": "Category"
-    },
-    "titles": {
-      "create": "Create Blog Post",
-      "edit": "Edit Blog Post",
-      "list": "Blog Posts",
-      "show": "Show Blog Post"
-    }
-  },
-  "categories": {
-    "categories": "Categories",
-    "fields": {
-      "id": "Id",
-      "title": "Title",
-      "createdAt": "Created At"
-    },
-    "titles": {
-      "create": "Create Category",
-      "edit": "Edit Category",
-      "list": "Categories",
-      "show": "Show Category"
-    }
-  },
   "documentTitle": {
     "default": "launchr",
     "suffix": " | launchr",
-    "blog_posts": {
-      "list": "Blog Posts | launchr",
-      "show": "#{{id}} Show Blog Post | launchr",
-      "edit": "#{{id}} Edit Blog Post | launchr",
-      "create": "Create new Blog Post | launchr",
-      "clone": "#{{id}} Clone Blog Post | launchr"
-    },
-    "categories": {
-      "list": "Categories | launchr",
-      "show": "#{{id}} Show Category | launchr",
-      "edit": "#{{id}} Edit Category | launchr",
-      "create": "Create new Category | launchr",
-      "clone": "#{{id}} Clone Category | launchr"
+    "actions": {
+      "list": "Actions | launchr",
+      "show": "#{{id}} Show Action | launchr"
     }
   },
   "table": {

@@ -32,6 +32,7 @@ import {
   CategoryList,
   CategoryShow,
 } from "./pages/categories";
+import {ActionsList, ActionShow} from "./pages/actions";
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -48,36 +49,25 @@ function App() {
         {/* You can change the theme colors here. example: theme={RefineThemes.Magenta} */}
         <ChakraProvider theme={RefineThemes.Yellow}>
           <Refine
-            dataProvider={dataProvider("https://api.fake-rest.refine.dev")}
-            notificationProvider={notificationProvider}
-            i18nProvider={i18nProvider}
-            routerProvider={routerBindings}
-            resources={[
-              {
-                name: "blog_posts",
-                list: "/blog-posts",
-                create: "/blog-posts/create",
-                edit: "/blog-posts/edit/:id",
-                show: "/blog-posts/show/:id",
-                meta: {
-                  canDelete: true,
-                },
-              },
-              {
-                name: "categories",
-                list: "/categories",
-                create: "/categories/create",
-                edit: "/categories/edit/:id",
-                show: "/categories/show/:id",
-                meta: {
-                  canDelete: true,
-                },
-              },
-            ]}
-            options={{
-              syncWithLocation: true,
-              warnWhenUnsavedChanges: true,
-            }}
+              dataProvider={dataProvider("http://localhost:8080/api")}
+              notificationProvider={notificationProvider}
+              i18nProvider={i18nProvider}
+              routerProvider={routerBindings}
+              resources={[
+                    {
+                      name: "actions",
+                      list: "/actions",
+                      show: "/actions/:id",
+                      meta: {
+                        canDelete: false,
+                      },
+                    },
+                  ]
+              }
+              options={{
+                syncWithLocation: true,
+                warnWhenUnsavedChanges: true,
+              }}
           >
             <Routes>
               <Route
@@ -98,19 +88,11 @@ function App() {
               >
                 <Route
                   index
-                  element={<NavigateToResource resource="blog_posts" />}
+                  element={<NavigateToResource resource="actions" />}
                 />
-                <Route path="/blog-posts">
-                  <Route index element={<BlogPostList />} />
-                  <Route path="create" element={<BlogPostCreate />} />
-                  <Route path="edit/:id" element={<BlogPostEdit />} />
-                  <Route path="show/:id" element={<BlogPostShow />} />
-                </Route>
-                <Route path="/categories">
-                  <Route index element={<CategoryList />} />
-                  <Route path="create" element={<CategoryCreate />} />
-                  <Route path="edit/:id" element={<CategoryEdit />} />
-                  <Route path="show/:id" element={<CategoryShow />} />
+                <Route path="/actions">
+                  <Route index element={<ActionsList />} />
+                  <Route path=":id" element={<ActionShow />} />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>

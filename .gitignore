@@ -4,5 +4,5 @@
 .launchr
 *.tar
 *.gz
-*.gen.go
 dist/
+/swagger-ui

@@ -1,0 +1,76 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Launchr
+  description: An API of Launchr actions
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+paths:
+  /actions:
+    get:
+      description: |
+        Returns all launchr actions
+      operationId: getActions
+      responses:
+        '200':
+          description: actions response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Action'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /actions/{id}:
+    get:
+      description: returns action by id
+      operationId: getActionByID
+      parameters:
+        - name: id
+          in: path
+          description: ID of action to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: action response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Action'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Action:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+            jsonschema:
+              type: object
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

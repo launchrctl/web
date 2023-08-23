@@ -1,14 +1,16 @@
 package web
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/launchrctl/launchr"
+
 	"github.com/launchrctl/web/server"
 )
 
-// ID is a plugin id.
-const ID = "web"
+const ApiPrefix = "/api"
 
 func init() {
 	launchr.RegisterPlugin(&Plugin{})
@@ -16,18 +18,16 @@ func init() {
 
 // Plugin is launchr plugin providing web ui.
 type Plugin struct {
-	app *launchr.App
+	app launchr.App
 }
 
 // PluginInfo implements launchr.Plugin interface.
 func (p *Plugin) PluginInfo() launchr.PluginInfo {
-	return launchr.PluginInfo{
-		ID: ID,
-	}
+	return launchr.PluginInfo{}
 }
 
-// InitApp implements launchr.Plugin interface.
-func (p *Plugin) InitApp(app *launchr.App) error {
+// OnAppInit implements launchr.Plugin interface.
+func (p *Plugin) OnAppInit(app launchr.App) error {
 	p.app = app
 	return nil
 }
@@ -42,7 +42,11 @@ func (p *Plugin) CobraAddCommands(rootCmd *cobra.Command) error {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Don't show usage help on a runtime error.
 			cmd.SilenceUsage = true
-			return server.Run(port)
+			return server.Run(p.app, server.RunOptions{
+				Addr:        fmt.Sprintf(":%s", port), // @todo use proper addr
+				ApiPrefix:   ApiPrefix,
+				SwaggerJson: true,
+			})
 		},
 	}
 	cmd.Flags().StringVarP(&port, "port", "p", "8080", `Web server port`)
