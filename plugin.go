@@ -1,3 +1,4 @@
+// Package web provides a launchr plugin with Web UI for launchr.
 package web
 
 import (
@@ -10,7 +11,8 @@ import (
 	"github.com/launchrctl/web/server"
 )
 
-const ApiPrefix = "/api"
+// APIPrefix is a default api prefix on the server.
+const APIPrefix = "/api"
 
 func init() {
 	launchr.RegisterPlugin(&Plugin{})
@@ -42,10 +44,10 @@ func (p *Plugin) CobraAddCommands(rootCmd *cobra.Command) error {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Don't show usage help on a runtime error.
 			cmd.SilenceUsage = true
-			return server.Run(p.app, server.RunOptions{
+			return server.Run(cmd.Context(), p.app, server.RunOptions{
 				Addr:        fmt.Sprintf(":%s", port), // @todo use proper addr
-				ApiPrefix:   ApiPrefix,
-				SwaggerJson: true,
+				APIPrefix:   APIPrefix,
+				SwaggerJSON: true,
 			})
 		},
 	}

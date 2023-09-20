@@ -9,6 +9,7 @@ info:
 paths:
   /actions:
     get:
+      summary: Lists all actions
       description: |
         Returns all launchr actions
       operationId: getActions
@@ -20,7 +21,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Action'
+                  $ref: '#/components/schemas/ActionBasicInfo'
         default:
           description: unexpected error
           content:
@@ -29,6 +30,7 @@ paths:
                 $ref: '#/components/schemas/Error'
   /actions/{id}:
     get:
+      summary: Returns action by id
       description: returns action by id
       operationId: getActionByID
       parameters:
@@ -51,6 +53,95 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    post:
+      summary: runs action
+      description: executes action
+      operationId: runAction
+      parameters:
+        - name: id
+          in: path
+          description: ID of action to run
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Action arguments and options
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionRunParams'
+      responses:
+        '201':
+          description: action response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRunInfo'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /actions/{id}/running:
+    get:
+      summary: Returns running actions
+      description: returns running actions
+      operationId: getRunningActionsByID
+      parameters:
+        - name: id
+          in: path
+          description: ID of action to fetch
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: action run info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActionBasicInfo'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /actions/{id}/running/{runId}:
+    get:
+      summary: Returns running actions
+      description: returns running actions
+      operationId: getOneRunningActionByID
+      parameters:
+        - name: id
+          in: path
+          description: ID of action to fetch
+          required: true
+          schema:
+            type: string
+        - name: runId
+          in: path
+          description: ID of the running action
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: action run info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionRunInfo'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     Action:
@@ -63,6 +154,46 @@ components:
               type: string
             jsonschema:
               type: object
+              x-go-name: "JsonSchema"
+              x-go-type: "jsonschema.Schema"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/jsonschema"
+    ActionBasicInfo:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+    ActionRunParams:
+      allOf:
+        - type: object
+          required:
+            - arguments
+            - options
+          properties:
+            arguments:
+              type: object
+              x-go-type: "action.TypeArgs"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/action"
+            options:
+              type: object
+              x-go-type: "action.TypeOpts"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/action"
+    ActionRunInfo:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              x-go-name: "ID"
+            status:
+              type: string
     Error:
       type: object
       required:
