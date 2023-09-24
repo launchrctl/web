@@ -3,7 +3,8 @@ import detector from "i18next-browser-languagedetector";
 import Backend from "i18next-xhr-backend";
 import { initReactI18next } from "react-i18next";
 
-i18n
+// eslint-disable-next-line import/no-default-export
+export default i18n
   .use(Backend)
   .use(detector)
   .use(initReactI18next)
@@ -16,5 +17,3 @@ i18n
     defaultNS: "common",
     fallbackLng: ["en"],
   });
-
-export default i18n;

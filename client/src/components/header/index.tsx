@@ -1,7 +1,7 @@
+import type { BoxProps } from "@chakra-ui/react";
 import {
   Avatar,
   Box,
-  BoxProps,
   HStack,
   Icon,
   IconButton,
@@ -13,20 +13,18 @@ import {
   useColorMode,
   useColorModeValue,
 } from "@chakra-ui/react";
-import {
-  HamburgerMenu,
-  RefineThemedLayoutV2HeaderProps,
-} from "@refinedev/chakra-ui";
+import type { RefineThemedLayoutV2HeaderProps } from "@refinedev/chakra-ui";
+import { HamburgerMenu } from "@refinedev/chakra-ui";
 import { useGetIdentity, useGetLocale, useSetLocale } from "@refinedev/core";
 import { IconLanguage, IconMoon, IconSun } from "@tabler/icons";
 import i18n from "i18next";
-import React from "react";
+import * as React from "react";
 
-type IUser = {
+interface IUser {
   id: number;
   name: string;
   avatar: string;
-};
+}
 
 export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
   sticky,
@@ -37,7 +35,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
 
   const bgColor = useColorModeValue(
     "refine.header.bg.light",
-    "refine.header.bg.dark"
+    "refine.header.bg.dark",
   );
 
   const changeLanguage = useSetLocale();
@@ -45,6 +43,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
   const currentLocale = locale();
 
   let stickyProps: BoxProps = {};
+
   if (sticky) {
     stickyProps = {
       position: "sticky",

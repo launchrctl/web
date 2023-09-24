@@ -1,6 +1,6 @@
-import { IResourceComponentsProps } from "@refinedev/core";
+import type { IResourceComponentsProps } from "@refinedev/core";
 import { ChakraUICreateInferencer } from "@refinedev/inferencer/chakra-ui";
 
-export const CategoryCreate: React.FC<IResourceComponentsProps> = () => {
-  return <ChakraUICreateInferencer />;
-};
+export const CategoryCreate: React.FC<IResourceComponentsProps> = () => (
+  <ChakraUICreateInferencer />
+);

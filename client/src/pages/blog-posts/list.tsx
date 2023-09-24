@@ -1,6 +1,6 @@
-import { IResourceComponentsProps } from "@refinedev/core";
+import type { IResourceComponentsProps } from "@refinedev/core";
 import { ChakraUIListInferencer } from "@refinedev/inferencer/chakra-ui";
 
-export const BlogPostList: React.FC<IResourceComponentsProps> = () => {
-  return <ChakraUIListInferencer />;
-};
+export const BlogPostList: React.FC<IResourceComponentsProps> = () => (
+  <ChakraUIListInferencer />
+);
