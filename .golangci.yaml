@@ -11,6 +11,8 @@ run:
   skip-files:
     - \.pb\.go$
     - \.pb\.goclay\.go$
+    - \.gen.go$
+    - server/streams.go # @fixme remove when implemented
 
 output:
   format: colored-line-number

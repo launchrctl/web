@@ -1,4 +1,4 @@
-openapi: "3.0.0"
+openapi: "3.1.0"
 info:
   version: 1.0.0
   title: Launchr
@@ -21,49 +21,31 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ActionBasicInfo'
+                  $ref: '#/components/schemas/ActionShort'
         default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/DefaultError'
   /actions/{id}:
     get:
       summary: Returns action by id
       description: returns action by id
       operationId: getActionByID
       parameters:
-        - name: id
-          in: path
-          description: ID of action to fetch
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ActionId'
       responses:
         '200':
           description: action response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Action'
+                $ref: '#/components/schemas/ActionFull'
         default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/DefaultError'
     post:
       summary: runs action
       description: executes action
       operationId: runAction
       parameters:
-        - name: id
-          in: path
-          description: ID of action to run
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ActionId'
       requestBody:
         description: Action arguments and options
         required: true
@@ -79,23 +61,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActionRunInfo'
         default:
-          description: unexpected error
+          $ref: '#/components/responses/DefaultError'
+  /actions/{id}/schema.json:
+    get:
+      summary: Returns action json schema
+      description: returns action json schema
+      operationId: getActionJSONSchema
+      parameters:
+        - $ref: '#/components/parameters/ActionId'
+      responses:
+        '200':
+          description: action json schema
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/JSONSchema'
+        default:
+          $ref: '#/components/responses/DefaultError'
   /actions/{id}/running:
     get:
       summary: Returns running actions
       description: returns running actions
       operationId: getRunningActionsByID
       parameters:
-        - name: id
-          in: path
-          description: ID of action to fetch
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ActionId'
       responses:
         '200':
           description: action run info
@@ -104,31 +93,17 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ActionBasicInfo'
+                  $ref: '#/components/schemas/ActionRunInfo'
         default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/DefaultError'
   /actions/{id}/running/{runId}:
     get:
-      summary: Returns running actions
-      description: returns running actions
+      summary: Returns action run info
+      description: returns action run info
       operationId: getOneRunningActionByID
       parameters:
-        - name: id
-          in: path
-          description: ID of action to fetch
-          required: true
-          schema:
-            type: string
-        - name: runId
-          in: path
-          description: ID of the running action
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/ActionId'
+        - $ref: '#/components/parameters/ActionRunInfoId'
       responses:
         '200':
           description: action run info
@@ -137,35 +112,94 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActionRunInfo'
         default:
-          description: unexpected error
+          $ref: '#/components/responses/DefaultError'
+  /actions/{id}/running/{runId}/streams:
+    get:
+      summary: Returns running action streams
+      description: returns running action streams
+      operationId: getRunningActionStreams
+      parameters:
+        - $ref: '#/components/parameters/ActionId'
+        - $ref: '#/components/parameters/ActionRunInfoId'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: action run info streams
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActionRunStreamData'
+        default:
+          $ref: '#/components/responses/DefaultError'
 components:
+  responses:
+    DefaultError:
+      description: unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  parameters:
+    ActionId:
+      name: id
+      in: path
+      description: ID of action to fetch
+      required: true
+      schema:
+        type: string
+    ActionRunInfoId:
+      name: runId
+      in: path
+      description: ID of the running action
+      required: true
+      schema:
+        type: string
+    Offset:
+      name: offset
+      in: query
+      description: number of elements to skip
+      schema:
+        type: integer
+    Limit:
+      name: limit
+      in: query
+      description: number of elements to return
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
   schemas:
-    Action:
+    ActionShort:
       allOf:
         - type: object
           required:
             - id
+            - title
+            - description
           properties:
             id:
               type: string
+              x-go-name: "ID"
+            title:
+              type: string
+            description:
+              type: string
+    ActionFull:
+      allOf:
+        - $ref: '#/components/schemas/ActionShort'
+        - type: object
+          required:
+            - jsonschema
+          properties:
             jsonschema:
               type: object
-              x-go-name: "JsonSchema"
+              x-go-name: "JSONSchema"
               x-go-type: "jsonschema.Schema"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/jsonschema"
-    ActionBasicInfo:
-      allOf:
-        - type: object
-          required:
-            - id
-          properties:
-            id:
-              type: string
     ActionRunParams:
       allOf:
         - type: object
@@ -188,12 +222,36 @@ components:
         - type: object
           required:
             - id
+            - status
           properties:
             id:
               type: string
               x-go-name: "ID"
             status:
               type: string
+    ActionRunStreamData:
+      allOf:
+        - type: object
+          required:
+            - type
+            - content
+            - offset
+            - count
+          properties:
+            type:
+              type: string
+              enum:
+                - stdOut
+                - stdIn
+                - stdErr
+            content:
+              type: string
+            offset:
+              type: integer
+            count:
+              type: integer
+    JSONSchema:
+      type: object
     Error:
       type: object
       required:

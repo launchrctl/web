@@ -25,7 +25,9 @@ LOCAL_BIN:=$(CURDIR)/bin
 
 # Linter config.
 GOLANGCI_BIN:=$(LOCAL_BIN)/golangci-lint
-GOLANGCI_TAG:=1.53.3
+GOLANGCI_TAG:=1.55.2
+
+SWAGGER_UI_DIR:=./swagger-ui
 
 .PHONY: all
 all: deps test build
@@ -35,6 +37,15 @@ all: deps test build
 deps:
 	$(info Installing go dependencies...)
 	go mod download
+	@if [ ! -d "$(SWAGGER_UI_DIR)" ]; then \
+		echo "Downloading Swagger UI..."; \
+		curl -Ss https://api.github.com/repos/swagger-api/swagger-ui/releases/latest | grep tarball_url | cut -d '"' -f 4 |\
+        	xargs curl -LsS -o swagger-ui.tar.gz; \
+		rm -rf $(SWAGGER_UI_DIR) $(SWAGGER_UI_DIR)-tmp && mkdir $(SWAGGER_UI_DIR)-tmp; \
+		tar xzf swagger-ui.tar.gz -C $(SWAGGER_UI_DIR)-tmp --strip=1; \
+		mv $(SWAGGER_UI_DIR)-tmp/dist $(SWAGGER_UI_DIR) && rm -rf $(SWAGGER_UI_DIR)-tmp && rm swagger-ui.tar.gz; \
+		sed -i.bkp "s|https://petstore.swagger.io/v2/swagger.json|/api/swagger.json|g" $(SWAGGER_UI_DIR)/swagger-initializer.js; \
+	fi
 
 # Run all tests
 .PHONY: test

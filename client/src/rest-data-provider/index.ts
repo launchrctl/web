@@ -44,18 +44,21 @@ export const dataProvider = (
       query._order = _order.join(",");
     }
 
-    const { data, headers } = await httpClient[requestMethod](
-      `${url}?${stringify(query)}&${stringify(queryFilters)}`,
-      {
-        headers: headersFromMeta,
-      },
-    );
+    const combinedQuery = { ...query, ...queryFilters };
+    const urlWithQuery =
+      Object.keys(combinedQuery).length > 0
+        ? `${url}?${stringify(combinedQuery)}`
+        : url;
+
+    const { data, headers } = await httpClient[requestMethod](urlWithQuery, {
+      headers: headersFromMeta,
+    });
 
     const total = Number(headers["x-total-count"]);
 
     return {
       data,
-      total: total || data.length > 0,
+      total: total || data.length,
     };
   },
 
@@ -167,28 +170,26 @@ export const dataProvider = (
       requestUrl = `${requestUrl}&${stringify(query)}`;
     }
 
-    if (headers) {
-      httpClient.defaults.headers = {
-        ...httpClient.defaults.headers,
-        ...headers,
-      };
-    }
-
     let axiosResponse;
 
     switch (method) {
       case "put":
       case "post":
       case "patch":
-        axiosResponse = await httpClient[method](url, payload);
+        axiosResponse = await httpClient[method](url, payload, {
+          headers,
+        });
         break;
       case "delete":
         axiosResponse = await httpClient.delete(url, {
           data: payload,
+          headers,
         });
         break;
       default:
-        axiosResponse = await httpClient.get(requestUrl);
+        axiosResponse = await httpClient.get(requestUrl, {
+          headers,
+        });
         break;
     }
 

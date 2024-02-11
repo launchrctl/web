@@ -1,16 +1,14 @@
-import type { CrudFilters } from "@refinedev/core";
-
+import { CrudFilters } from "@refinedev/core";
 import { mapOperator } from "./mapOperator";
 
 export const generateFilter = (filters?: CrudFilters) => {
-  const queryFilters: Record<string, string> = {};
+  const queryFilters: { [key: string]: string } = {};
 
   if (filters) {
     filters.map((filter) => {
       if (filter.operator === "or" || filter.operator === "and") {
         throw new Error(
-          // eslint-disable-next-line max-len
-          `[@refinedev/simple-rest]: "operator: ${filter.operator}" is not supported. You can create custom data provider. https://refine.dev/docs/api-reference/core/providers/data-provider/#creating-a-data-provider`,
+          `[@refinedev/simple-rest]: \`operator: ${filter.operator}\` is not supported. You can create custom data provider. https://refine.dev/docs/api-reference/core/providers/data-provider/#creating-a-data-provider`
         );
       }
 
@@ -19,7 +17,6 @@ export const generateFilter = (filters?: CrudFilters) => {
 
         if (field === "q") {
           queryFilters[field] = value;
-
           return;
         }
 
