@@ -1,0 +1,134 @@
+openapi: 3.1.0
+info:
+  title: Actions API - OpenAPI 3.1
+  description: |-
+    This is a Actions Server based on the OpenAPI 3.1 specification.
+  version: 0.0.1
+servers:
+  - url: http://localhost:3000
+    description: Local test
+tags:
+  - name: action
+    description: Everything about actions
+    externalDocs:
+      description: Find out more
+      url: https://github.com/launchrctl/launchr
+paths:
+  /actions:
+    get:
+      tags:
+        - action
+      summary: List all actions
+      description: Return all actions
+      operationId: getActions
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionsArray'
+
+        '404':
+          description: Not found response
+          content:
+            text/plain:
+              schema:
+                title: Actions not found
+                type: string
+                examples: ['Not found']
+  /action/{actionId}:
+    get:
+      tags:
+        - action
+      summary: Find action by ID
+      description: Returns a single action
+      operationId: getActionById
+      parameters:
+        - name: actionId
+          in: path
+          description: ID of action to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Action'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Action not found
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          exampless: [1]
+        name:
+          type: string
+          examples: ['Category of actions']
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          examples: ['Foundation']
+    Action:
+      required:
+        - image
+        - command
+      type: object
+      properties:
+        title:
+          type: string
+          exampless: ['Action name']
+        image:
+          type: string
+          examples: ['alpine:latest']
+        command:
+          type: array
+          examples: ['ls', 'mkdir', 'ping']
+          items:
+            type: string
+        category:
+          $ref: '#/components/schemas/Category'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+    ActionsArray:
+      description: List of actions object
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Action'
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+  requestBodies:
+    Action:
+      description: Action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Action'

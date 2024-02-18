@@ -1,7 +1,7 @@
 # Launchr Web plugin
 
-Launchr Web plugin is an extenstion to [Launchr](https://github.com/launchrctl/launchr) to run actions via Web UI.  
-The plugin consists of a Backend API and a Frontend client.  
+Launchr Web plugin is an extenstion to [Launchr](https://github.com/launchrctl/launchr) to run actions via Web UI.
+The plugin consists of a Backend API and a Frontend client.
 
 ## Table of contents
 
@@ -30,6 +30,17 @@ cd client
 yarn
 # Build the project
 yarn build
+# Start client dev server
+yarn dev
+```
+
+See [client readme](client/README.MD) for more information.
+
+To build the nuxt client:
+```shell
+cd nuxt-client
+# Fetch dependencies
+yarn
 # Start client dev server
 yarn dev
 ```
