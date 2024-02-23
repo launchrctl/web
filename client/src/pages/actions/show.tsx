@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import { Edit } from "@refinedev/chakra-ui";
 import type { BaseRecord, IResourceComponentsProps } from "@refinedev/core";
 import {
@@ -8,9 +9,13 @@ import {
   useResource,
 } from "@refinedev/core";
 import { Theme as ChakraUITheme } from "@rjsf/chakra-ui";
+import {
+  Heading,
+} from "@chakra-ui/react";
 import type { IChangeEvent } from "@rjsf/core";
-import { withTheme } from "@rjsf/core";
+import Form, { withTheme } from "@rjsf/core";
 import type { RJSFSchema } from "@rjsf/utils";
+import { UiSchema, WidgetProps, RegistryWidgetsType } from '@rjsf/utils';
 import validator from "@rjsf/validator-ajv8";
 
 // @todo move to types
@@ -110,15 +115,101 @@ export const ActionShow: React.FC<IResourceComponentsProps> = () => {
     // @todo show notification
   };
 
+  const schema: RJSFSchema = {
+    type: 'boolean',
+    default: true,
+  };
+
+  const uiSchema: UiSchema = {
+    'ui:widget': 'checkbox',
+  };
+
+  const CustomCheckbox = function (props: WidgetProps) {
+    return (
+      <button
+        style={{backgroundColor: 'green', fontSize: '50px'}}
+        id='custom' className={props.value ? 'checked' : 'unchecked'}
+        onClick={() => props.onChange(!props.value)}
+      >
+        {String(props.value)}
+      </button>
+    );
+  };
+
+  const widgets: RegistryWidgetsType = {
+    CheckboxWidget: CustomCheckbox,
+  };
+
+  const [loadedScript, setLoadedScript] = useState(false);
+  useEffect(() => {
+    const script = document.createElement('script');
+    // @todo find good way to load and execute custom webcomponents scripts.
+    // https://lit.dev/docs/frameworks/react/
+    script.src = "https://www.unpkg.com/@zachleat/table-saw@1.0.2/table-saw.js";
+    script.async = true;
+    script.type = 'module';
+
+    script.onload = () => {
+      setLoadedScript(true);
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   return (
     <Edit isLoading={isFetching}>
       <ActionRunningState isLoading={isFetchingRunning} list={running} />
       {jsonschema && (
-        <FormChakraUI
-          schema={jsonschema}
-          validator={validator}
-          onSubmit={onSubmit}
-        />
+        <div>
+          <Heading>Chakra UI Form</Heading>
+          <FormChakraUI
+            schema={jsonschema}
+            validator={validator}
+            onSubmit={onSubmit}
+          />
+          <Heading>Form without styles. Naked RJSF</Heading>
+          <Form
+            schema={jsonschema}
+            validator={validator}
+          />
+          <Heading>Form with custom UI Widget and UI Schema</Heading>
+          <Form
+            schema={schema}
+            validator={validator}
+            uiSchema={uiSchema}
+            widgets={widgets}
+          />
+          <Heading>Custom Webcomponent loaded</Heading>
+          <p>this is external table-saw webcomponent with responsive tables</p>
+          {loadedScript &&
+            <table-saw>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Movie Title</th>
+                  <th scope="col">Rank</th>
+                  <th scope="col">Year</th>
+                  <th scope="col"><abbr title="Rotten Tomato Rating">Rating</abbr></th>
+                  <th scope="col">Gross</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-tablesaw-label="Movie Title"><a href="http://en.wikipedia.org/wiki/Avatar_(2009_film)">Avatar</a></td>
+                  <td data-tablesaw-label="Rank">1</td>
+                  <td data-tablesaw-label="Year">2009</td>
+                  <td data-tablesaw-label="Rating">83%</td>
+                  <td data-tablesaw-label="Gross">$2.7B</td>
+                </tr>
+              </tbody>
+            </table>
+          </table-saw>
+          }
+        </div>
       )}
     </Edit>
   );

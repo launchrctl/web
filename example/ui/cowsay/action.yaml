@@ -1,0 +1,9 @@
+action:
+  title: Cowsay Hello!
+  image: rancher/cowsay:latest
+  command: Hello action! {{ .phrase }}
+  arguments:
+    - name: phrase
+      title: What cow say?
+      type: string
+      default: Hello!
