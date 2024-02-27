@@ -5,13 +5,21 @@ import {
   useCustom,
   useCustomMutation,
   useOne,
+  usePublish,
   useResource,
+  useSubscription,
 } from "@refinedev/core";
 import { Theme as ChakraUITheme } from "@rjsf/chakra-ui";
 import type { IChangeEvent } from "@rjsf/core";
 import { withTheme } from "@rjsf/core";
 import type { RJSFSchema } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
+import { useState } from "react";
+import {
+  Box,
+  List,
+  ListItem,
+} from "@chakra-ui/react";
 
 // @todo move to types
 interface IActionData extends BaseRecord {
@@ -34,6 +42,10 @@ interface IActionRunningProps {
   list?: IRunInfo[];
 }
 
+interface IActionsRunningProps {
+  actions: string[];
+}
+
 const ActionRunningState: React.FC<IActionRunningProps> = ({
   isLoading,
   list,
@@ -50,6 +62,18 @@ const ActionRunningState: React.FC<IActionRunningProps> = ({
         </li>
       ))}
     </ul>
+  );
+};
+
+const ActionsRunningState: React.FC<IActionsRunningProps> = ({ actions }) => {
+  return (
+    <Box p={5} shadow='md' borderWidth='1px'>
+      <List spacing={3}>
+        {actions.map((action, id) => (
+          <ListItem key={id}>{action}</ListItem>
+        ))}
+      </List>
+    </Box>
   );
 };
 
@@ -90,12 +114,33 @@ export const ActionShow: React.FC<IResourceComponentsProps> = () => {
 
   const { mutateAsync } = useCustomMutation();
 
+  const [actions, setActions] = useState([]);
+  const publish = usePublish();
+
+  useSubscription({
+    channel: "resorces/actions",
+    types: ["get actions"],
+    onLiveEvent: (event) => {
+      setActions(event?.payload?.actions);
+    },
+    dataProviderName: "default",
+  });
+
   const onSubmit = async (
     { formData }: IChangeEvent<IFormValues>,
     // e: FormEvent<IFormValues>,
   ) => {
     if (!formData) {
       return;
+    }
+
+    if (publish) {
+      publish({
+        channel: "resorces/actions",
+        type: "get actions",
+        payload: {},
+        date: new Date(),
+      });
     }
 
     await mutateAsync({
@@ -113,6 +158,7 @@ export const ActionShow: React.FC<IResourceComponentsProps> = () => {
   return (
     <Edit isLoading={isFetching}>
       <ActionRunningState isLoading={isFetchingRunning} list={running} />
+      {/* <ActionsRunningState actions={actions} /> */}
       {jsonschema && (
         <FormChakraUI
           schema={jsonschema}

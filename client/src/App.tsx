@@ -19,7 +19,9 @@ import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Header } from "./components";
 import { AppIcon } from "./components/app-icon";
 import { ActionList, ActionShow } from "./pages/actions";
+import { AsyncActionList } from "./pages/async"
 import { dataProvider as launchrDataProvider } from "./rest-data-provider";
+import { liveProvider } from "./live-provider";
 
 const apiUrl = "http://localhost:8080/api";
 
@@ -33,6 +35,7 @@ export function App() {
             dataProvider={{
               default: launchrDataProvider(apiUrl),
             }}
+            liveProvider={ liveProvider }
             notificationProvider={useNotificationProvider}
             routerProvider={routerBindings}
             resources={[
@@ -49,6 +52,7 @@ export function App() {
             options={{
               // syncWithLocation: true,
               warnWhenUnsavedChanges: true,
+              liveMode: "auto"
             }}
           >
             <Routes>
@@ -72,6 +76,9 @@ export function App() {
                   index
                   element={<NavigateToResource resource="actions" />}
                 />
+                <Route path="/async">
+                  <Route index element={<AsyncActionList />} />
+                </Route>
                 <Route path="/actions">
                   <Route index element={<ActionList />} />
                   <Route path=":id/show" element={<ActionShow />} />

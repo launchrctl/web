@@ -1,0 +1,150 @@
+asyncapi: 3.0.0
+info:
+  title: Launchr
+  version: 1.0.0
+  description: An API of Launchr actions
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  websocket:
+    host: "localhost:3000"
+    protocol: ws
+channels:
+  actionsList:
+    address: /actions-list
+    messages:
+      actionsList:
+        $ref: "#/components/messages/actionsList"
+      getActionsList:
+        $ref: "#/components/messages/getActionsList"
+  actionRun:
+    address: /action-running
+    parameters:
+      id:
+        description: Id of the action
+        default: 'default-action-id'
+      runId:
+        description: Id of the process
+        default: 'default-process-id'
+    messages:
+      actionsList:
+        $ref: "#/components/messages/actionsList"
+operations:
+  actionsList:
+    action: send
+    channel:
+      $ref: "#/channels/actionsList"
+  getActionsList:
+    action: receive
+    channel:
+      $ref: "#/channels/actionsList"
+  getRunningAction:
+    action: send
+    channel:
+      $ref: "#/channels/actionRun"
+components:
+  messages:
+    actionsList:
+      title: Send actions list
+      payload:
+        type: array
+        items:
+          $ref: "#/components/schemas/ActionShort"
+    getActionsList:
+      title: Request actions list
+      payload:
+        type: string
+  schemas:
+    ActionShort:
+      allOf:
+        - type: object
+          required:
+            - id
+            - title
+            - description
+          properties:
+            id:
+              type: string
+              x-go-name: "ID"
+            title:
+              type: string
+            description:
+              type: string
+    ActionFull:
+      allOf:
+        - $ref: '#/components/schemas/ActionShort'
+        - type: object
+          required:
+            - jsonschema
+          properties:
+            jsonschema:
+              type: object
+              x-go-name: "JSONSchema"
+              x-go-type: "jsonschema.Schema"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/jsonschema"
+    ActionRunParams:
+      allOf:
+        - type: object
+          required:
+            - arguments
+            - options
+          properties:
+            arguments:
+              type: object
+              x-go-type: "action.TypeArgs"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/action"
+            options:
+              type: object
+              x-go-type: "action.TypeOpts"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/action"
+    ActionRunInfo:
+      allOf:
+        - type: object
+          required:
+            - id
+            - status
+          properties:
+            id:
+              type: string
+              x-go-name: "ID"
+            status:
+              type: string
+    ActionRunStreamData:
+      allOf:
+        - type: object
+          required:
+            - type
+            - content
+            - offset
+            - count
+          properties:
+            type:
+              type: string
+              enum:
+                - stdOut
+                - stdIn
+                - stdErr
+            content:
+              type: string
+            offset:
+              type: integer
+            count:
+              type: integer
+    JSONSchema:
+      type: object
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+
