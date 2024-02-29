@@ -7,26 +7,30 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import axios from "axios";
+const ids = [
+    "example.foundation.software.flatcar:bump",
+    "example.integration.application.bus:watch",
+    "example.platform:build",
+    "example.platform:bump",
+    "example.ui:cowsay"
+];
+const statuses = [
+    "not started",
+    "running",
+    "finished"
+];
+const generateRandomArray = () => {
+    return ids.map((id) => ({
+        id,
+        status: statuses[Math.floor(Math.random() * statuses.length)]
+    }));
+};
 export default function () {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const response = yield axios.get('http://localhost:8080/api/actions');
-            return {
-                send: [{
-                        payload: response.data
-                    }]
-            };
-        }
-        catch (error) {
-            return {
-                send: [{
-                        error: {
-                            message: 'Failed to fetch actions',
-                            details: error.message
-                        }
-                    }]
-            };
-        }
+        return {
+            send: [{
+                    payload: generateRandomArray()
+                }]
+        };
     });
 }

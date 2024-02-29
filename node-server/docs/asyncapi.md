@@ -118,19 +118,28 @@ Receive **one of** the following messages:
 
 
 
-### SEND `/action-running` Operation
+### RECEIVE `/actions/actionId/running/runId` Operation
 
-* Operation ID: `getRunningAction`
+* Operation ID: `getRunningActions`
 
-#### Parameters
+Receive **one of** the following messages:
+
+#### Message Request runinning actions list `getRunningActions`
+
+##### Payload
 
 | Name | Type | Description | Value | Constraints | Notes |
 |---|---|---|---|---|---|
-| id | string | Id of the action | default (`"default-action-id"`) | - | **required** |
-| runId | string | Id of the process | default (`"default-process-id"`) | - | **required** |
+| (root) | string | - | - | - | - |
+
+> Examples of payload _(generated)_
+
+```json
+"string"
+```
 
 
-#### Message Send actions list `actionsList`
+#### Message Stream data `sendRunningActions`
 
 ##### Payload
 
@@ -141,8 +150,7 @@ Receive **one of** the following messages:
 | 0 (allOf item) | object | - | - | - | **additional properties are allowed** |
 | id | string | - | - | - | **required** |
 | id.x-go-name | - | - | `"ID"` | - | - |
-| title | string | - | - | - | **required** |
-| description | string | - | - | - | **required** |
+| status | string | - | - | - | **required** |
 
 > Examples of payload _(generated)_
 
@@ -150,8 +158,154 @@ Receive **one of** the following messages:
 [
   {
     "id": "string",
-    "title": "string",
-    "description": "string"
+    "status": "string"
+  }
+]
+```
+
+
+
+### SEND `/actions/actionId/running/runId` Operation
+
+* Operation ID: `sendRunningAction`
+
+Sending **one of** the following messages:
+
+#### Message Request runinning actions list `getRunningActions`
+
+##### Payload
+
+| Name | Type | Description | Value | Constraints | Notes |
+|---|---|---|---|---|---|
+| (root) | string | - | - | - | - |
+
+> Examples of payload _(generated)_
+
+```json
+"string"
+```
+
+
+#### Message Stream data `sendRunningActions`
+
+##### Payload
+
+| Name | Type | Description | Value | Constraints | Notes |
+|---|---|---|---|---|---|
+| (root) | array<allOf> | - | - | - | - |
+| (single item) | allOf | - | - | - | **additional properties are allowed** |
+| 0 (allOf item) | object | - | - | - | **additional properties are allowed** |
+| id | string | - | - | - | **required** |
+| id.x-go-name | - | - | `"ID"` | - | - |
+| status | string | - | - | - | **required** |
+
+> Examples of payload _(generated)_
+
+```json
+[
+  {
+    "id": "string",
+    "status": "string"
+  }
+]
+```
+
+
+
+### RECEIVE `/actions-stream` Operation
+
+* Operation ID: `getActionsRunStream`
+
+Receive **one of** the following messages:
+
+#### Message Request runinning actions stream `getActionsRunStream`
+
+##### Payload
+
+| Name | Type | Description | Value | Constraints | Notes |
+|---|---|---|---|---|---|
+| (root) | string | - | - | - | - |
+
+> Examples of payload _(generated)_
+
+```json
+"string"
+```
+
+
+#### Message Stream data `sendActionsRunStream`
+
+##### Payload
+
+| Name | Type | Description | Value | Constraints | Notes |
+|---|---|---|---|---|---|
+| (root) | array<allOf> | - | - | - | - |
+| (single item) | allOf | - | - | - | **additional properties are allowed** |
+| 0 (allOf item) | object | - | - | - | **additional properties are allowed** |
+| type | string | - | allowed (`"stdOut"`, `"stdIn"`, `"stdErr"`) | - | **required** |
+| content | string | - | - | - | **required** |
+| offset | integer | - | - | - | **required** |
+| count | integer | - | - | - | **required** |
+
+> Examples of payload _(generated)_
+
+```json
+[
+  {
+    "type": "stdOut",
+    "content": "string",
+    "offset": 0,
+    "count": 0
+  }
+]
+```
+
+
+
+### SEND `/actions-stream` Operation
+
+* Operation ID: `sendActionsRunStream`
+
+Sending **one of** the following messages:
+
+#### Message Request runinning actions stream `getActionsRunStream`
+
+##### Payload
+
+| Name | Type | Description | Value | Constraints | Notes |
+|---|---|---|---|---|---|
+| (root) | string | - | - | - | - |
+
+> Examples of payload _(generated)_
+
+```json
+"string"
+```
+
+
+#### Message Stream data `sendActionsRunStream`
+
+##### Payload
+
+| Name | Type | Description | Value | Constraints | Notes |
+|---|---|---|---|---|---|
+| (root) | array<allOf> | - | - | - | - |
+| (single item) | allOf | - | - | - | **additional properties are allowed** |
+| 0 (allOf item) | object | - | - | - | **additional properties are allowed** |
+| type | string | - | allowed (`"stdOut"`, `"stdIn"`, `"stdErr"`) | - | **required** |
+| content | string | - | - | - | **required** |
+| offset | integer | - | - | - | **required** |
+| count | integer | - | - | - | **required** |
+
+> Examples of payload _(generated)_
+
+```json
+[
+  {
+    "type": "stdOut",
+    "content": "string",
+    "offset": 0,
+    "count": 0
   }
 ]
 ```

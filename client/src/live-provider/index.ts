@@ -1,15 +1,17 @@
 import { LiveProvider, LiveEvent } from "@refinedev/core";
 import { w3cwebsocket } from "websocket";
 
-const socket = new w3cwebsocket("ws://localhost:3000/actions-list");
+const actionsSocket = new w3cwebsocket("ws://localhost:3000/actions-list");
+const runningActionsSocket = new w3cwebsocket("ws://localhost:3000/actions/actionId/running/runId");
+const actionStreamSocket = new w3cwebsocket("ws://localhost:3000/actions-stream");
 
 export const liveProvider: LiveProvider = {
   subscribe: async ({ channel, params, types, callback, meta }) => {
-    socket.onopen = () => {
-      socket.send("get actions");
+    actionsSocket.onopen = () => {
+      actionsSocket.send("get actions");
     };
 
-    socket.onmessage = (e) => {
+    actionsSocket.onmessage = (e) => {
       const event = {
         channel: "actions-list",
         type: "get-actions-list",
@@ -21,6 +23,29 @@ export const liveProvider: LiveProvider = {
       callback(event);
     };
 
+    actionStreamSocket.onmessage = (e) => {
+      const event = {
+        channel: "stdout-result",
+        type: "get-stdout",
+        payload: JSON.parse(e.data.toString()),
+        date: new Date(),
+      };
+      callback(event);
+    };
+
+    runningActionsSocket.onmessage = (e) => {
+      const event = {
+        channel: "running-actions-list",
+        type: "get-runing-actions-list",
+        payload: {
+          actions: JSON.parse(e.data.toString()),
+        },
+        date: new Date(),
+      };
+      callback(event);
+    };
+
+
     return {
       unsubscribe: () => {},
     };
@@ -29,7 +54,12 @@ export const liveProvider: LiveProvider = {
     // unsubscribe();
   },
   publish: async ({ channel, type, payload, date }) => {
-    // Publish the data to the resource channel using Socket.IO
-    socket.send("get actions");
+    if (channel === 'resorces/actions') {
+      actionsSocket.send("get actions");
+    }
+
+    if (channel === 'resorces/streams') {
+      actionStreamSocket.send("get actions");
+    }
   },
 };

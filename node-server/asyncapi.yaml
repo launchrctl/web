@@ -18,18 +18,28 @@ channels:
         $ref: "#/components/messages/actionsList"
       getActionsList:
         $ref: "#/components/messages/getActionsList"
-  actionRun:
-    address: /action-running
-    parameters:
-      id:
-        description: Id of the action
-        default: 'default-action-id'
-      runId:
-        description: Id of the process
-        default: 'default-process-id'
+  actionsRun:
+    # parameters not working in glee somewhy
+    address: /actions/actionId/running/runId
+    # parameters:
+    #   actionId:
+    #     description: Id of the action
+    #     default: 'default-action-id'
+    #   runId:
+    #     description: Id of the process
+    #     default: 'default-process-id'
     messages:
-      actionsList:
-        $ref: "#/components/messages/actionsList"
+      getRunningActions:
+        $ref: "#/components/messages/getRunningActions"
+      sendRunningActions:
+        $ref: "#/components/messages/sendRunningActions"
+  actionsRunStream:
+    address: /actions-stream
+    messages:
+      getActionsRunStream:
+        $ref: "#/components/messages/getActionsRunStream"
+      sendActionsRunStream:
+        $ref: "#/components/messages/sendActionsRunStream"
 operations:
   actionsList:
     action: send
@@ -39,10 +49,22 @@ operations:
     action: receive
     channel:
       $ref: "#/channels/actionsList"
-  getRunningAction:
+  getRunningActions:
+    action: receive
+    channel:
+      $ref: "#/channels/actionsRun"
+  sendRunningAction:
     action: send
     channel:
-      $ref: "#/channels/actionRun"
+      $ref: "#/channels/actionsRun"
+  getActionsRunStream:
+    action: receive
+    channel:
+      $ref: "#/channels/actionsRunStream"
+  sendActionsRunStream:
+    action: send
+    channel:
+      $ref: "#/channels/actionsRunStream"
 components:
   messages:
     actionsList:
@@ -55,6 +77,26 @@ components:
       title: Request actions list
       payload:
         type: string
+    getRunningActions:
+      title: Request runinning actions list
+      payload:
+        type: string
+    sendRunningActions:
+      title: Stream data
+      payload:
+        type: array
+        items:
+          $ref: "#/components/schemas/actionsRunInfo"
+    getActionsRunStream:
+      title: Request runinning actions stream
+      payload:
+        type: string
+    sendActionsRunStream:
+      title: Stream data
+      payload:
+        type: array
+        items:
+          $ref: "#/components/schemas/actionsRunStreamData"
   schemas:
     ActionShort:
       allOf:
@@ -84,7 +126,7 @@ components:
               x-go-type: "jsonschema.Schema"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/jsonschema"
-    ActionRunParams:
+    actionsRunParams:
       allOf:
         - type: object
           required:
@@ -101,7 +143,7 @@ components:
               x-go-type: "action.TypeOpts"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/action"
-    ActionRunInfo:
+    actionsRunInfo:
       allOf:
         - type: object
           required:
@@ -113,7 +155,7 @@ components:
               x-go-name: "ID"
             status:
               type: string
-    ActionRunStreamData:
+    actionsRunStreamData:
       allOf:
         - type: object
           required:
