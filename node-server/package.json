@@ -1,0 +1,17 @@
+{
+  "name": "node-server",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@asyncapi/glee": "^0.35.11",
+    "axios": "^1.6.7",
+    "systeminformation": "^5.22.0",
+    "ws": "^8.16.0"
+  },
+  "scripts": {
+    "docs": "glee docs",
+    "dev": "glee dev",
+    "start": "glee start"
+  }
+}

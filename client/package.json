@@ -32,12 +32,13 @@
     "react-dom": "^18.0.0",
     "react-i18next": "^11.8.11",
     "react-router-dom": "^6.8.1",
-    "react-use-websocket": "^4.5.0"
+    "websocket": "^1.0.34"
   },
   "devDependencies": {
     "@types/node": "^18.16.2",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "@types/websocket": "^1.0.10",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "@vitejs/plugin-react": "^4.2.1",

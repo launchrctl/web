@@ -1,0 +1,10 @@
+action:
+  title: Cowsay Hello argument!
+  description: Handles no logic
+  image: rancher/cowsay:latest
+  command: Hello {{ .phrase }}!
+  arguments:
+    - name: phrase
+      title: What cow say?
+      type: string
+      default: World
