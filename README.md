@@ -1,7 +1,7 @@
 # Launchr Web plugin
 
-Launchr Web plugin is an extenstion to [Launchr](https://github.com/launchrctl/launchr) to run actions via Web UI.  
-The plugin consists of a Backend API and a Frontend client.  
+Launchr Web plugin is an extenstion to [Launchr](https://github.com/launchrctl/launchr) to run actions via Web UI.
+The plugin consists of a Backend API and a Frontend client.
 
 ## Table of contents
 
@@ -26,6 +26,9 @@ The documentation for `launchr` usage can be found in [the main project](https:/
 To build the client:
 ```shell
 cd client
+
+# Install yarn 4 https://yarnpkg.com/getting-started/install yarn set version stable
+
 # Fetch dependencies
 yarn
 # Build the project
