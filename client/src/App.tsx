@@ -1,11 +1,4 @@
-import { ChakraProvider } from "@chakra-ui/react";
-import {
-  ErrorComponent,
-  RefineThemes,
-  ThemedLayoutV2,
-  ThemedTitleV2,
-  useNotificationProvider,
-} from "@refinedev/chakra-ui";
+import { ErrorComponent, useNotificationProvider } from "@refinedev/mui";
 import { Refine } from "@refinedev/core";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import routerBindings, {
@@ -13,22 +6,23 @@ import routerBindings, {
   NavigateToResource,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
-import * as React from "react";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
-
-import { Header } from "./components";
-import { AppIcon } from "./components/app-icon";
 import { ActionList, ActionShow } from "./pages/actions";
 import { dataProvider as launchrDataProvider } from "./rest-data-provider";
+import { ThemeProvider } from "./theme-provider";
+import { ThemedLayoutV2 } from "./components/layout";
+import { ThemedHeaderV2 } from "./components/layout/header";
+import { ThemedSiderV2 } from "./components/layout/sider";
+import { ThemedTitleV2 } from "./components/layout/title";
+import * as React from "react";
 
-const apiUrl = "http://localhost:8080/api";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 export function App() {
   return (
     <BrowserRouter>
       <RefineKbarProvider>
-        {/* You can change the theme colors here. example: theme={RefineThemes.Magenta} */}
-        <ChakraProvider theme={RefineThemes.Yellow}>
+        <ThemeProvider>
           <Refine
             dataProvider={{
               default: launchrDataProvider(apiUrl),
@@ -55,14 +49,9 @@ export function App() {
               <Route
                 element={
                   <ThemedLayoutV2
-                    Header={() => <Header sticky />}
-                    Title={({ collapsed }) => (
-                      <ThemedTitleV2
-                        collapsed={collapsed}
-                        text={"launchr" /* @todo use app name from API */}
-                        icon={<AppIcon />}
-                      />
-                    )}
+                    Header={ThemedHeaderV2}
+                    Sider={ThemedSiderV2}
+                    Title={ThemedTitleV2}
                   >
                     <Outlet />
                   </ThemedLayoutV2>
@@ -86,7 +75,7 @@ export function App() {
             <UnsavedChangesNotifier />
             <DocumentTitleHandler />
           </Refine>
-        </ChakraProvider>
+        </ThemeProvider>
       </RefineKbarProvider>
     </BrowserRouter>
   );

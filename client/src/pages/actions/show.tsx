@@ -1,4 +1,4 @@
-import { Edit } from "@refinedev/chakra-ui";
+import { Edit } from '@refinedev/mui';
 import type { BaseRecord, IResourceComponentsProps } from "@refinedev/core";
 import {
   useApiUrl,
@@ -7,7 +7,7 @@ import {
   useOne,
   useResource,
 } from "@refinedev/core";
-import { Theme as ChakraUITheme } from "@rjsf/chakra-ui";
+import { Theme } from "@rjsf/mui";
 import type { IChangeEvent } from "@rjsf/core";
 import { withTheme } from "@rjsf/core";
 import type { RJSFSchema } from "@rjsf/utils";
@@ -27,7 +27,7 @@ interface IFormValues {
 }
 
 // Make modifications to the theme with your own fields and widgets
-const FormChakraUI = withTheme(ChakraUITheme);
+const Form = withTheme(Theme);
 
 interface IActionRunningProps {
   isLoading: boolean;
@@ -114,7 +114,7 @@ export const ActionShow: React.FC<IResourceComponentsProps> = () => {
     <Edit isLoading={isFetching}>
       <ActionRunningState isLoading={isFetchingRunning} list={running} />
       {jsonschema && (
-        <FormChakraUI
+        <Form
           schema={jsonschema}
           validator={validator}
           onSubmit={onSubmit}

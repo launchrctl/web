@@ -1,7 +1,7 @@
 import type { IResourceComponentsProps } from "@refinedev/core";
-import { ChakraUIEditInferencer } from "@refinedev/inferencer/chakra-ui";
+import { MuiEditInferencer } from "@refinedev/inferencer/mui";
 import * as React from "react";
 
 export const ActionEdit: React.FC<IResourceComponentsProps> = () => (
-  <ChakraUIEditInferencer />
+  <MuiEditInferencer />
 );
