@@ -1,0 +1,22 @@
+{
+  "name": "lit-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@jsfe/core": "^0.0.5",
+    "@jsfe/shoelace": "^0.3.1",
+    "@lit/task": "^1.0.0",
+    "@shoelace-style/shoelace": "^2.14.0",
+    "axios": "^1.6.7",
+    "lit": "^3.1.2"
+  },
+  "devDependencies": {
+    "vite": "^5.1.0"
+  }
+}

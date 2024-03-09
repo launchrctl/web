@@ -39,6 +39,17 @@ yarn dev
 
 See [client readme](client/README.MD) for more information.
 
+To build the nuxt client:
+```shell
+cd nuxt-client
+# Fetch dependencies
+yarn
+# Start client dev server
+yarn dev
+```
+
+See [client readme](client/README.MD) for more information.
+
 To run Launchr Web server:
 ```shell
 # Run web server on http://localhost:8080
