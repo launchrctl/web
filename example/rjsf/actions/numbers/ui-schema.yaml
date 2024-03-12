@@ -1,0 +1,5 @@
+uiSchema:
+  range:
+    'ui:widget': range
+  rangeConstrained:
+    'ui:widget': range

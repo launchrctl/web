@@ -1,0 +1,25 @@
+action:
+  title: RJSF Example of strings
+  description: RJSF Example of strings arguments
+  image: alpine:latest
+  command: [ "sh", "-c", "for i in $(seq 60); do echo $$i; sleep 1; done" ]
+  arguments:
+    - name: simpleString
+      title: Simple inline string
+      type: string
+      default: With default value from schema
+    - name: stringConstrained
+      title: String with constraints
+      type: string
+      pattern: '^[A-Z \d\W]+$'
+      minLength: 2
+      maxLength: 10
+      description: Only UPPERCASE with 2 to 10 characters is allowed.
+    - name: textArea
+      title: Text area
+      description: Using UI schema options.
+      type: string
+    - name: color
+      title: Color picker
+      type: string
+      default: '#4a90e2'

@@ -1,0 +1,12 @@
+action:
+  title: extrahosts
+  description: Test passing additional entries to container's /etc/hosts
+  image: extrahosts:latest
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+    - "example.com:127.0.0.1"
+  build:
+    context: ./
+  command:
+    - sh
+    - /action/main.sh
