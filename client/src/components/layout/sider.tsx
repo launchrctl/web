@@ -19,7 +19,6 @@ import {
   ThemedTitleV2 as DefaultTitle,
   useThemedLayoutContext,
 } from "@refinedev/mui";
-import ChevronLeft from "@mui/icons-material/ChevronLeft";
 import Dashboard from "@mui/icons-material/Dashboard";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -28,7 +27,6 @@ import Logout from "@mui/icons-material/Logout";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
 import Drawer from "@mui/material/Drawer";
-import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -462,11 +460,6 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
             }}
           >
             <RenderToTitle collapsed={siderCollapsed} />
-            {!siderCollapsed && (
-              <IconButton size="small" onClick={() => setSiderCollapsed(true)}>
-                {<ChevronLeft />}
-              </IconButton>
-            )}
           </Paper>
           <Box
             sx={{

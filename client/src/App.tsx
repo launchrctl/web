@@ -9,7 +9,7 @@ import routerBindings, {
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { ActionList, ActionShow } from "./pages/actions";
 import { dataProvider as launchrDataProvider } from "./rest-data-provider";
-import { ThemeProvider } from "./theme-provider";
+import ThemeProvider from "./theme-provider";
 import { ThemedLayoutV2 } from "./components/layout";
 import { ThemedHeaderV2 } from "./components/layout/header";
 import { ThemedSiderV2 } from "./components/layout/sider";
