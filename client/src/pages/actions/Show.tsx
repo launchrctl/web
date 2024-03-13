@@ -12,7 +12,7 @@ import { Show } from '@refinedev/mui'
 import type { IChangeEvent } from '@rjsf/core'
 import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
-import type { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 import type { FC } from 'react'
 import { useState } from 'react'
@@ -22,6 +22,7 @@ import { RunningActionsList } from '../../components/RunningActionsList'
 // @todo move to types
 interface IActionData extends BaseRecord {
   jsonschema: RJSFSchema
+  uischema: UiSchema
 }
 
 interface IFormValues {
@@ -51,6 +52,8 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
   const { isFetching } = queryResult
 
   const jsonschema = queryResult?.data?.data?.jsonschema
+
+  const uischema = queryResult?.data?.data?.uischema?.uiSchema || {}
 
   if (jsonschema) {
     // @todo I actually don't know for the moment how to overcome error
@@ -117,7 +120,12 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
         }}
       />
       {jsonschema && (
-        <Form schema={jsonschema} validator={validator} onSubmit={onSubmit}>
+        <Form
+          schema={jsonschema}
+          uiSchema={uischema}
+          validator={validator}
+          onSubmit={onSubmit}
+        >
           <div>
             <Button variant="contained" type="submit" disabled={actionRunning}>
               Submit
