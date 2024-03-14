@@ -1,11 +1,11 @@
 import React from "react";
 import { useThemedLayoutContext } from "@refinedev/mui";
-import Menu from "@mui/icons-material/Menu";
+import { Menu } from "@mui/icons-material";
 import IconButton from "@mui/material/IconButton";
 import type { IconButtonProps } from "@mui/material/IconButton";
 
 const HamburgerIcon = (props: IconButtonProps) => (
-  <IconButton color="inherit" aria-label="open drawer" edge="start" {...props}>
+  <IconButton color="inherit" aria-label="open drawer" edge="end" {...props}>
     <Menu />
   </IconButton>
 );
@@ -31,9 +31,7 @@ export const HamburgerMenu: React.FC = () => {
       <HamburgerIcon
         onClick={() => setMobileSiderOpen(!mobileSiderOpen)}
         sx={{
-          mr: 2,
           display: { xs: "flex", md: "none" },
-          ...(mobileSiderOpen && { display: "none" }),
         }}
       />
     </>

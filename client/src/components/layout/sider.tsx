@@ -1,4 +1,4 @@
-import React, { CSSProperties, useState } from "react";
+import React, { CSSProperties, useState, useEffect, FC } from "react";
 import {
   CanAccess,
   ITreeMenu,
@@ -33,9 +33,12 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Paper from "@mui/material/Paper";
 import Tooltip from "@mui/material/Tooltip";
+import { DarkModeSwitcher } from "./darkModeSwitcher";
+import { Close } from "@mui/icons-material";
 import type { RefineThemedLayoutV2SiderProps } from "@refinedev/mui";
+import IconButton from "@mui/material/IconButton";
 
-export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
+export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
   Title: TitleFromProps,
   render,
   meta,
@@ -50,7 +53,7 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
 
   const drawerWidth = () => {
     if (siderCollapsed) return 56;
-    return 240;
+    return 280;
   };
 
   const t = useTranslate();
@@ -72,7 +75,7 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
 
   const [open, setOpen] = useState<{ [k: string]: any }>({});
 
-  React.useEffect(() => {
+  useEffect(() => {
     setOpen((previous) => {
       const previousKeys: string[] = Object.keys(previous);
       const previousOpenKeys = previousKeys.filter((key) => previous[key]);
@@ -367,7 +370,6 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
       disablePadding
       sx={{
         flexGrow: 1,
-        paddingTop: "16px",
       }}
     >
       {renderSider()}
@@ -396,6 +398,7 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
         }}
       >
         <Drawer
+          anchor="bottom"
           variant="temporary"
           elevation={2}
           open={mobileSiderOpen}
@@ -412,22 +415,22 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
         >
           <Box
             sx={{
-              width: drawerWidth(),
+              display: "flex",
+              justifyContent: "flex-end",
             }}
           >
-            <Box
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={() => setMobileSiderOpen(!mobileSiderOpen)}
               sx={{
-                height: 64,
-                display: "flex",
-                alignItems: "center",
-                paddingLeft: "16px",
-                fontSize: "14px",
+                display: { xs: "flex", md: "none" },
               }}
             >
-              <RenderToTitle collapsed={false} />
-            </Box>
-            {drawer}
+              <Close />
+            </IconButton>
           </Box>
+          {drawer}
         </Drawer>
         <Drawer
           variant="permanent"
@@ -460,6 +463,7 @@ export const ThemedSiderV2: React.FC<RefineThemedLayoutV2SiderProps> = ({
             }}
           >
             <RenderToTitle collapsed={siderCollapsed} />
+            <DarkModeSwitcher />
           </Paper>
           <Box
             sx={{
