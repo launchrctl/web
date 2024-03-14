@@ -1,58 +1,106 @@
-import React, { ReactNode } from 'react';
-import { RefineThemes, RefineSnackbarProvider } from "@refinedev/mui";
-import CssBaseline from "@mui/material/CssBaseline";
-import GlobalStyles from "@mui/material/GlobalStyles";
-import {
-  ThemeProvider as MuiThemeProvider,
-  TypographyVariantsOptions,
-  createTheme,
-} from "@mui/material/styles";
 import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 
-interface ThemeProviderProps {
+import CssBaseline from "@mui/material/CssBaseline";
+import GlobalStyles from "@mui/material/GlobalStyles";
+import type { TypographyVariantsOptions } from "@mui/material/styles";
+import {
+  createTheme,
+  ThemeProvider as MuiThemeProvider,
+} from "@mui/material/styles";
+import { RefineSnackbarProvider, RefineThemes } from "@refinedev/mui";
+import type { FC, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useMediaQuery } from "@mui/system";
+
+interface IThemeProviderProps {
   children: ReactNode;
 }
 
 const typographyOptions: TypographyVariantsOptions = {
-  fontFamily: "Inter, Arial, sans-serif",
+  fontFamily: ["Inter", "Arial", "sans-serif"].join(","),
   fontSize: 16,
 };
 
-const theme = createTheme({
-  ...RefineThemes.Blue,
-  palette: {
-    primary: {
-      main: "#000",
+interface IThemeContextType {
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+}
+
+const ThemeContext = createContext<IThemeContextType>({
+  isDarkMode: false,
+  toggleDarkMode: () => {},
+});
+
+export const useThemeContext = () => useContext(ThemeContext);
+
+const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
+  let hasDarkModeValue = useMediaQuery("(prefers-color-scheme: dark)");
+  const storage = localStorage.getItem("darkMode");
+
+  if (storage === "true") {
+    hasDarkModeValue = true;
+  } else if (storage === "false") {
+    hasDarkModeValue = false;
+  }
+
+  const [isDarkMode, setDarkMode] = useState<boolean>(hasDarkModeValue);
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", isDarkMode.toString());
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!isDarkMode);
+  };
+
+  const theme = createTheme({
+    ...RefineThemes.Blue,
+    palette: {
+      mode: isDarkMode ? "dark" : "light",
+      primary: {
+        main: isDarkMode ? "#fff" : "#000",
+      },
+      secondary: {
+        main: isDarkMode ? "#000" : "#fff",
+      },
     },
-    secondary: {
-      main: "#1570EF",
+    typography: {
+      ...typographyOptions,
     },
-  },
-  typography: {
-    ...typographyOptions,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 22,
-          textTransform: "none",
-          fontWeight: 600,
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            fontSize: 18,
+            padding: "13px 31px",
+            borderRadius: 28,
+            textTransform: "none",
+            fontWeight: 600,
+            lineHeight: 1.55,
+            "& .MuiButton-startIcon > *:nth-of-type(1)": {
+              fontSize: 24,
+            },
+          },
         },
       },
     },
-  },
-});
+  });
 
-const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => (
-  // Available themes: Blue, Purple, Magenta, Red, Orange, Yellow, Green
-  // Change the line below to change the theme
-  <MuiThemeProvider theme={theme}>
-    <CssBaseline />
-    <GlobalStyles styles={{ html: { WebkitFontSmoothing: 'auto' } }} />
-    <RefineSnackbarProvider>{children}</RefineSnackbarProvider>
-  </MuiThemeProvider>
-);
+  return (
+    // Available themes: Blue, Purple, Magenta, Red, Orange, Yellow, Green
+    // Change the line below to change the theme
+    <MuiThemeProvider theme={theme}>
+      <CssBaseline />
+      <GlobalStyles styles={{ html: { WebkitFontSmoothing: "auto" } }} />
+      <RefineSnackbarProvider>
+        <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
+          {children}
+        </ThemeContext.Provider>
+      </RefineSnackbarProvider>
+    </MuiThemeProvider>
+  );
+};
 
 export default ThemeProvider;
