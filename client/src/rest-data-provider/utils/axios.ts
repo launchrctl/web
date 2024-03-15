@@ -1,12 +1,10 @@
-import { HttpError } from "@refinedev/core";
-import axios from "axios";
+import type { HttpError } from '@refinedev/core';
+import axios from 'axios';
 
 const axiosInstance = axios.create();
 
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     const customError: HttpError = {
       ...error,
@@ -15,7 +13,7 @@ axiosInstance.interceptors.response.use(
     };
 
     return Promise.reject(customError);
-  }
+  },
 );
 
 export { axiosInstance };

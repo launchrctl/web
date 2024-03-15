@@ -33,7 +33,7 @@ module.exports = {
     "import/no-absolute-path": "error",
     "import/no-duplicates": "error",
     "prettier/prettier": ["error", {
-      singleQuote: false,
+      singleQuote: true,
       trailingComma: "all",
       tabWidth: 2,
     }],
@@ -146,7 +146,7 @@ module.exports = {
     "@typescript-eslint/prefer-namespace-keyword": "error",
     "@typescript-eslint/quotes": [
       "error",
-      "double",
+      "single",
       {
         avoidEscape: true,
       },
@@ -158,7 +158,7 @@ module.exports = {
         selector: "default",
         format: ["camelCase", "PascalCase", "snake_case", "UPPER_CASE"],
         filter: {
-          regex: "^_.*$",
+          regex: "^[_&].*$",
           match: false,
         },
       },
@@ -232,6 +232,7 @@ module.exports = {
       "error",
       {
         code: 150,
+        ignoreUrls: true,
       },
     ],
     "new-parens": "error",
@@ -305,7 +306,7 @@ module.exports = {
     "object-shorthand": "error",
     "prefer-const": "error",
     "prefer-object-spread": "error",
-    "quote-props": ["error", "consistent-as-needed"],
+    "quote-props": ["error", "as-needed"],
     "radix": "error",
     "use-isnan": "error",
     "valid-typeof": "off",

@@ -1,22 +1,25 @@
-import { CrudFilters } from "@refinedev/core";
-import { mapOperator } from "./mapOperator";
+import type { CrudFilters } from '@refinedev/core';
+
+import { mapOperator } from './mapOperator';
 
 export const generateFilter = (filters?: CrudFilters) => {
-  const queryFilters: { [key: string]: string } = {};
+  const queryFilters: Record<string, string> = {};
 
   if (filters) {
     filters.map((filter) => {
-      if (filter.operator === "or" || filter.operator === "and") {
+      if (filter.operator === 'or' || filter.operator === 'and') {
         throw new Error(
-          `[@refinedev/simple-rest]: \`operator: ${filter.operator}\` is not supported. You can create custom data provider. https://refine.dev/docs/api-reference/core/providers/data-provider/#creating-a-data-provider`
+          `[@refinedev/simple-rest]: \`operator: ${filter.operator}\` is not supported. You can create custom data provider. 
+          https://refine.dev/docs/api-reference/core/providers/data-provider/#creating-a-data-provider`,
         );
       }
 
-      if ("field" in filter) {
+      if ('field' in filter) {
         const { field, operator, value } = filter;
 
-        if (field === "q") {
+        if (field === 'q') {
           queryFilters[field] = value;
+
           return;
         }
 

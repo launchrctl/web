@@ -1,15 +1,15 @@
-import React from "react";
-import { useRouterContext, useLink, useRouterType } from "@refinedev/core";
-import MuiLink from "@mui/material/Link";
-import Typography from "@mui/material/Typography";
-import type { RefineLayoutThemedTitleProps } from "@refinedev/mui";
-import Logo from "../../assets/logo.svg";
+import MuiLink from '@mui/material/Link';
+import Typography from '@mui/material/Typography';
+import { useLink, useRouterContext, useRouterType } from '@refinedev/core';
+import type { RefineLayoutThemedTitleProps } from '@refinedev/mui';
+import type { FC } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import Logo from '../../assets/logo.svg';
 
 const defaultText = import.meta.env.VITE_APP_NAME;
 
-export const ThemedTitleV2: React.FC<RefineLayoutThemedTitleProps> = ({
-  collapsed,
+export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
   wrapperStyles,
   text = defaultText,
 }) => {
@@ -18,35 +18,31 @@ export const ThemedTitleV2: React.FC<RefineLayoutThemedTitleProps> = ({
   const Link = useLink();
   const { Link: LegacyLink } = useRouterContext();
 
-  const ActiveLink = routerType === "legacy" ? LegacyLink : Link;
+  const ActiveLink = routerType === 'legacy' ? LegacyLink : Link;
 
   return (
-    <>
-      <MuiLink
-        to="/"
-        component={ActiveLink}
-        underline="none"
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          ...wrapperStyles,
-        }}
+    <MuiLink
+      to="/"
+      component={ActiveLink}
+      underline="none"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        ...wrapperStyles,
+      }}
+    >
+      <img src={Logo} width="24" height="24" alt={t('Logo')} />
+      <Typography
+        variant="h5"
+        fontWeight={700}
+        color="text.primary"
+        fontSize="15px"
+        textOverflow="ellipsis"
+        overflow="hidden"
       >
-        <img src={Logo} width="24" height="24" alt={t("Logo")} />
-        {!collapsed && (
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            color="text.primary"
-            fontSize="15px"
-            textOverflow="ellipsis"
-            overflow="hidden"
-          >
-            {text}
-          </Typography>
-        )}
-      </MuiLink>
-    </>
+        {text}
+      </Typography>
+    </MuiLink>
   );
 };

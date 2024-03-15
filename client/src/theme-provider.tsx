@@ -1,25 +1,25 @@
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
 
-import CssBaseline from "@mui/material/CssBaseline";
-import GlobalStyles from "@mui/material/GlobalStyles";
-import type { TypographyVariantsOptions } from "@mui/material/styles";
+import CssBaseline from '@mui/material/CssBaseline';
+import GlobalStyles from '@mui/material/GlobalStyles';
+import type { TypographyVariantsOptions } from '@mui/material/styles';
 import {
   createTheme,
   ThemeProvider as MuiThemeProvider,
-} from "@mui/material/styles";
-import { RefineSnackbarProvider, RefineThemes } from "@refinedev/mui";
-import type { FC, ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
-import { useMediaQuery } from "@mui/system";
+} from '@mui/material/styles';
+import { useMediaQuery } from '@mui/system';
+import { RefineSnackbarProvider, RefineThemes } from '@refinedev/mui';
+import type { FC, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 interface IThemeProviderProps {
   children: ReactNode;
 }
 
 const typographyOptions: TypographyVariantsOptions = {
-  fontFamily: ["Inter", "Arial", "sans-serif"].join(","),
+  fontFamily: ['Inter', 'Arial', 'sans-serif'].join(','),
   fontSize: 16,
 };
 
@@ -30,25 +30,28 @@ interface IThemeContextType {
 
 const ThemeContext = createContext<IThemeContextType>({
   isDarkMode: false,
-  toggleDarkMode: () => {},
+  toggleDarkMode: () => {
+    // Toggles dark mode state
+  },
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useThemeContext = () => useContext(ThemeContext);
 
 const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
-  let hasDarkModeValue = useMediaQuery("(prefers-color-scheme: dark)");
-  const storage = localStorage.getItem("darkMode");
+  let hasDarkModeValue = useMediaQuery('(prefers-color-scheme: dark)');
+  const storage = localStorage.getItem('darkMode');
 
-  if (storage === "true") {
+  if (storage === 'true') {
     hasDarkModeValue = true;
-  } else if (storage === "false") {
+  } else if (storage === 'false') {
     hasDarkModeValue = false;
   }
 
   const [isDarkMode, setDarkMode] = useState<boolean>(hasDarkModeValue);
 
   useEffect(() => {
-    localStorage.setItem("darkMode", isDarkMode.toString());
+    localStorage.setItem('darkMode', isDarkMode.toString());
   }, [isDarkMode]);
 
   const toggleDarkMode = () => {
@@ -58,12 +61,12 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
   const theme = createTheme({
     ...RefineThemes.Blue,
     palette: {
-      mode: isDarkMode ? "dark" : "light",
+      mode: isDarkMode ? 'dark' : 'light',
       primary: {
-        main: isDarkMode ? "#fff" : "#000",
+        main: isDarkMode ? '#fff' : '#000',
       },
       secondary: {
-        main: isDarkMode ? "#000" : "#fff",
+        main: isDarkMode ? '#000' : '#fff',
       },
     },
     typography: {
@@ -74,12 +77,12 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
         styleOverrides: {
           root: {
             fontSize: 18,
-            padding: "13px 31px",
+            padding: '13px 31px',
             borderRadius: 28,
-            textTransform: "none",
+            textTransform: 'none',
             fontWeight: 600,
             lineHeight: 1.55,
-            "& .MuiButton-startIcon > *:nth-of-type(1)": {
+            '& .MuiButton-startIcon > *:nth-of-type(1)': {
               fontSize: 24,
             },
           },
@@ -93,7 +96,7 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
     // Change the line below to change the theme
     <MuiThemeProvider theme={theme}>
       <CssBaseline />
-      <GlobalStyles styles={{ html: { WebkitFontSmoothing: "auto" } }} />
+      <GlobalStyles styles={{ html: { WebkitFontSmoothing: 'auto' } }} />
       <RefineSnackbarProvider>
         <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
           {children}
@@ -103,4 +106,4 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
   );
 };
 
-export default ThemeProvider;
+export { ThemeProvider };

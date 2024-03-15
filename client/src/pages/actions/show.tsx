@@ -1,17 +1,18 @@
-import { Edit } from '@refinedev/mui';
-import type { BaseRecord, IResourceComponentsProps } from "@refinedev/core";
+import type { BaseRecord, IResourceComponentsProps } from '@refinedev/core';
 import {
   useApiUrl,
   useCustom,
   useCustomMutation,
   useOne,
   useResource,
-} from "@refinedev/core";
-import { Theme } from "@rjsf/mui";
-import type { IChangeEvent } from "@rjsf/core";
-import { withTheme } from "@rjsf/core";
-import type { RJSFSchema } from "@rjsf/utils";
-import validator from "@rjsf/validator-ajv8";
+} from '@refinedev/core';
+import { Edit } from '@refinedev/mui';
+import type { IChangeEvent } from '@rjsf/core';
+import { withTheme } from '@rjsf/core';
+import { Theme } from '@rjsf/mui';
+import type { RJSFSchema } from '@rjsf/utils';
+import validator from '@rjsf/validator-ajv8';
+import type { FC } from 'react';
 
 // @todo move to types
 interface IActionData extends BaseRecord {
@@ -34,10 +35,7 @@ interface IActionRunningProps {
   list?: IRunInfo[];
 }
 
-const ActionRunningState: React.FC<IActionRunningProps> = ({
-  isLoading,
-  list,
-}) => {
+const ActionRunningState: FC<IActionRunningProps> = ({ isLoading, list }) => {
   if (isLoading) {
     return <></>;
   }
@@ -53,7 +51,7 @@ const ActionRunningState: React.FC<IActionRunningProps> = ({
   );
 };
 
-export const ActionShow: React.FC<IResourceComponentsProps> = () => {
+export const ActionShow: FC<IResourceComponentsProps> = () => {
   // @todo const translate = useTranslate();
   const {
     // resource,
@@ -82,7 +80,7 @@ export const ActionShow: React.FC<IResourceComponentsProps> = () => {
   const apiUrl = useApiUrl();
   const queryRunning = useCustom<IRunInfo[]>({
     url: `${apiUrl}/actions/${idFromRoute}/running`,
-    method: "get",
+    method: 'get',
   });
   const { isFetching: isFetchingRunning, refetch } = queryRunning;
   // eslint-disable-next-line unicorn/consistent-destructuring
@@ -100,7 +98,7 @@ export const ActionShow: React.FC<IResourceComponentsProps> = () => {
 
     await mutateAsync({
       url: `${apiUrl}/actions/${idFromRoute}`,
-      method: "post",
+      method: 'post',
       values: formData,
       // successNotification,
       // errorNotification,
@@ -114,11 +112,7 @@ export const ActionShow: React.FC<IResourceComponentsProps> = () => {
     <Edit isLoading={isFetching}>
       <ActionRunningState isLoading={isFetchingRunning} list={running} />
       {jsonschema && (
-        <Form
-          schema={jsonschema}
-          validator={validator}
-          onSubmit={onSubmit}
-        />
+        <Form schema={jsonschema} validator={validator} onSubmit={onSubmit} />
       )}
     </Edit>
   );
