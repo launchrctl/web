@@ -1,20 +1,21 @@
-import { ErrorComponent, useNotificationProvider } from "@refinedev/mui";
-import { Refine } from "@refinedev/core";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
+import { Refine } from '@refinedev/core';
+import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar';
+import { ErrorComponent, useNotificationProvider } from '@refinedev/mui';
 import routerBindings, {
   DocumentTitleHandler,
   NavigateToResource,
   UnsavedChangesNotifier,
-} from "@refinedev/react-router-v6";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
-import { ActionList, ActionShow } from "./pages/actions";
-import { dataProvider as launchrDataProvider } from "./rest-data-provider";
-import ThemeProvider from "./theme-provider";
-import { ThemedLayoutV2 } from "./components/layout";
-import { ThemedHeaderV2 } from "./components/layout/header";
-import { ThemedSiderV2 } from "./components/layout/sider";
-import { ThemedTitleV2 } from "./components/layout/title";
-import * as React from "react";
+} from '@refinedev/react-router-v6';
+import * as React from 'react';
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
+
+import { ThemedLayoutV2 } from './components/layout';
+import { ThemedHeaderV2 } from './components/layout/header';
+import { ThemedSiderV2 } from './components/layout/sider';
+import { ThemedTitleV2 } from './components/layout/title';
+import { ActionList, ActionShow } from './pages/actions';
+import { dataProvider as launchrDataProvider } from './rest-data-provider';
+import { ThemeProvider } from './theme-provider';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -31,9 +32,9 @@ export function App() {
             routerProvider={routerBindings}
             resources={[
               {
-                name: "actions",
-                list: "/actions",
-                show: "/actions/:id/show",
+                name: 'actions',
+                list: '/actions',
+                show: '/actions/:id/show',
                 // edit: "/actions/:id/edit",
                 meta: {
                   canDelete: false,

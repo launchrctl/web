@@ -1,7 +1,7 @@
-import type { IResourceComponentsProps } from "@refinedev/core";
-import { MuiListInferencer } from "@refinedev/inferencer/mui";
-import * as React from "react";
+import type { IResourceComponentsProps } from '@refinedev/core';
+import { MuiListInferencer } from '@refinedev/inferencer/mui';
+import type { FC } from 'react';
 
-export const ActionList: React.FC<IResourceComponentsProps> = () => (
+export const ActionList: FC<IResourceComponentsProps> = () => (
   <MuiListInferencer />
 );

@@ -1,7 +1,7 @@
-import type { IResourceComponentsProps } from "@refinedev/core";
-import { MuiEditInferencer } from "@refinedev/inferencer/mui";
-import * as React from "react";
+import type { IResourceComponentsProps } from '@refinedev/core';
+import { MuiEditInferencer } from '@refinedev/inferencer/mui';
+import type { FC } from 'react';
 
-export const ActionEdit: React.FC<IResourceComponentsProps> = () => (
+export const ActionEdit: FC<IResourceComponentsProps> = () => (
   <MuiEditInferencer />
 );

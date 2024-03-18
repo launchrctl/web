@@ -1,42 +1,44 @@
-import React, { CSSProperties, useState, useEffect, FC } from "react";
+import { Close } from '@mui/icons-material';
+import Dashboard from '@mui/icons-material/Dashboard';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import ListOutlined from '@mui/icons-material/ListOutlined';
+import Logout from '@mui/icons-material/Logout';
+import Box from '@mui/material/Box';
+import Collapse from '@mui/material/Collapse';
+import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Paper from '@mui/material/Paper';
+import Tooltip from '@mui/material/Tooltip';
+import type { ITreeMenu } from '@refinedev/core';
 import {
   CanAccess,
-  ITreeMenu,
+  pickNotDeprecated,
+  useActiveAuthProvider,
   useIsExistAuthentication,
-  useLogout,
-  useTitle,
-  useTranslate,
-  useRouterContext,
-  useRouterType,
   useLink,
+  useLogout,
   useMenu,
   useRefineContext,
-  useActiveAuthProvider,
-  pickNotDeprecated,
+  useRouterContext,
+  useRouterType,
+  useTitle,
+  useTranslate,
   useWarnAboutChange,
-} from "@refinedev/core";
+} from '@refinedev/core';
+import type { RefineThemedLayoutV2SiderProps } from '@refinedev/mui';
 import {
   ThemedTitleV2 as DefaultTitle,
   useThemedLayoutContext,
-} from "@refinedev/mui";
-import Dashboard from "@mui/icons-material/Dashboard";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-import ListOutlined from "@mui/icons-material/ListOutlined";
-import Logout from "@mui/icons-material/Logout";
-import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
-import Drawer from "@mui/material/Drawer";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Paper from "@mui/material/Paper";
-import Tooltip from "@mui/material/Tooltip";
-import { DarkModeSwitcher } from "./darkModeSwitcher";
-import { Close } from "@mui/icons-material";
-import type { RefineThemedLayoutV2SiderProps } from "@refinedev/mui";
-import IconButton from "@mui/material/IconButton";
+} from '@refinedev/mui';
+import type { CSSProperties, FC } from 'react';
+import { useEffect, useState } from 'react';
+
+import { DarkModeSwitcher } from './darkModeSwitcher';
 
 export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
   Title: TitleFromProps,
@@ -45,14 +47,19 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
   activeItemDisabled = false,
 }) => {
   const {
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     siderCollapsed,
     setSiderCollapsed,
+    // eslint-disable-next-line @typescript-eslint/naming-convention
     mobileSiderOpen,
     setMobileSiderOpen,
   } = useThemedLayoutContext();
 
   const drawerWidth = () => {
-    if (siderCollapsed) return 56;
+    if (siderCollapsed) {
+      return 56;
+    }
+
     return 280;
   };
 
@@ -60,7 +67,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
   const routerType = useRouterType();
   const Link = useLink();
   const { Link: LegacyLink } = useRouterContext();
-  const ActiveLink = routerType === "legacy" ? LegacyLink : Link;
+  const ActiveLink = routerType === 'legacy' ? LegacyLink : Link;
   const { hasDashboard } = useRefineContext();
   const translate = useTranslate();
 
@@ -68,12 +75,14 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
   const isExistAuthentication = useIsExistAuthentication();
   const TitleFromContext = useTitle();
   const authProvider = useActiveAuthProvider();
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { warnWhen, setWarnWhen } = useWarnAboutChange();
   const { mutate: mutateLogout } = useLogout({
     v3LegacyAuthProviderCompatible: Boolean(authProvider?.isLegacy),
   });
 
-  const [open, setOpen] = useState<{ [k: string]: any }>({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [open, setOpen] = useState<Record<string, any>>({});
 
   useEffect(() => {
     setOpen((previous) => {
@@ -82,8 +91,9 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
 
       const uniqueKeys = new Set([...previousOpenKeys, ...defaultOpenKeys]);
       const uniqueKeysRecord = Object.fromEntries(
-        Array.from(uniqueKeys.values()).map((key) => [key, true])
+        [...uniqueKeys.values()].map((key) => [key, true]),
       );
+
       return uniqueKeysRecord;
     });
   }, [defaultOpenKeys]);
@@ -94,13 +104,16 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
     setOpen({ ...open, [key]: !open[key] });
   };
 
-  const renderTreeView = (tree: ITreeMenu[], selectedKey?: string) => {
-    return tree.map((item: ITreeMenu) => {
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  const renderTreeView = (tree: ITreeMenu[], selectedKey?: string) =>
+    tree.map((item: ITreeMenu) => {
+      // eslint-disable-next-line @typescript-eslint/no-shadow
       const { icon, label, route, name, children, parentName, meta, options } =
         item;
-      const isOpen = open[item.key || ""] || false;
+      const { key } = item;
+      const isOpen = open[key || ''] || false;
 
-      const isSelected = item.key === selectedKey;
+      const isSelected = key === selectedKey;
       const isNested = !(
         pickNotDeprecated(meta?.parent, options?.parent, parentName) ===
         undefined
@@ -109,14 +122,14 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
       if (children.length > 0) {
         return (
           <CanAccess
-            key={item.key}
+            key={key}
             resource={name.toLowerCase()}
             action="list"
             params={{
               resource: item,
             }}
           >
-            <div key={item.key}>
+            <div key={key}>
               <Tooltip
                 title={label ?? name}
                 placement="right"
@@ -127,26 +140,27 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
                   onClick={() => {
                     if (siderCollapsed) {
                       setSiderCollapsed(false);
+
                       if (!isOpen) {
-                        handleClick(item.key || "");
+                        handleClick(key || '');
                       }
                     } else {
-                      handleClick(item.key || "");
+                      handleClick(key || '');
                     }
                   }}
                   sx={{
                     pl: isNested ? 4 : 2,
-                    justifyContent: "center",
-                    marginTop: "8px",
+                    justifyContent: 'center',
+                    marginTop: '8px',
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      justifyContent: "center",
-                      minWidth: "24px",
-                      transition: "margin-right 0.3s",
-                      marginRight: siderCollapsed ? "0px" : "12px",
-                      color: "currentColor",
+                      justifyContent: 'center',
+                      minWidth: '24px',
+                      transition: 'margin-right 0.3s',
+                      marginRight: siderCollapsed ? '0px' : '12px',
+                      color: 'currentColor',
                     }}
                   >
                     {icon ?? <ListOutlined />}
@@ -155,30 +169,26 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
                     primary={label}
                     primaryTypographyProps={{
                       noWrap: true,
-                      fontSize: "14px",
+                      fontSize: '14px',
                     }}
                   />
                   {isOpen ? (
                     <ExpandLess
                       sx={{
-                        color: "text.icon",
+                        color: 'text.icon',
                       }}
                     />
                   ) : (
                     <ExpandMore
                       sx={{
-                        color: "text.icon",
+                        color: 'text.icon',
                       }}
                     />
                   )}
                 </ListItemButton>
               </Tooltip>
               {!siderCollapsed && (
-                <Collapse
-                  in={open[item.key || ""]}
-                  timeout="auto"
-                  unmountOnExit
-                >
+                <Collapse in={open[key || '']} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding>
                     {renderTreeView(children, selectedKey)}
                   </List>
@@ -190,11 +200,11 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
       }
 
       const linkStyle: CSSProperties =
-        activeItemDisabled && isSelected ? { pointerEvents: "none" } : {};
+        activeItemDisabled && isSelected ? { pointerEvents: 'none' } : {};
 
       return (
         <CanAccess
-          key={item.key}
+          key={key}
           resource={name.toLowerCase()}
           action="list"
           params={{ resource: item }}
@@ -216,17 +226,17 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
               sx={{
                 pl: isNested ? 4 : 2,
                 py: isNested ? 1.25 : 1,
-                justifyContent: "center",
-                color: isSelected ? "primary.main" : "text.primary",
+                justifyContent: 'center',
+                color: isSelected ? 'primary.main' : 'text.primary',
               }}
             >
               <ListItemIcon
                 sx={{
-                  justifyContent: "center",
-                  transition: "margin-right 0.3s",
-                  marginRight: siderCollapsed ? "0px" : "12px",
-                  minWidth: "24px",
-                  color: "currentColor",
+                  justifyContent: 'center',
+                  transition: 'margin-right 0.3s',
+                  marginRight: siderCollapsed ? '0px' : '12px',
+                  minWidth: '24px',
+                  color: 'currentColor',
                 }}
               >
                 {icon ?? <ListOutlined />}
@@ -235,7 +245,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
                 primary={label}
                 primaryTypographyProps={{
                   noWrap: true,
-                  fontSize: "14px",
+                  fontSize: '14px',
                 }}
               />
             </ListItemButton>
@@ -243,12 +253,11 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         </CanAccess>
       );
     });
-  };
 
   const dashboard = hasDashboard ? (
     <CanAccess resource="dashboard" action="list">
       <Tooltip
-        title={translate("dashboard.title", "Dashboard")}
+        title={translate('dashboard.title', 'Dashboard')}
         placement="right"
         disableHoverListener={!siderCollapsed}
         arrow
@@ -256,51 +265,51 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         <ListItemButton
           component={ActiveLink}
           to="/"
-          selected={selectedKey === "/"}
+          selected={selectedKey === '/'}
           onClick={() => {
             setMobileSiderOpen(false);
           }}
           sx={{
             pl: 2,
             py: 1,
-            justifyContent: "center",
-            color: selectedKey === "/" ? "primary.main" : "text.primary",
+            justifyContent: 'center',
+            color: selectedKey === '/' ? 'primary.main' : 'text.primary',
           }}
         >
           <ListItemIcon
             sx={{
-              justifyContent: "center",
-              minWidth: "24px",
-              transition: "margin-right 0.3s",
-              marginRight: siderCollapsed ? "0px" : "12px",
-              color: "currentColor",
-              fontSize: "14px",
+              justifyContent: 'center',
+              minWidth: '24px',
+              transition: 'margin-right 0.3s',
+              marginRight: siderCollapsed ? '0px' : '12px',
+              color: 'currentColor',
+              fontSize: '14px',
             }}
           >
             <Dashboard />
           </ListItemIcon>
           <ListItemText
-            primary={translate("dashboard.title", "Dashboard")}
+            primary={translate('dashboard.title', 'Dashboard')}
             primaryTypographyProps={{
               noWrap: true,
-              fontSize: "14px",
+              fontSize: '14px',
             }}
           />
         </ListItemButton>
       </Tooltip>
     </CanAccess>
-  ) : null;
+  ) : undefined;
 
   const handleLogout = () => {
     if (warnWhen) {
-      const confirm = window.confirm(
+      const hasConfirm = window.confirm(
         t(
-          "warnWhenUnsavedChanges",
-          "Are you sure you want to leave? You have unsaved changes."
-        )
+          'warnWhenUnsavedChanges',
+          'Are you sure you want to leave? You have unsaved changes.',
+        ),
       );
 
-      if (confirm) {
+      if (hasConfirm) {
         setWarnWhen(false);
         mutateLogout();
       }
@@ -311,7 +320,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
 
   const logout = isExistAuthentication && (
     <Tooltip
-      title={t("buttons.logout", "Logout")}
+      title={t('buttons.logout', 'Logout')}
       placement="right"
       disableHoverListener={!siderCollapsed}
       arrow
@@ -320,25 +329,25 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         key="logout"
         onClick={() => handleLogout()}
         sx={{
-          justifyContent: "center",
+          justifyContent: 'center',
         }}
       >
         <ListItemIcon
           sx={{
-            justifyContent: "center",
-            minWidth: "24px",
-            transition: "margin-right 0.3s",
-            marginRight: siderCollapsed ? "0px" : "12px",
-            color: "currentColor",
+            justifyContent: 'center',
+            minWidth: '24px',
+            transition: 'margin-right 0.3s',
+            marginRight: siderCollapsed ? '0px' : '12px',
+            color: 'currentColor',
           }}
         >
           <Logout />
         </ListItemIcon>
         <ListItemText
-          primary={t("buttons.logout", "Logout")}
+          primary={t('buttons.logout', 'Logout')}
           primaryTypographyProps={{
             noWrap: true,
-            fontSize: "14px",
+            fontSize: '14px',
           }}
         />
       </ListItemButton>
@@ -356,6 +365,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         collapsed: siderCollapsed,
       });
     }
+
     return (
       <>
         {dashboard}
@@ -382,19 +392,19 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         sx={{
           width: { xs: drawerWidth() },
           display: {
-            xs: "none",
-            md: "block",
+            xs: 'none',
+            md: 'block',
           },
-          transition: "width 0.3s ease",
+          transition: 'width 0.3s ease',
         }}
       />
       <Box
         component="nav"
         sx={{
-          position: "fixed",
+          position: 'fixed',
           zIndex: 1101,
           width: { sm: drawerWidth() },
-          display: "flex",
+          display: 'flex',
         }}
       >
         <Drawer
@@ -408,15 +418,15 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
           }}
           sx={{
             display: {
-              sm: "block",
-              md: "none",
+              sm: 'block',
+              md: 'none',
             },
           }}
         >
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "flex-end",
+              display: 'flex',
+              justifyContent: 'flex-end',
             }}
           >
             <IconButton
@@ -424,7 +434,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
               aria-label="open drawer"
               onClick={() => setMobileSiderOpen(!mobileSiderOpen)}
               sx={{
-                display: { xs: "flex", md: "none" },
+                display: { xs: 'flex', md: 'none' },
               }}
             >
               <Close />
@@ -435,11 +445,11 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: "none", md: "block" },
-            "& .MuiDrawer-paper": {
+            display: { xs: 'none', md: 'block' },
+            '& .MuiDrawer-paper': {
               width: drawerWidth(),
-              overflow: "hidden",
-              transition: "width 200ms cubic-bezier(0.4, 0, 0.6, 1) 0ms",
+              overflow: 'hidden',
+              transition: 'width 200ms cubic-bezier(0.4, 0, 0.6, 1) 0ms',
             },
           }}
           open
@@ -447,16 +457,16 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
           <Paper
             elevation={0}
             sx={{
-              fontSize: "14px",
-              width: "100%",
+              fontSize: '14px',
+              width: '100%',
               height: 64,
-              display: "flex",
+              display: 'flex',
               flexShrink: 0,
-              alignItems: "center",
-              justifyContent: siderCollapsed ? "center" : "space-between",
-              paddingLeft: siderCollapsed ? 0 : "16px",
-              paddingRight: siderCollapsed ? 0 : "8px",
-              variant: "outlined",
+              alignItems: 'center',
+              justifyContent: siderCollapsed ? 'center' : 'space-between',
+              paddingLeft: siderCollapsed ? 0 : '16px',
+              paddingRight: siderCollapsed ? 0 : '8px',
+              variant: 'outlined',
               borderRadius: 0,
               borderBottom: (theme) =>
                 `1px solid ${theme.palette.action.focus}`,
@@ -468,8 +478,8 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
           <Box
             sx={{
               flexGrow: 1,
-              overflowX: "hidden",
-              overflowY: "auto",
+              overflowX: 'hidden',
+              overflowY: 'auto',
             }}
           >
             {drawer}
