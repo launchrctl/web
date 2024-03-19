@@ -1,7 +1,7 @@
+import Divider from '@mui/material/Divider'
 import type { BaseRecord, IResourceComponentsProps } from '@refinedev/core'
 import {
   useApiUrl,
-  useCustom,
   useCustomMutation,
   useOne,
   useResource,
@@ -14,13 +14,11 @@ import type { RJSFSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 import type { FC } from 'react'
 
+import { RunningActionsList } from '../../components/RunningActionsList'
+
 // @todo move to types
 interface IActionData extends BaseRecord {
   jsonschema: RJSFSchema
-}
-
-interface IRunInfo extends BaseRecord {
-  status: string
 }
 
 interface IFormValues {
@@ -29,27 +27,6 @@ interface IFormValues {
 
 // Make modifications to the theme with your own fields and widgets
 const Form = withTheme(Theme)
-
-interface IActionRunningProps {
-  isLoading: boolean
-  list?: IRunInfo[]
-}
-
-const ActionRunningState: FC<IActionRunningProps> = ({ isLoading, list }) => {
-  if (isLoading) {
-    return <></>
-  }
-
-  return (
-    <ul>
-      {list?.map((info) => (
-        <li key={info.id}>
-          {info.id}: {info.status}
-        </li>
-      ))}
-    </ul>
-  )
-}
 
 export const ActionShow: FC<IResourceComponentsProps> = () => {
   // @todo const translate = useTranslate();
@@ -77,12 +54,6 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
   }
 
   const apiUrl = useApiUrl()
-  const queryRunning = useCustom<IRunInfo[]>({
-    url: `${apiUrl}/actions/${idFromRoute}/running`,
-    method: 'get',
-  })
-  const { isFetching: isFetchingRunning, refetch } = queryRunning
-  const running = queryRunning?.data?.data
 
   const { mutateAsync } = useCustomMutation()
 
@@ -98,17 +69,33 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
       url: `${apiUrl}/actions/${idFromRoute}`,
       method: 'post',
       values: formData,
-      // successNotification,
-      // errorNotification,
+      // @todo more informative messages.
+      successNotification: () => ({
+        message: 'Action successfully started.',
+        description: 'Success with no errors',
+        type: 'success',
+      }),
+      errorNotification() {
+        return {
+          message: 'Error.',
+          description: 'Something goes wrong',
+          type: 'error',
+        }
+      },
     })
-    await refetch()
     // @todo redirect somewhere
-    // @todo show notification
   }
 
   return (
     <Edit isLoading={isFetching}>
-      <ActionRunningState isLoading={isFetchingRunning} list={running} />
+      <RunningActionsList
+        actionId={idFromRoute ? idFromRoute.toString() : ''}
+      />
+      <Divider
+        sx={{
+          my: 4,
+        }}
+      />
       {jsonschema && (
         <Form schema={jsonschema} validator={validator} onSubmit={onSubmit} />
       )}

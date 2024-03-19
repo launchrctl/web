@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
@@ -94,6 +95,16 @@ func (l *launchrServer) GetActionJSONSchema(w http.ResponseWriter, _ *http.Reque
 
 func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Request, id string) {
 	runningActions := l.actionMngr.RunInfoByAction(id)
+
+	sortFunc := func(i, j int) bool {
+		if runningActions[i].Status != runningActions[j].Status {
+			return runningActions[i].Status < runningActions[j].Status
+		}
+		return runningActions[i].ID < runningActions[j].ID
+	}
+
+	sort.Slice(runningActions, sortFunc)
+
 	var result = make([]ActionRunInfo, 0, len(runningActions))
 	for _, ri := range runningActions {
 		result = append(result, ActionRunInfo{
