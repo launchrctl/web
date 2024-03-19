@@ -1,14 +1,14 @@
-import { Menu } from '@mui/icons-material';
-import type { IconButtonProps } from '@mui/material/IconButton';
-import IconButton from '@mui/material/IconButton';
-import { useThemedLayoutContext } from '@refinedev/mui';
-import type { FC } from 'react';
+import { Menu } from '@mui/icons-material'
+import type { IconButtonProps } from '@mui/material/IconButton'
+import IconButton from '@mui/material/IconButton'
+import { useThemedLayoutContext } from '@refinedev/mui'
+import type { FC } from 'react'
 
 const HamburgerIcon = (props: IconButtonProps) => (
   <IconButton color="inherit" aria-label="open drawer" edge="end" {...props}>
     <Menu />
   </IconButton>
-);
+)
 
 export const HamburgerMenu: FC = () => {
   const {
@@ -18,7 +18,7 @@ export const HamburgerMenu: FC = () => {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     mobileSiderOpen,
     setMobileSiderOpen,
-  } = useThemedLayoutContext();
+  } = useThemedLayoutContext()
 
   return (
     <>
@@ -37,5 +37,5 @@ export const HamburgerMenu: FC = () => {
         }}
       />
     </>
-  );
-};
+  )
+}

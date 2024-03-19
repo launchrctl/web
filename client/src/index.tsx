@@ -1,17 +1,17 @@
-import './i18n';
+import './I18n'
 
-import * as React from 'react';
-import { createRoot } from 'react-dom/client';
+import * as React from 'react'
+import { createRoot } from 'react-dom/client'
 
-import { App } from './App';
+import { App } from './App'
 
-const container = document.getElementById('root') as HTMLElement;
-const root = createRoot(container);
+const container = document.getElementById('root') as HTMLElement
+const root = createRoot(container)
 
 root.render(
   <React.StrictMode>
     <React.Suspense fallback="loading">
       <App />
     </React.Suspense>
-  </React.StrictMode>,
-);
+  </React.StrictMode>
+)

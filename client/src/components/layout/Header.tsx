@@ -1,13 +1,13 @@
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Hidden from '@mui/material/Hidden';
-import Toolbar from '@mui/material/Toolbar';
-import type { RefineThemedLayoutV2HeaderProps } from '@refinedev/mui';
-import type { FC } from 'react';
+import AppBar from '@mui/material/AppBar'
+import Box from '@mui/material/Box'
+import Hidden from '@mui/material/Hidden'
+import Toolbar from '@mui/material/Toolbar'
+import type { RefineThemedLayoutV2HeaderProps } from '@refinedev/mui'
+import type { FC } from 'react'
 
-import { DarkModeSwitcher } from './darkModeSwitcher';
-import { HamburgerMenu } from './hamburgerMenu';
-import { ThemedTitleV2 as Title } from './title';
+import { DarkModeSwitcher } from './DarkModeSwitcher'
+import { HamburgerMenu } from './HamburgerMenu'
+import { ThemedTitleV2 as Title } from './Title'
 
 export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
   <Hidden mdUp>
@@ -29,4 +29,4 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
       </Toolbar>
     </AppBar>
   </Hidden>
-);
+)

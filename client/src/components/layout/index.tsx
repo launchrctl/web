@@ -1,10 +1,10 @@
-import Box from '@mui/material/Box';
-import type { RefineThemedLayoutV2Props } from '@refinedev/mui';
-import { ThemedLayoutContextProvider } from '@refinedev/mui';
-import type { FC } from 'react';
+import Box from '@mui/material/Box'
+import type { RefineThemedLayoutV2Props } from '@refinedev/mui'
+import { ThemedLayoutContextProvider } from '@refinedev/mui'
+import type { FC } from 'react'
 
-import { ThemedHeaderV2 as DefaultHeader } from './header';
-import { ThemedSiderV2 as DefaultSider } from './sider';
+import { ThemedHeaderV2 as DefaultHeader } from './Header'
+import { ThemedSiderV2 as DefaultSider } from './Sider'
 
 export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
   Sider,
@@ -15,8 +15,8 @@ export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
   children,
   initialSiderCollapsed,
 }) => {
-  const SiderToRender = Sider ?? DefaultSider;
-  const HeaderToRender = Header ?? DefaultHeader;
+  const SiderToRender = Sider ?? DefaultSider
+  const HeaderToRender = Header ?? DefaultHeader
 
   return (
     <ThemedLayoutContextProvider initialSiderCollapsed={initialSiderCollapsed}>
@@ -56,5 +56,5 @@ export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
         {OffLayoutArea && <OffLayoutArea />}
       </Box>
     </ThemedLayoutContextProvider>
-  );
-};
+  )
+}

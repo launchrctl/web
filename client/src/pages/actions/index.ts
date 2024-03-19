@@ -1,3 +1,3 @@
-export { ActionList } from './list';
-export { ActionShow } from './show';
-export { ActionEdit } from './edit';
+export { ActionEdit } from './Edit'
+export { ActionList } from './List'
+export { ActionShow } from './Show'
