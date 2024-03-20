@@ -1,9 +1,9 @@
-import { Close } from '@mui/icons-material'
+import { Close, GitHub, ListOutlined } from '@mui/icons-material'
 import Dashboard from '@mui/icons-material/Dashboard'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
-import ListOutlined from '@mui/icons-material/ListOutlined'
 import Logout from '@mui/icons-material/Logout'
+import { ListItem } from '@mui/material'
 import Box from '@mui/material/Box'
 import Collapse from '@mui/material/Collapse'
 import Drawer from '@mui/material/Drawer'
@@ -203,54 +203,90 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         activeItemDisabled && isSelected ? { pointerEvents: 'none' } : {}
 
       return (
-        <CanAccess
-          key={key}
-          resource={name.toLowerCase()}
-          action="list"
-          params={{ resource: item }}
-        >
-          <Tooltip
-            title={label ?? name}
-            placement="right"
-            disableHoverListener={!siderCollapsed}
-            arrow
+        <>
+          <CanAccess
+            key={key}
+            resource={name.toLowerCase()}
+            action="list"
+            params={{ resource: item }}
           >
-            <ListItemButton
-              component={ActiveLink}
-              to={route}
-              selected={isSelected}
-              style={linkStyle}
-              onClick={() => {
-                setMobileSiderOpen(false)
-              }}
-              sx={{
-                pl: isNested ? 4 : 2,
-                py: isNested ? 1.25 : 1,
-                justifyContent: 'center',
-                color: isSelected ? 'primary.main' : 'text.primary',
-              }}
-            >
-              <ListItemIcon
+            <ListItem disablePadding={true}>
+              <Tooltip
+                title={label ?? name}
+                placement="right"
+                disableHoverListener={!siderCollapsed}
+                arrow
+              >
+                <ListItemButton
+                  component={ActiveLink}
+                  to={route}
+                  selected={isSelected}
+                  style={linkStyle}
+                  onClick={() => {
+                    setMobileSiderOpen(false)
+                  }}
+                  sx={{
+                    pl: isNested ? 4 : 2,
+                    py: isNested ? 1.25 : 1,
+                    justifyContent: 'center',
+                    color: isSelected ? 'primary.main' : 'text.primary',
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      justifyContent: 'center',
+                      transition: 'margin-right 0.3s',
+                      marginRight: siderCollapsed ? '0px' : '12px',
+                      minWidth: '24px',
+                      color: 'currentColor',
+                    }}
+                  >
+                    {icon ?? <ListOutlined />}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={label}
+                    primaryTypographyProps={{
+                      noWrap: true,
+                      fontSize: '14px',
+                    }}
+                  />
+                </ListItemButton>
+              </Tooltip>
+            </ListItem>
+            <ListItem disablePadding={true}>
+              <ListItemButton
+                component={Link}
+                to={'https://github.com/launchrctl/web/issues/new'}
+                target={'_blank'}
                 sx={{
+                  pl: 2,
+                  py: 1,
                   justifyContent: 'center',
-                  transition: 'margin-right 0.3s',
-                  marginRight: siderCollapsed ? '0px' : '12px',
-                  minWidth: '24px',
-                  color: 'currentColor',
+                  color: 'text.primary',
                 }}
               >
-                {icon ?? <ListOutlined />}
-              </ListItemIcon>
-              <ListItemText
-                primary={label}
-                primaryTypographyProps={{
-                  noWrap: true,
-                  fontSize: '14px',
-                }}
-              />
-            </ListItemButton>
-          </Tooltip>
-        </CanAccess>
+                <ListItemIcon
+                  sx={{
+                    justifyContent: 'center',
+                    transition: 'margin-right 0.3s',
+                    marginRight: '12px',
+                    minWidth: '24px',
+                    color: 'currentColor',
+                  }}
+                >
+                  <GitHub />
+                </ListItemIcon>
+                <ListItemText
+                  primary={'Report an issue on GitHub'}
+                  primaryTypographyProps={{
+                    noWrap: true,
+                    fontSize: '14px',
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          </CanAccess>
+        </>
       )
     })
 
