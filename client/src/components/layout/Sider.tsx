@@ -1,20 +1,20 @@
-import { Close } from '@mui/icons-material';
-import Dashboard from '@mui/icons-material/Dashboard';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import ListOutlined from '@mui/icons-material/ListOutlined';
-import Logout from '@mui/icons-material/Logout';
-import Box from '@mui/material/Box';
-import Collapse from '@mui/material/Collapse';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Paper from '@mui/material/Paper';
-import Tooltip from '@mui/material/Tooltip';
-import type { ITreeMenu } from '@refinedev/core';
+import { Close } from '@mui/icons-material'
+import Dashboard from '@mui/icons-material/Dashboard'
+import ExpandLess from '@mui/icons-material/ExpandLess'
+import ExpandMore from '@mui/icons-material/ExpandMore'
+import ListOutlined from '@mui/icons-material/ListOutlined'
+import Logout from '@mui/icons-material/Logout'
+import Box from '@mui/material/Box'
+import Collapse from '@mui/material/Collapse'
+import Drawer from '@mui/material/Drawer'
+import IconButton from '@mui/material/IconButton'
+import List from '@mui/material/List'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import Paper from '@mui/material/Paper'
+import Tooltip from '@mui/material/Tooltip'
+import type { ITreeMenu } from '@refinedev/core'
 import {
   CanAccess,
   pickNotDeprecated,
@@ -29,16 +29,16 @@ import {
   useTitle,
   useTranslate,
   useWarnAboutChange,
-} from '@refinedev/core';
-import type { RefineThemedLayoutV2SiderProps } from '@refinedev/mui';
+} from '@refinedev/core'
+import type { RefineThemedLayoutV2SiderProps } from '@refinedev/mui'
 import {
   ThemedTitleV2 as DefaultTitle,
   useThemedLayoutContext,
-} from '@refinedev/mui';
-import type { CSSProperties, FC } from 'react';
-import { useEffect, useState } from 'react';
+} from '@refinedev/mui'
+import type { CSSProperties, FC } from 'react'
+import { useEffect, useState } from 'react'
 
-import { DarkModeSwitcher } from './darkModeSwitcher';
+import { DarkModeSwitcher } from './DarkModeSwitcher'
 
 export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
   Title: TitleFromProps,
@@ -53,71 +53,71 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
     // eslint-disable-next-line @typescript-eslint/naming-convention
     mobileSiderOpen,
     setMobileSiderOpen,
-  } = useThemedLayoutContext();
+  } = useThemedLayoutContext()
 
   const drawerWidth = () => {
     if (siderCollapsed) {
-      return 56;
+      return 56
     }
 
-    return 280;
-  };
+    return 280
+  }
 
-  const t = useTranslate();
-  const routerType = useRouterType();
-  const Link = useLink();
-  const { Link: LegacyLink } = useRouterContext();
-  const ActiveLink = routerType === 'legacy' ? LegacyLink : Link;
-  const { hasDashboard } = useRefineContext();
-  const translate = useTranslate();
+  const t = useTranslate()
+  const routerType = useRouterType()
+  const Link = useLink()
+  const { Link: LegacyLink } = useRouterContext()
+  const ActiveLink = routerType === 'legacy' ? LegacyLink : Link
+  const { hasDashboard } = useRefineContext()
+  const translate = useTranslate()
 
-  const { menuItems, selectedKey, defaultOpenKeys } = useMenu({ meta });
-  const isExistAuthentication = useIsExistAuthentication();
-  const TitleFromContext = useTitle();
-  const authProvider = useActiveAuthProvider();
+  const { menuItems, selectedKey, defaultOpenKeys } = useMenu({ meta })
+  const isExistAuthentication = useIsExistAuthentication()
+  const TitleFromContext = useTitle()
+  const authProvider = useActiveAuthProvider()
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const { warnWhen, setWarnWhen } = useWarnAboutChange();
+  const { warnWhen, setWarnWhen } = useWarnAboutChange()
   const { mutate: mutateLogout } = useLogout({
     v3LegacyAuthProviderCompatible: Boolean(authProvider?.isLegacy),
-  });
+  })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [open, setOpen] = useState<Record<string, any>>({});
+  const [open, setOpen] = useState<Record<string, any>>({})
 
   useEffect(() => {
     setOpen((previous) => {
-      const previousKeys: string[] = Object.keys(previous);
-      const previousOpenKeys = previousKeys.filter((key) => previous[key]);
+      const previousKeys: string[] = Object.keys(previous)
+      const previousOpenKeys = previousKeys.filter((key) => previous[key])
 
-      const uniqueKeys = new Set([...previousOpenKeys, ...defaultOpenKeys]);
+      const uniqueKeys = new Set([...previousOpenKeys, ...defaultOpenKeys])
       const uniqueKeysRecord = Object.fromEntries(
-        [...uniqueKeys.values()].map((key) => [key, true]),
-      );
+        [...uniqueKeys.values()].map((key) => [key, true])
+      )
 
-      return uniqueKeysRecord;
-    });
-  }, [defaultOpenKeys]);
+      return uniqueKeysRecord
+    })
+  }, [defaultOpenKeys])
 
-  const RenderToTitle = TitleFromProps ?? TitleFromContext ?? DefaultTitle;
+  const RenderToTitle = TitleFromProps ?? TitleFromContext ?? DefaultTitle
 
   const handleClick = (key: string) => {
-    setOpen({ ...open, [key]: !open[key] });
-  };
+    setOpen({ ...open, [key]: !open[key] })
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-shadow
   const renderTreeView = (tree: ITreeMenu[], selectedKey?: string) =>
     tree.map((item: ITreeMenu) => {
       // eslint-disable-next-line @typescript-eslint/no-shadow
       const { icon, label, route, name, children, parentName, meta, options } =
-        item;
-      const { key } = item;
-      const isOpen = open[key || ''] || false;
+        item
+      const { key } = item
+      const isOpen = open[key || ''] || false
 
-      const isSelected = key === selectedKey;
+      const isSelected = key === selectedKey
       const isNested = !(
         pickNotDeprecated(meta?.parent, options?.parent, parentName) ===
         undefined
-      );
+      )
 
       if (children.length > 0) {
         return (
@@ -139,13 +139,13 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
                 <ListItemButton
                   onClick={() => {
                     if (siderCollapsed) {
-                      setSiderCollapsed(false);
+                      setSiderCollapsed(false)
 
                       if (!isOpen) {
-                        handleClick(key || '');
+                        handleClick(key || '')
                       }
                     } else {
-                      handleClick(key || '');
+                      handleClick(key || '')
                     }
                   }}
                   sx={{
@@ -196,11 +196,11 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
               )}
             </div>
           </CanAccess>
-        );
+        )
       }
 
       const linkStyle: CSSProperties =
-        activeItemDisabled && isSelected ? { pointerEvents: 'none' } : {};
+        activeItemDisabled && isSelected ? { pointerEvents: 'none' } : {}
 
       return (
         <CanAccess
@@ -221,7 +221,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
               selected={isSelected}
               style={linkStyle}
               onClick={() => {
-                setMobileSiderOpen(false);
+                setMobileSiderOpen(false)
               }}
               sx={{
                 pl: isNested ? 4 : 2,
@@ -251,8 +251,8 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
             </ListItemButton>
           </Tooltip>
         </CanAccess>
-      );
-    });
+      )
+    })
 
   const dashboard = hasDashboard ? (
     <CanAccess resource="dashboard" action="list">
@@ -267,7 +267,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
           to="/"
           selected={selectedKey === '/'}
           onClick={() => {
-            setMobileSiderOpen(false);
+            setMobileSiderOpen(false)
           }}
           sx={{
             pl: 2,
@@ -298,25 +298,25 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         </ListItemButton>
       </Tooltip>
     </CanAccess>
-  ) : undefined;
+  ) : undefined
 
   const handleLogout = () => {
     if (warnWhen) {
       const hasConfirm = window.confirm(
         t(
           'warnWhenUnsavedChanges',
-          'Are you sure you want to leave? You have unsaved changes.',
-        ),
-      );
+          'Are you sure you want to leave? You have unsaved changes.'
+        )
+      )
 
       if (hasConfirm) {
-        setWarnWhen(false);
-        mutateLogout();
+        setWarnWhen(false)
+        mutateLogout()
       }
     } else {
-      mutateLogout();
+      mutateLogout()
     }
-  };
+  }
 
   const logout = isExistAuthentication && (
     <Tooltip
@@ -352,9 +352,9 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         />
       </ListItemButton>
     </Tooltip>
-  );
+  )
 
-  const items = renderTreeView(menuItems, selectedKey);
+  const items = renderTreeView(menuItems, selectedKey)
 
   const renderSider = () => {
     if (render) {
@@ -363,7 +363,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         logout,
         items,
         collapsed: siderCollapsed,
-      });
+      })
     }
 
     return (
@@ -372,8 +372,8 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         {items}
         {logout}
       </>
-    );
-  };
+    )
+  }
 
   const drawer = (
     <List
@@ -384,7 +384,7 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
     >
       {renderSider()}
     </List>
-  );
+  )
 
   return (
     <>
@@ -487,5 +487,5 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
         </Drawer>
       </Box>
     </>
-  );
-};
+  )
+}

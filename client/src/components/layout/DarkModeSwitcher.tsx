@@ -1,10 +1,10 @@
-import Switch from '@mui/material/Switch';
-import type { FC } from 'react';
+import Switch from '@mui/material/Switch'
+import type { FC } from 'react'
 
-import { useThemeContext } from '../../theme-provider';
+import { useThemeContext } from '../../ThemeProvider'
 
 export const DarkModeSwitcher: FC = () => {
-  const { isDarkMode, toggleDarkMode } = useThemeContext();
+  const { isDarkMode, toggleDarkMode } = useThemeContext()
 
   return (
     <Switch
@@ -46,5 +46,5 @@ export const DarkModeSwitcher: FC = () => {
         },
       }}
     />
-  );
-};
+  )
+}
