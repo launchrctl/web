@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
 	"github.com/launchrctl/launchr/pkg/cli"
+	"gopkg.in/yaml.v3"
 )
 
 type launchrServer struct {
@@ -157,11 +159,33 @@ func apiActionFull(baseURL string, a *action.Action) ActionFull {
 	jsonschema := a.JSONSchema()
 	jsonschema.ID = fmt.Sprintf("%s/actions/%s/schema.json", baseURL, url.QueryEscape(a.ID))
 	def := a.ActionDef()
+
+
+	var resultMap map[string]interface{}
+
+  yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", a.Dir()))
+  if err != nil {
+    if os.IsNotExist(err) {
+      fmt.Println("Warning: ui-schema.yaml not found, using empty UISchema")
+      resultMap = map[string]interface{}{}
+    } else {
+      panic(err)
+    }
+  } else {
+    var data interface{}
+    err = yaml.Unmarshal(yamlData, &data)
+    if err != nil {
+      panic(err)
+    }
+    resultMap, _ = data.(map[string]interface{})
+  }
+
 	return ActionFull{
 		ID:          a.ID,
 		Title:       def.Title,
 		Description: def.Description,
 		JSONSchema:  jsonschema,
+		UISchema:    &resultMap,
 	}
 }
 

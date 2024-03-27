@@ -10,13 +10,14 @@ import { Edit } from '@refinedev/mui'
 import type { IChangeEvent } from '@rjsf/core'
 import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
-import type { RJSFSchema } from '@rjsf/utils'
+import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 import type { FC } from 'react'
 
 // @todo move to types
 interface IActionData extends BaseRecord {
   jsonschema: RJSFSchema
+  uischema: UiSchema
 }
 
 interface IRunInfo extends BaseRecord {
@@ -68,6 +69,8 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
 
   const jsonschema = queryResult?.data?.data?.jsonschema
 
+  const uischema = queryResult?.data?.data?.uischema?.uiSchema || {}
+
   if (jsonschema) {
     // @todo I actually don't know for the moment how to overcome error
     //  "no schema with key or ref" produced when schema is defined.
@@ -110,7 +113,12 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
     <Edit isLoading={isFetching}>
       <ActionRunningState isLoading={isFetchingRunning} list={running} />
       {jsonschema && (
-        <Form schema={jsonschema} validator={validator} onSubmit={onSubmit} />
+        <Form
+          schema={jsonschema}
+          uiSchema={uischema}
+          validator={validator}
+          onSubmit={onSubmit}
+        />
       )}
     </Edit>
   )

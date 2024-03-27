@@ -1,5 +1,4 @@
 uiSchema:
-  buttonGroup:
-    'ui:widget': button
-  radio:
-    'ui:widget': radio
+  arguments:
+    radio:
+      'ui:widget': radio
