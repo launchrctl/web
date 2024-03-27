@@ -201,92 +201,89 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
 
       const linkStyle: CSSProperties =
         activeItemDisabled && isSelected ? { pointerEvents: 'none' } : {}
-
       return (
-        <>
-          <CanAccess
-            key={key}
-            resource={name.toLowerCase()}
-            action="list"
-            params={{ resource: item }}
-          >
-            <ListItem disablePadding={true}>
-              <Tooltip
-                title={label ?? name}
-                placement="right"
-                disableHoverListener={!siderCollapsed}
-                arrow
-              >
-                <ListItemButton
-                  component={ActiveLink}
-                  to={route}
-                  selected={isSelected}
-                  style={linkStyle}
-                  onClick={() => {
-                    setMobileSiderOpen(false)
-                  }}
-                  sx={{
-                    pl: isNested ? 4 : 2,
-                    py: isNested ? 1.25 : 1,
-                    justifyContent: 'center',
-                    color: isSelected ? 'primary.main' : 'text.primary',
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      justifyContent: 'center',
-                      transition: 'margin-right 0.3s',
-                      marginRight: siderCollapsed ? '0px' : '12px',
-                      minWidth: '24px',
-                      color: 'currentColor',
-                    }}
-                  >
-                    {icon ?? <ListOutlined />}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={label}
-                    primaryTypographyProps={{
-                      noWrap: true,
-                      fontSize: '14px',
-                    }}
-                  />
-                </ListItemButton>
-              </Tooltip>
-            </ListItem>
-            <ListItem disablePadding={true}>
+        <CanAccess
+          key={key}
+          resource={name.toLowerCase()}
+          action="list"
+          params={{ resource: item }}
+        >
+          <ListItem key={key} disablePadding={true}>
+            <Tooltip
+              title={label ?? name}
+              placement="right"
+              disableHoverListener={!siderCollapsed}
+              arrow
+            >
               <ListItemButton
-                component={Link}
-                to={'https://github.com/launchrctl/web/issues/new'}
-                target={'_blank'}
+                component={ActiveLink}
+                to={route}
+                selected={isSelected}
+                style={linkStyle}
+                onClick={() => {
+                  setMobileSiderOpen(false)
+                }}
                 sx={{
-                  pl: 2,
-                  py: 1,
+                  pl: isNested ? 4 : 2,
+                  py: isNested ? 1.25 : 1,
                   justifyContent: 'center',
-                  color: 'text.primary',
+                  color: isSelected ? 'primary.main' : 'text.primary',
                 }}
               >
                 <ListItemIcon
                   sx={{
                     justifyContent: 'center',
                     transition: 'margin-right 0.3s',
-                    marginRight: '12px',
+                    marginRight: siderCollapsed ? '0px' : '12px',
                     minWidth: '24px',
                     color: 'currentColor',
                   }}
                 >
-                  <GitHub />
+                  {icon ?? <ListOutlined />}
                 </ListItemIcon>
                 <ListItemText
-                  primary={'Report an issue on GitHub'}
+                  primary={label}
                   primaryTypographyProps={{
                     noWrap: true,
                     fontSize: '14px',
                   }}
                 />
               </ListItemButton>
-            </ListItem>
-          </CanAccess>
-        </>
+            </Tooltip>
+          </ListItem>
+          <ListItem key={'github'} disablePadding={true}>
+            <ListItemButton
+              component={Link}
+              to={'https://github.com/launchrctl/web/issues/new'}
+              target={'_blank'}
+              sx={{
+                pl: 2,
+                py: 1,
+                justifyContent: 'center',
+                color: 'text.primary',
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  justifyContent: 'center',
+                  transition: 'margin-right 0.3s',
+                  marginRight: '12px',
+                  minWidth: '24px',
+                  color: 'currentColor',
+                }}
+              >
+                <GitHub />
+              </ListItemIcon>
+              <ListItemText
+                primary={'Report an issue on GitHub'}
+                primaryTypographyProps={{
+                  noWrap: true,
+                  fontSize: '14px',
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        </CanAccess>
       )
     })
 
