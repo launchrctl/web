@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
-	"github.com/launchrctl/launchr/pkg/cli"
 )
 
 type launchrServer struct {
@@ -40,8 +40,23 @@ func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.R
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action run info with id %q is not found", id))
 		return
 	}
-	panic("not implemented")
-	//_ = ri.Action.GetRunEnvironment().Logs(r.Context(), "", "")
+	outputFile, err := os.ReadFile(fmt.Sprintf("%s-out.txt", id))
+	if err != nil {
+		if os.IsNotExist(err) {
+			sendError(w, http.StatusNotFound, fmt.Sprintf("Output file associated with actionId %q not found", id))
+		} else {
+			sendError(w, http.StatusInternalServerError, "Error accessing file")
+		}
+		return
+	}
+
+	// @todo: care about error file aswell.
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(ActionRunStreamData{
+		Type: "stdOut",
+		Content: string(outputFile),
+	})
 }
 
 func (l *launchrServer) basePath() string {
@@ -133,7 +148,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams := cli.StandardStreams() // @todo IO should possibly go to a file.
+	streams := fileStreams(id)
 	defer func() {
 		//if err != nil {
 		//	streams.Close()

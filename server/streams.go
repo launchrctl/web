@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -49,10 +50,16 @@ func (w *wrappedWriter) Write(p []byte) (int, error) {
 	return w.w.Write(p)
 }
 
-func fileStreams() *webCli {
+func fileStreams(actionId ActionId) *webCli {
 	// @todo wrap writer to prepend info
-	outfile, _ := os.Create("out.txt")
-	errfile, _ := os.Create("err.txt")
+	outfile, errO := os.Create(fmt.Sprintf("%s-out.txt", actionId))
+	if errO != nil {
+		fmt.Println("Error creating file:", errO)
+	}
+	errfile, errE := os.Create(fmt.Sprintf("%s-err.txt", actionId))
+	if errE != nil {
+		fmt.Println("Error creating file:", errE)
+	}
 	out := &wrappedWriter{
 		p: StdOut,
 		w: outfile,

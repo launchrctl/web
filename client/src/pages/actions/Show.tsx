@@ -1,18 +1,21 @@
+import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import type { BaseRecord, IResourceComponentsProps } from '@refinedev/core'
 import {
   useApiUrl,
   useCustomMutation,
+  useNotification,
   useOne,
   useResource,
 } from '@refinedev/core'
-import { Edit } from '@refinedev/mui'
+import { Show } from '@refinedev/mui'
 import type { IChangeEvent } from '@rjsf/core'
 import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
 import type { RJSFSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 import type { FC } from 'react'
+import { useState } from 'react'
 
 import { RunningActionsList } from '../../components/RunningActionsList'
 
@@ -36,6 +39,10 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
     // action: actionFromRoute,
     identifier,
   } = useResource()
+
+  const { open } = useNotification()
+
+  const [actionRunning, setActionRunning] = useState(false)
 
   const queryResult = useOne<IActionData>({
     resource: identifier,
@@ -65,6 +72,8 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
       return
     }
 
+    setActionRunning(true)
+
     await mutateAsync({
       url: `${apiUrl}/actions/${idFromRoute}`,
       method: 'post',
@@ -86,19 +95,36 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
     // @todo redirect somewhere
   }
 
+  const onActionRunFinished = async () => {
+    setActionRunning(false)
+    open?.({
+      type: 'success',
+      message: 'All actions runs finished',
+      description: 'Success!',
+    })
+  }
+
   return (
-    <Edit isLoading={isFetching}>
-      <RunningActionsList
-        actionId={idFromRoute ? idFromRoute.toString() : ''}
-      />
+    <Show isLoading={isFetching} title="">
+      {jsonschema && (
+        <Form schema={jsonschema} validator={validator} onSubmit={onSubmit}>
+          <div>
+            <Button variant="contained" type="submit" disabled={actionRunning}>
+              Submit
+            </Button>
+          </div>
+        </Form>
+      )}
       <Divider
         sx={{
           my: 4,
         }}
       />
-      {jsonschema && (
-        <Form schema={jsonschema} validator={validator} onSubmit={onSubmit} />
-      )}
-    </Edit>
+      <RunningActionsList
+        actionId={idFromRoute ? idFromRoute.toString() : ''}
+        actionRunning={actionRunning}
+        onActionRunFinished={onActionRunFinished}
+      />
+    </Show>
   )
 }

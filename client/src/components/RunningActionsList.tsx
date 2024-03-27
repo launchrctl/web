@@ -10,33 +10,45 @@ interface IRunInfo extends BaseRecord {
 }
 
 interface IRunningActionsListProps {
+  actionRunning: boolean
   actionId: string
+  onActionRunFinished: () => void
 }
 
 export const RunningActionsList: FC<IRunningActionsListProps> = ({
   actionId,
+  actionRunning,
+  onActionRunFinished,
 }) => {
   const apiUrl = useApiUrl()
   const [running, setRunning] = useState<IRunInfo[] | undefined>()
+
   const queryRunning = useCustom<IRunInfo[]>({
     url: `${apiUrl}/actions/${actionId}/running`,
     method: 'get',
   })
-  const { refetch } = queryRunning
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await refetch()
-      setRunning(data?.data)
+    if (actionRunning) {
+      const { refetch } = queryRunning
+
+      const fetchData = async () => {
+        const { data } = await refetch()
+
+        const runningActions = data?.data?.some((a) => a.status === 'running')
+        if (!runningActions) {
+          onActionRunFinished()
+        }
+        setRunning(data?.data)
+      }
+      const intervalId = setInterval(
+        fetchData,
+        import.meta.env.VITE_API_POLL_INTERVAL
+      )
+
+      return () => clearInterval(intervalId)
     }
-
-    const intervalId = setInterval(
-      fetchData,
-      import.meta.env.VITE_API_POLL_INTERVAL
-    )
-
-    return () => clearInterval(intervalId)
-  }, [refetch])
+  }, [actionRunning, queryRunning, onActionRunFinished])
 
   return (
     <>
@@ -44,6 +56,7 @@ export const RunningActionsList: FC<IRunningActionsListProps> = ({
         ?.sort((a, b) => a.status.localeCompare(b.status))
         .map((info) => (
           <RunningAction
+            actionId={actionId}
             key={info.id?.toString()}
             id={info.id?.toString()}
             status={info.status.toString()}
