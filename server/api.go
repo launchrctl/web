@@ -44,17 +44,15 @@ func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.R
 	if err != nil {
 		if os.IsNotExist(err) {
 			sendError(w, http.StatusNotFound, fmt.Sprintf("Output file associated with actionId %q not found", id))
-		} else {
-			sendError(w, http.StatusInternalServerError, "Error accessing file")
 		}
-		return
+		sendError(w, http.StatusInternalServerError, "Error accessing file")
 	}
 
 	// @todo: care about error file aswell.
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(ActionRunStreamData{
-		Type: "stdOut",
+		Type:    "stdOut",
 		Content: string(outputFile),
 	})
 }
@@ -148,7 +146,11 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams := fileStreams(id)
+	streams, err := fileStreams(id)
+	if err != nil {
+		sendError(w, http.StatusBadRequest, "Error creation files")
+	}
+
 	defer func() {
 		//if err != nil {
 		//	streams.Close()

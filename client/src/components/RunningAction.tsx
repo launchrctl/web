@@ -65,7 +65,7 @@ export const RunningAction: FC<IRunningActiontProps> = ({
                 color: '#fff',
                 fontSize: '12px',
                 lineHeight: '1.5',
-                padding: '20px',
+                padding: '15px',
               }}
             >
               {output}

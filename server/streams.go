@@ -50,28 +50,32 @@ func (w *wrappedWriter) Write(p []byte) (int, error) {
 	return w.w.Write(p)
 }
 
-func fileStreams(actionId ActionId) *webCli {
-	// @todo wrap writer to prepend info
-	outfile, errO := os.Create(fmt.Sprintf("%s-out.txt", actionId))
-	if errO != nil {
-		fmt.Println("Error creating file:", errO)
+func fileStreams(actionId ActionId) (*webCli, error) {
+	outfile, err := os.Create(fmt.Sprintf("%s-out.txt", actionId))
+	if err != nil {
+		return nil, fmt.Errorf("error creating output file: %w", err)
 	}
-	errfile, errE := os.Create(fmt.Sprintf("%s-err.txt", actionId))
-	if errE != nil {
-		fmt.Println("Error creating file:", errE)
+
+	errfile, err := os.Create(fmt.Sprintf("%s-err.txt", actionId))
+	if err != nil {
+		return nil, fmt.Errorf("error creating error file: %w", err)
 	}
+
+	// Create wrapped writers
 	out := &wrappedWriter{
 		p: StdOut,
 		w: outfile,
 	}
-	err := &wrappedWriter{
+	errWriter := &wrappedWriter{
 		p: StdErr,
 		w: errfile,
 	}
+
+	// Build and return webCli
 	return &webCli{
 		files: []*os.File{outfile, errfile},
 		in:    cli.NewIn(io.NopCloser(strings.NewReader(""))),
 		out:   cli.NewOut(out),
-		err:   err,
-	}
+		err:   errWriter,
+	}, nil
 }
