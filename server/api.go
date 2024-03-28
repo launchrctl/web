@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"sort"
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
-	"github.com/launchrctl/launchr/pkg/cli"
 )
 
 type launchrServer struct {
@@ -39,8 +40,21 @@ func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.R
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action run info with id %q is not found", id))
 		return
 	}
-	panic("not implemented")
-	//_ = ri.Action.GetRunEnvironment().Logs(r.Context(), "", "")
+	outputFile, err := os.ReadFile(fmt.Sprintf("%s-out.txt", id))
+	if err != nil {
+		if os.IsNotExist(err) {
+			sendError(w, http.StatusNotFound, fmt.Sprintf("Output file associated with actionId %q not found", id))
+		}
+		sendError(w, http.StatusInternalServerError, "Error accessing file")
+	}
+
+	// @todo: care about error file aswell.
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(ActionRunStreamData{
+		Type:    "stdOut",
+		Content: string(outputFile),
+	})
 }
 
 func (l *launchrServer) basePath() string {
@@ -94,6 +108,16 @@ func (l *launchrServer) GetActionJSONSchema(w http.ResponseWriter, _ *http.Reque
 
 func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Request, id string) {
 	runningActions := l.actionMngr.RunInfoByAction(id)
+
+	sortFunc := func(i, j int) bool {
+		if runningActions[i].Status != runningActions[j].Status {
+			return runningActions[i].Status < runningActions[j].Status
+		}
+		return runningActions[i].ID < runningActions[j].ID
+	}
+
+	sort.Slice(runningActions, sortFunc)
+
 	var result = make([]ActionRunInfo, 0, len(runningActions))
 	for _, ri := range runningActions {
 		result = append(result, ActionRunInfo{
@@ -122,7 +146,11 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams := cli.StandardStreams() // @todo IO should possibly go to a file.
+	streams, err := fileStreams(id)
+	if err != nil {
+		sendError(w, http.StatusBadRequest, "Error creation files")
+	}
+
 	defer func() {
 		//if err != nil {
 		//	streams.Close()
