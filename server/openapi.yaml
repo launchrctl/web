@@ -204,6 +204,7 @@ components:
               type: object
               x-go-name: "UISchema"
               x-go-type: "map[string]interface{}"
+              x-go-type-skip-optional-pointer: true
     ActionRunParams:
       allOf:
         - type: object

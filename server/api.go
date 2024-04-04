@@ -211,7 +211,7 @@ func apiActionFull(baseURL string, a *action.Action) ActionFull {
 		Title:       def.Title,
 		Description: def.Description,
 		JSONSchema:  jsonschema,
-		UISchema:    &resultMap,
+		UISchema:    resultMap,
 	}
 }
 
