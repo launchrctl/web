@@ -23,10 +23,10 @@ bin/launchr web --help
 
 The documentation for `launchr` usage can be found in [the main project](https://github.com/launchrctl/launchr).
 
-To build the client:
+## To build the client:
+### Node
 ```shell
 cd client
-
 # Install yarn 4 https://yarnpkg.com/getting-started/install yarn set version stable
 
 # Fetch dependencies
@@ -35,6 +35,10 @@ yarn
 yarn build
 # Start client dev server
 yarn dev
+```
+### Docker
+```shell
+make front-install front-build
 ```
 
 See [client readme](client/README.MD) for more information.

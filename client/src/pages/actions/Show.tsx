@@ -106,6 +106,16 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
 
   return (
     <Show isLoading={isFetching} title="">
+      <RunningActionsList
+        actionId={idFromRoute ? idFromRoute.toString() : ''}
+        actionRunning={actionRunning}
+        onActionRunFinished={onActionRunFinished}
+      />
+      <Divider
+        sx={{
+          my: 4,
+        }}
+      />
       {jsonschema && (
         <Form schema={jsonschema} validator={validator} onSubmit={onSubmit}>
           <div>
@@ -115,16 +125,6 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
           </div>
         </Form>
       )}
-      <Divider
-        sx={{
-          my: 4,
-        }}
-      />
-      <RunningActionsList
-        actionId={idFromRoute ? idFromRoute.toString() : ''}
-        actionRunning={actionRunning}
-        onActionRunFinished={onActionRunFinished}
-      />
     </Show>
   )
 }
