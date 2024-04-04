@@ -78,3 +78,10 @@ Useful make commands:
 1. Fetch dependencies - `make deps`
 2. Test the code - `make test`
 3. Lint the code - `make lint`
+
+## Test for release
+
+```shell
+make front-install front-build
+make EMBED=1
+```

@@ -2,6 +2,11 @@
 
 package web
 
+import (
+	"embed"
+	"io/fs"
+)
+
 //go:embed swagger-ui/*
 var swaggerUIFS embed.FS
 
