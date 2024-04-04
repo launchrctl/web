@@ -192,7 +192,7 @@ func apiActionFull(baseURL string, a *action.Action) ActionFull {
 	yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", a.Dir()))
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println("Warning: ui-schema.yaml not found, using empty UISchema")
+			fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
 			resultMap = map[string]interface{}{}
 		} else {
 			panic(err)
