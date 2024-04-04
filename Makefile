@@ -19,6 +19,10 @@ else
     LDFLAGS_EXTRA=-s -w
     BUILD_OPTS=-trimpath
 endif
+EMBED?=0
+ifeq ($(EMBED), 1)
+	BUILD_OPTS+=-tags embed
+endif
 
 BUILD_ENVPARMS:=CGO_ENABLED=0
 
