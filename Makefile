@@ -3,6 +3,8 @@ export GOSUMDB=off
 GOPATH?=$(HOME)/go
 FIRST_GOPATH:=$(firstword $(subst :, ,$(GOPATH)))
 
+NODE_TAG=21-alpine3.19
+
 # Build available information.
 GIT_HASH:=$(shell git log --format="%h" -n 1 2> /dev/null)
 GIT_BRANCH:=$(shell git branch 2> /dev/null | grep '*' | cut -f2 -d' ')
@@ -85,3 +87,17 @@ endif
 .lint:
 	$(info Running lint...)
 	$(GOLANGCI_BIN) run --fix ./...
+
+
+# Front tasks.
+front-install:
+	docker run --rm -it -v $(PWD)/client:/usr/src/app -w /usr/src/app node:$(NODE_TAG)  sh -c "corepack install && corepack enable && yarn install"
+
+front-build:
+	docker run --rm -it -v $(PWD)/client:/usr/src/app -w /usr/src/app node:$(NODE_TAG) sh -c "corepack install && corepack enable && yarn build"
+
+front-dev:
+	docker run --rm -it -v $(PWD)/client:/usr/src/app -p 5173:5173 -w /usr/src/app node:$(NODE_TAG) sh -c "corepack install && corepack enable && yarn dev -- --host"
+
+front-lint-fix:
+	docker run --rm -it -v $(PWD)/client:/usr/src/app -w /usr/src/app node:$(NODE_TAG) sh -c "corepack install && corepack enable && yarn lint --fix"
