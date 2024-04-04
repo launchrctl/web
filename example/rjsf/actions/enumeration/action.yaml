@@ -12,8 +12,3 @@ action:
       title: Radio
       type: string
       enum: [ Ola, Hello, Bonjour, Buongiorno, GutenTag ]
-    - name: buttonGroup
-      type: string
-      enum: [ Ola, Hello, Bonjour, Buongiorno, GutenTag ]
-      default: Ola
-      description: With default value set

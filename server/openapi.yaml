@@ -200,6 +200,11 @@ components:
               x-go-type: "jsonschema.Schema"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/jsonschema"
+            uischema:
+              type: object
+              x-go-name: "UISchema"
+              x-go-type: "map[string]interface{}"
+              x-go-type-skip-optional-pointer: true
     ActionRunParams:
       allOf:
         - type: object
