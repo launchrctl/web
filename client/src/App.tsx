@@ -14,6 +14,7 @@ import { ThemedHeaderV2 } from './components/layout/Header'
 import { ThemedSiderV2 } from './components/layout/Sider'
 import { ThemedTitleV2 } from './components/layout/Title'
 import { ActionList, ActionShow } from './pages/actions'
+import { FlowShow } from './pages/flow'
 import { dataProvider as launchrDataProvider } from './rest-data-provider'
 import { ThemeProvider } from './ThemeProvider'
 
@@ -67,6 +68,9 @@ export function App() {
                   <Route path=":id/show" element={<ActionShow />} />
                   {/*<Route path=":id/running/:runId" element={<ActionAttach />} />*/}
                   {/*<Route path=":id/edit" element={<ActionEdit />} />*/}
+                </Route>
+                <Route path="/flow">
+                  <Route index element={<FlowShow />} />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>

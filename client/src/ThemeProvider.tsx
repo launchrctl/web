@@ -77,7 +77,6 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
         styleOverrides: {
           root: {
             fontSize: 18,
-            padding: '13px 31px',
             borderRadius: 28,
             textTransform: 'none',
             fontWeight: 600,

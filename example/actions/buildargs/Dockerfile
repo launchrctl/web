@@ -1,6 +1,0 @@
-FROM alpine:latest
-ARG USER_ID
-ARG USER_NAME
-ARG GROUP_ID
-RUN adduser -D -u ${USER_ID} -g ${GROUP_ID} ${USER_NAME} || true
-USER ${USER_NAME}

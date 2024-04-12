@@ -21,7 +21,6 @@ export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
   return (
     <ThemedLayoutContextProvider initialSiderCollapsed={initialSiderCollapsed}>
       <Box display="flex" flexDirection="row">
-        <SiderToRender Title={Title} />
         <Box
           sx={[
             {
