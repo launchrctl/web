@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/launchrctl/launchr/pkg/log"
@@ -22,6 +23,68 @@ type launchrServer struct {
 	ctx        context.Context
 	baseURL    string
 	apiPrefix  string
+}
+
+type launchrWebConfig struct {
+	VarsFile  string   `yaml:"vars_file"`
+	Variables []string `yaml:"variables"`
+}
+
+func parseVarsFile(path string) (map[string]interface{}, error) {
+	var data map[string]interface{}
+	var rawData []byte
+
+	rawData, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return data, err
+	}
+
+	err = yaml.Unmarshal(rawData, &data)
+	if err != nil {
+		return data, err
+	}
+
+	return data, nil
+}
+
+func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Request) {
+	var launchrConfig *launchrWebConfig
+	err := l.cfg.Get("web", &launchrConfig)
+	if err != nil {
+		log.Debug(err.Error())
+		sendError(w, http.StatusInternalServerError, "error getting config")
+		return
+	}
+
+	customisation := make(CustomisationConfig)
+	if launchrConfig == nil {
+		log.Debug("Launchr config doesn't exist")
+	} else {
+		if launchrConfig.VarsFile != "" {
+			vars := make(map[string]bool)
+			for _, item := range launchrConfig.Variables {
+				vars[item] = true
+			}
+
+			gvFile, err := parseVarsFile(launchrConfig.VarsFile)
+			if err != nil {
+				log.Debug(err.Error())
+				sendError(w, http.StatusInternalServerError, "error getting group vars file")
+				return
+			}
+
+			if len(launchrConfig.Variables) > 0 {
+				for key, value := range gvFile {
+					if _, ok := vars[key]; ok {
+						customisation[key] = value
+					}
+				}
+			}
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(customisation)
 }
 
 func (l *launchrServer) GetOneRunningActionByID(w http.ResponseWriter, _ *http.Request, id ActionId, runID ActionRunInfoId) {
