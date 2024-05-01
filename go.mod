@@ -10,7 +10,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/render v1.0.3
-	github.com/launchrctl/launchr v0.8.2-0.20240513162729-0023678afad2
+	github.com/launchrctl/launchr v0.7.1-0.20240506145500-6aa1fc4dd3e9
 	github.com/oapi-codegen/nethttp-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/spf13/cobra v1.8.0
