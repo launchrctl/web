@@ -15,7 +15,7 @@ export const FlowShow: FC = () => {
       <ActionProvider>
         <FormFlow />
         <SidebarFlow actions={actions} />
-        <ActionsFlow />
+        <ActionsFlow actions={actions} />
       </ActionProvider>
     </div>
   )
