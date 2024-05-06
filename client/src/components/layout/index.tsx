@@ -37,7 +37,6 @@ export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
           <Box
             component="main"
             sx={{
-              p: { xs: 0, md: 2, lg: 3 },
               flexGrow: 1,
               bgcolor: (theme) => theme.palette.background.default,
               '& > .MuiPaper-root, & > div:not([class]) > .MuiPaper-root': {

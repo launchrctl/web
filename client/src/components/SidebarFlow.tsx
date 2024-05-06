@@ -9,6 +9,9 @@ import { useState } from 'react'
 
 import { SidebarActions } from './SidebarActions'
 import { SidebarTree } from './SidebarTree'
+import Stack from '@mui/material/Stack'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import ToggleButton from '@mui/material/ToggleButton'
 
 interface ISidebarFlowProps {
   actions: GetListResponse | undefined
@@ -22,30 +25,34 @@ export const SidebarFlow: FC<ISidebarFlowProps> = ({ actions }) => {
   }
 
   return (
-    <Box
-      sx={{
-        boxShadow: 1,
-        borderRadius: 2,
-        p: 2,
-        minWidth: 400,
-      }}
-    >
+    <>
       <TabContext value={value}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <TabList onChange={handleChange}>
-            <Tab label="Layers" value="1" />
-            <Tab label="Actions" value="2" />
-            <Tab label="Flows" value="3" />
-          </TabList>
-        </Box>
-        <TabPanel value="1">
-          <SidebarTree actions={actions} />
-        </TabPanel>
-        <TabPanel value="2">
-          <SidebarActions actions={actions} />
-        </TabPanel>
-        <TabPanel value="3">TBD</TabPanel>
+        <Stack sx={{ height: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', p: 2 }}>
+            <ToggleButtonGroup
+              color="primary"
+              value={value}
+              exclusive
+              onChange={handleChange}
+              size="small"
+              sx={{ display: "flex" }}
+            >
+              <ToggleButton value="1" sx={{ textTransform: "capitalize", flex: 1, fontSize: 11, fontWeight: 600 }}>Layers</ToggleButton>
+              <ToggleButton value="2" sx={{ textTransform: "capitalize", flex: 1, fontSize: 11, fontWeight: 600 }}>Actions</ToggleButton>
+              <ToggleButton value="3" sx={{ textTransform: "capitalize", flex: 1, fontSize: 11, fontWeight: 600 }}>Flows</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+          <TabPanel value="1" sx={{ p: 2, overflowY: 'auto' }}>
+            <SidebarTree actions={actions} />
+          </TabPanel>
+          <TabPanel value="2" sx={{ p: 2, overflowY: 'auto' }}>
+            <SidebarActions actions={actions} />
+          </TabPanel>
+          <TabPanel value="3" sx={{ p: 2, overflowY: 'auto' }}>
+            TBD
+          </TabPanel>
+        </Stack>
       </TabContext>
-    </Box>
+    </>
   )
 }
