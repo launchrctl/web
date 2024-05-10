@@ -196,30 +196,35 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	})
 }
 
-func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
+func apiActionFull(baseURL string, a action.Action) (ActionFull, error) {
 	jsonschema := a.JSONSchema()
-	jsonschema.ID = fmt.Sprintf("%s/actions/%s/schema.json", baseURL, url.QueryEscape(a.ID))
+	jsonschema.ID = fmt.Sprintf("%s/actions/%s/schema.json", baseURL, url.QueryEscape(a.GetID()))
 	def := a.ActionDef()
 
 	var uiSchema map[string]interface{}
 
-	yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", a.Dir()))
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return ActionFull{}, err
-		}
-
+	if containerAction, ok := a.(*action.ContainerAction); !ok {
 		fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
 		uiSchema = map[string]interface{}{}
 	} else {
-		err = yaml.Unmarshal(yamlData, &uiSchema)
+		yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", containerAction.Dir()))
 		if err != nil {
-			return ActionFull{}, err
+			if !os.IsNotExist(err) {
+				return ActionFull{}, err
+			}
+
+			fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
+			uiSchema = map[string]interface{}{}
+		} else {
+			err = yaml.Unmarshal(yamlData, &uiSchema)
+			if err != nil {
+				return ActionFull{}, err
+			}
 		}
 	}
 
 	return ActionFull{
-		ID:          a.ID,
+		ID:          a.GetID(),
 		Title:       def.Title,
 		Description: def.Description,
 		JSONSchema:  jsonschema,
@@ -227,11 +232,11 @@ func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
 	}, nil
 }
 
-func apiActionShort(a *action.Action) (ActionShort, error) {
+func apiActionShort(a action.Action) (ActionShort, error) {
 	err := a.EnsureLoaded()
 	def := a.ActionDef()
 	return ActionShort{
-		ID:          a.ID,
+		ID:          a.GetID(),
 		Title:       def.Title,
 		Description: def.Description,
 	}, err
