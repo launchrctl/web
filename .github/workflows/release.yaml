@@ -1,0 +1,64 @@
+name: Create Archive on Tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build_and_archive:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js 21
+      uses: actions/setup-node@v4
+      with:
+        node-version: '21'
+
+    - name: Enable Corepack
+      working-directory: client
+      run: corepack enable
+
+    - name: Install dependencies
+      working-directory: client
+      run: yarn install
+
+    - name: Build project
+      working-directory: client
+      run: yarn build
+
+    - name: Create archives of dist folder
+      working-directory: client
+      run: |
+        zip -r dist.zip dist
+        tar -czvf dist.tar.gz dist
+
+    - name: Upload archives as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist.zip
+        path: client/dist.zip
+
+    - name: Upload tar.gz as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist.tar.gz
+        path: client/dist.tar.gz
+
+    - name: Create GitHub release
+      uses: elgohr/Github-Release-Action@v5
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        title: ${{ github.ref_name }}
+
+    - name: Upload dist.zip and dist.tar.gz to the release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        file: client/dist.*
+        file_glob: true
+        tag: ${{ github.ref_name }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
