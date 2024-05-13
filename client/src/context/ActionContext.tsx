@@ -1,23 +1,33 @@
-import { type ReactNode, createContext, useContext, useReducer, type FC } from 'react'
+import {
+  type ReactNode,
+  createContext,
+  useContext,
+  useReducer,
+  type FC,
+} from 'react'
 
 interface Props {
   children: ReactNode
 }
 
-export const ActionContext = createContext("")
+export const ActionContext = createContext('')
 
 export const ActionDispatchContext = createContext(null)
 
-const reducer = (state: { id: string }, action: { type: string; id: string }) => {
+const reducer = (
+  state: { id: string },
+  action: { type: string; id: string }
+) => {
+  console.log(action)
   if (action?.type === 'set-action' && action.id) {
     return {
-      id: action.id
-    };
+      id: action.id,
+    }
   }
 }
 
-export const ActionProvider:FC<Props> = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, { id: ""})
+export const ActionProvider: FC<Props> = ({ children }) => {
+  const [state, dispatch] = useReducer(reducer, { id: '' })
 
   return (
     <ActionContext.Provider value={state}>
@@ -35,4 +45,3 @@ export function useAction() {
 export function useActionDispatch() {
   return useContext(ActionDispatchContext)
 }
-
