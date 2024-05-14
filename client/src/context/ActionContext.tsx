@@ -1,33 +1,45 @@
-import {
-  type ReactNode,
+import React, {
   createContext,
   useContext,
   useReducer,
-  type FC,
+  ReactNode,
+  FC,
 } from 'react'
+
+interface State {
+  id: string
+}
+
+interface Action {
+  type: string
+  id: string
+}
 
 interface Props {
   children: ReactNode
 }
 
-export const ActionContext = createContext('')
+const initialState: State = {
+  id: '',
+}
 
-export const ActionDispatchContext = createContext(null)
+const ActionContext = createContext<State>(initialState)
+const ActionDispatchContext = createContext<React.Dispatch<Action> | null>(null)
 
-const reducer = (
-  state: { id: string },
-  action: { type: string; id: string }
-) => {
-  console.log(action)
-  if (action?.type === 'set-action' && action.id) {
-    return {
-      id: action.id,
-    }
+const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case 'set-action':
+      return {
+        ...state,
+        id: action.id,
+      }
+    default:
+      return state
   }
 }
 
 export const ActionProvider: FC<Props> = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, { id: '' })
+  const [state, dispatch] = useReducer(reducer, initialState)
 
   return (
     <ActionContext.Provider value={state}>
@@ -38,10 +50,6 @@ export const ActionProvider: FC<Props> = ({ children }) => {
   )
 }
 
-export function useAction() {
-  return useContext(ActionContext)
-}
-
-export function useActionDispatch() {
-  return useContext(ActionDispatchContext)
-}
+export const useAction = (): State => useContext(ActionContext)
+export const useActionDispatch = (): React.Dispatch<Action> | null =>
+  useContext(ActionDispatchContext)

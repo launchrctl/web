@@ -226,34 +226,6 @@ function getItemLabel(item) {
 export const SidebarTree: FC = ({ actions }) => {
   const dispatch = useActionDispatch()
 
-  const renderTree = (tree) => {
-    return tree
-    // return (
-    //   <>
-    //     {Object.keys(tree).map((element) => {
-    //       return (
-    //         <TreeItem key={element} itemId={element} label={element}>
-    //           {Array.isArray(tree[element])
-    //             ? tree[element].map((action) => {
-    //                 return (
-    //                   <TreeItem
-    //                     key={action.id}
-    //                     itemId={action.id}
-    //                     label={action.title}
-    //                     onClick={() => {
-    //                       dispatch({ type: 'set-action', id: action.id })
-    //                     }}
-    //                   ></TreeItem>
-    //                 )
-    //               })
-    //             : renderTree(tree[element])}
-    //         </TreeItem>
-    //       )
-    //     })}
-    //   </>
-    // )
-  }
-
   const [lastSelectedItem, setLastSelectedItem] = useState(undefined)
 
   const handleItemSelectionToggle = (
@@ -263,6 +235,7 @@ export const SidebarTree: FC = ({ actions }) => {
   ) => {
     if (isSelected) {
       setLastSelectedItem(itemId)
+      dispatch({ type: 'set-action', id: itemId })
     }
   }
 

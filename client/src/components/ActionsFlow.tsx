@@ -155,12 +155,12 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   )
 
   useEffect(() => {
-    if (actions) {
-      // TEST data actions
-      testActions.forEach((testAction) => {
-        actions.data.push(testAction)
-      })
-    }
+    // if (actions) {
+    //   // TEST data actions
+    //   testActions.forEach((testAction) => {
+    //     actions.data.push(testAction)
+    //   })
+    // }
 
     const [receivedNodes, receivedEdges] = getNodesAndEdges(
       actions,
