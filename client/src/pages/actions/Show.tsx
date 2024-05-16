@@ -38,6 +38,7 @@ export const ActionShow: FC = () => {
     resource: identifier,
     id: idFromRoute,
   })
+
   const { isFetching } = queryResult
 
   const jsonschema = queryResult?.data?.data?.jsonschema

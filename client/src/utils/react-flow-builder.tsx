@@ -1,16 +1,35 @@
+// Coefficient less than 0.51 behaves unpredictably.
+// Use coefficient between 0.51 till endless
 export const elementsScaleCoef = 1
 export const actionWidth = 260 * elementsScaleCoef
 export const actionHeight = 60 * elementsScaleCoef
 export const grandFolderGap = 80 * elementsScaleCoef
-export const folderLabelHeight = 45 * elementsScaleCoef
+export const folderLabelHeight = 50 * elementsScaleCoef
 export const actionsGroupOuterGap = 4 * elementsScaleCoef
 export const gapBetweenActions = 4 * elementsScaleCoef
-export const layerColorSchemes = [
-  '20, 112, 239',
-  '237, 58, 97',
-  '47, 216, 161',
-  '122, 90, 248',
+
+const layerColorSchemesHSL = [
+  [214.79, 87.25, 50.78],
+  [346.93, 83.26, 57.84],
+  [160.47, 68.42, 51.57],
+  [252.15, 91.86, 66.27],
 ]
+
+export const buildNodeColor = ({
+  index = 0,
+  isFilled = false,
+  isHovered = false,
+  isDarker = false,
+}) => {
+  return `
+    hsla(
+      ${layerColorSchemesHSL[index || 0][0]}deg 
+      ${layerColorSchemesHSL[index || 0][1]}% 
+      ${isDarker ? layerColorSchemesHSL[index || 0][2] - 20 : layerColorSchemesHSL[index || 0][2]}%
+      ${isFilled ? '' : `/ ${isHovered ? '40%' : '10%'}`}
+    )
+  `
+}
 
 const generateReadableLabel = (phrase) => {
   const label = phrase.replaceAll(/[_-]/g, ' ')
@@ -380,6 +399,36 @@ const setLayerIndexes = (folders, index) => {
   })
 }
 
+const calculateAmountOfActions = (nodes, writeInto = false) => {
+  if (writeInto) {
+    nodes.data.actionsAmount = 0
+  }
+
+  if (
+    nodes.hasOwnProperty('actions') &&
+    Object.keys(nodes.actions).length > 0 &&
+    writeInto
+  ) {
+    nodes.data.actionsAmount = Object.keys(nodes.actions).filter(
+      (a) => a !== '_params'
+    ).length
+  }
+
+  if (nodes.hasOwnProperty('folders') && Object.keys(nodes.folders).length) {
+    for (const folderKey in nodes.folders) {
+      const subFolder = nodes.folders[folderKey]
+
+      const subActionsAmount = calculateAmountOfActions(subFolder, true)
+
+      if (writeInto) {
+        nodes.data.actionsAmount += subActionsAmount
+      }
+    }
+  }
+
+  return writeInto ? nodes.data.actionsAmount : undefined
+}
+
 export const getNodesAndEdges = (actions, colorMode) => {
   if (!actions) {
     return []
@@ -403,7 +452,9 @@ export const getNodesAndEdges = (actions, colorMode) => {
       if (!currentFolder[folder]) {
         currentFolder[folder] = {
           id: folder,
-          data: { label: generateReadableLabel(folder) },
+          data: {
+            label: generateReadableLabel(folder),
+          },
           type: 'node-wrapper',
           folders: {},
           actions: {},
@@ -428,7 +479,10 @@ export const getNodesAndEdges = (actions, colorMode) => {
       }
       currentFolder.actions[fileName] = {
         id: item.id,
-        data: { label: item.title },
+        data: {
+          label: item.title,
+          isActive: false,
+        },
         type: 'node-action',
         parentId,
       }
@@ -437,7 +491,9 @@ export const getNodesAndEdges = (actions, colorMode) => {
       if (!currentFolder[folderName]) {
         currentFolder[folderName] = {
           id: item.id,
-          data: { label: generateReadableLabel(item.title) },
+          data: {
+            label: generateReadableLabel(item.title),
+          },
           type: 'node-wrapper',
           folders: {},
           actions: {},
@@ -491,6 +547,7 @@ export const getNodesAndEdges = (actions, colorMode) => {
   }
 
   nodesSetCoordinates(nodes)
+  calculateAmountOfActions(nodes)
 
   return [destructureNodesObj(nodes), edges.reverse()]
 }

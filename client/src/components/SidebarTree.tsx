@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView'
-import type { FC } from 'react'
+import { FC, useEffect } from 'react'
 import FolderIcon from '/images/folder.svg'
 import AppIcon from '/images/app.svg'
 import ActionIcon from '/images/action.svg'
@@ -24,7 +24,9 @@ import { TreeItem2Icon } from '@mui/x-tree-view/TreeItem2Icon'
 import Collapse from '@mui/material/Collapse'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
-import { useState } from 'react'
+import { useState, createContext } from 'react'
+import { useSidebarTreeItemStates } from '../context/SidebarTreeItemStatesContext'
+import { sanitizeDataForNewSchema } from '@rjsf/utils'
 
 const StyledTreeItemLabelText = styled(Typography)({
   fontSize: '11px',
@@ -112,7 +114,7 @@ const CustomTreeItem2Root = styled(TreeItem2Root)(({ theme }) => {
   return {
     borderRadius: 8,
     '&.is-actions-group': {
-      backgroundColor: theme.palette.mode === 'dark' ? '#2e4d7d' : '#F2F4F7',
+      backgroundColor: theme.palette.mode === 'dark' ? '#2e4d7d' : '#e3edfe',
     },
   }
 })
@@ -152,6 +154,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   props: CustomTreeItemProps,
   ref: React.Ref<HTMLLIElement>
 ) {
+  const dispatch = useActionDispatch()
   const { id, itemId, label, disabled, children, ...other } = props
   const {
     getRootProps,
@@ -162,10 +165,31 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
     status,
     publicAPI,
   } = useTreeItem2({ id, itemId, children, label, disabled, rootRef: ref })
-  // const paddingLeft = 20 * depth
   const item = publicAPI.getItem(itemId)
   const expandable = isExpandable(children)
   const icon = getIconFromFileType(item.fileType)
+  const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemStates()
+
+  const wrappedHandleMouseLeave = () => {
+    handleMouseLeave(itemId)
+  }
+
+  const wrappedHandleMouseEnter = () => {
+    handleMouseEnter(itemId)
+  }
+
+  useEffect(() => {
+    if (status.expanded && status.selected && item.isActionsGroup) {
+      dispatch({ type: 'set-actions-list', id: itemId })
+    } else if (
+      status.selected &&
+      !status.expanded &&
+      item.fileType === 'action'
+    ) {
+      dispatch({ type: 'set-action', id: itemId })
+    }
+  }, [status.expanded, status.selected])
+
   return (
     <TreeItem2Provider itemId={itemId}>
       <CustomTreeItem2Root
@@ -176,6 +200,8 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
         })}
       >
         <CustomTreeItemContent
+          onMouseEnter={wrappedHandleMouseEnter}
+          onMouseLeave={wrappedHandleMouseLeave}
           {...getContentProps({
             depth: item.depth,
             className: clsx('content', {
@@ -206,7 +232,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
             })}
           />
         </CustomTreeItemContent>
-        {children && (
+        {expandable && (
           <Collapse
             sx={{
               padding: 0,
@@ -224,24 +250,8 @@ function getItemLabel(item) {
 }
 
 export const SidebarTree: FC = ({ actions }) => {
-  const dispatch = useActionDispatch()
-
-  const [lastSelectedItem, setLastSelectedItem] = useState(undefined)
-
-  const handleItemSelectionToggle = (
-    event: React.SyntheticEvent,
-    itemId: string,
-    isSelected: boolean
-  ) => {
-    if (isSelected) {
-      setLastSelectedItem(itemId)
-      dispatch({ type: 'set-action', id: itemId })
-    }
-  }
-
   return (
     <RichTreeView
-      onItemSelectionToggle={handleItemSelectionToggle}
       getItemLabel={getItemLabel}
       items={treeBuilder(actions)}
       slots={{ item: CustomTreeItem }}

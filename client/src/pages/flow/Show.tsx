@@ -1,6 +1,7 @@
 import { useList } from '@refinedev/core'
 import { type FC } from 'react'
 import { ActionProvider } from '../../context/ActionContext'
+import { SidebarTreeItemStatesProvider } from '../../context/SidebarTreeItemStatesContext'
 import Grid from '@mui/material/Grid'
 import Box from '@mui/material/Box'
 
@@ -14,17 +15,23 @@ export const FlowShow: FC = () => {
   })
   return (
     <ActionProvider>
-      <Grid container sx={{ height: 'calc(100vh - 68px)' }} columns={{ xs: 36 }}>
-        <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
-          <SidebarFlow actions={actions} />
+      <SidebarTreeItemStatesProvider>
+        <Grid
+          container
+          sx={{ height: 'calc(100vh - 68px)' }}
+          columns={{ xs: 36 }}
+        >
+          <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
+            <SidebarFlow actions={actions} />
+          </Grid>
+          <Grid item xs={21} sx={{ height: 'calc(100vh - 68px)' }}>
+            <ActionsFlow actions={actions} />
+          </Grid>
+          <Grid item xs={8} sx={{ height: 'calc(100vh - 68px)' }}>
+            <FormFlow />
+          </Grid>
         </Grid>
-        <Grid item xs={21} sx={{ height: 'calc(100vh - 68px)' }}>
-          <ActionsFlow actions={actions} />
-        </Grid>
-        <Grid item xs={8} sx={{ height: 'calc(100vh - 68px)' }}>
-          <FormFlow />
-        </Grid>
-      </Grid>
+      </SidebarTreeItemStatesProvider>
     </ActionProvider>
   )
 }

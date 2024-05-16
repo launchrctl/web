@@ -32,9 +32,20 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         id: action.id,
+        type: action.type,
+      }
+    case 'set-actions-list':
+      return {
+        ...state,
+        id: action.id,
+        type: action.type,
       }
     default:
-      return state
+      return {
+        ...state,
+        id: '',
+        type: 'default',
+      }
   }
 }
 
