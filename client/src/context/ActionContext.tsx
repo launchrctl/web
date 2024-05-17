@@ -32,13 +32,13 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         id: action.id,
-        type: action.type,
+        type: 'action',
       }
     case 'set-actions-list':
       return {
         ...state,
         id: action.id,
-        type: action.type,
+        type: 'actions-list',
       }
     default:
       return {

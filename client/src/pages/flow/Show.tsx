@@ -6,7 +6,7 @@ import Grid from '@mui/material/Grid'
 import Box from '@mui/material/Box'
 
 import { ActionsFlow } from '../../components/ActionsFlow'
-import { FormFlow } from '../../components/FormFlow'
+import { SecondSIdebarFlow } from '../../components/SecondSIdebarFlow'
 import { SidebarFlow } from '../../components/SidebarFlow'
 
 export const FlowShow: FC = () => {
@@ -28,7 +28,7 @@ export const FlowShow: FC = () => {
             <ActionsFlow actions={actions} />
           </Grid>
           <Grid item xs={8} sx={{ height: 'calc(100vh - 68px)' }}>
-            <FormFlow />
+            <SecondSIdebarFlow />
           </Grid>
         </Grid>
       </SidebarTreeItemStatesProvider>
