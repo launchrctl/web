@@ -20,7 +20,7 @@ interface IThemeProviderProps {
 
 const typographyOptions: TypographyVariantsOptions = {
   fontFamily: ['Inter', 'Arial', 'sans-serif'].join(','),
-  fontSize: 16,
+
 }
 
 interface IThemeContextType {

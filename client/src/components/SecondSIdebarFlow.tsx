@@ -19,11 +19,17 @@ export const SecondSIdebarFlow: FC = () => {
     }
   }, [action])
 
+  let content;
+
+  if (action?.type === 'action' && actionId.length && isAction()) {
+    content = <FormFlow actionId={actionId} />
+  } else {
+    content = <h1>Default</h1>
+  }
+
   return (
     <Box role="presentation" sx={{ p: 2, overflowY: 'scroll', height: '100%' }}>
-      {action?.type === 'action' && actionId.length && isAction() && (
-        <FormFlow actionId={actionId}/>
-      )}
+      {content}
     </Box>
   )
 }
