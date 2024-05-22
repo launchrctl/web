@@ -19,7 +19,7 @@ export const SecondSIdebarFlow: FC = () => {
     }
   }, [action])
 
-  let content;
+  let content
 
   if (action?.type === 'action' && actionId.length && isAction()) {
     content = <FormFlow actionId={actionId} />

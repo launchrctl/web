@@ -27,6 +27,8 @@ import Box from '@mui/material/Box'
 import { useState, createContext } from 'react'
 import { useSidebarTreeItemStates } from '../context/SidebarTreeItemStatesContext'
 import { sanitizeDataForNewSchema } from '@rjsf/utils'
+import { useTreeViewApiRef } from '@mui/x-tree-view'
+import CheckIcon from '/images/check.svg'
 
 const StyledTreeItemLabelText = styled(Typography)({
   fontSize: '11px',
@@ -38,11 +40,13 @@ const StyledTreeItemLabelText = styled(Typography)({
 interface CustomLabelProps {
   children: React.ReactNode
   icon?: React.ElementType
+  iconClassnames: string
   expandable?: boolean
 }
 
 function CustomLabel({
   icon: Icon,
+  iconClassnames,
   expandable,
   children,
   ...other
@@ -64,7 +68,7 @@ function CustomLabel({
             mr: 0.5,
           }}
         >
-          <ItemPreviewIcon>{Icon}</ItemPreviewIcon>
+          <ItemPreviewIcon className={iconClassnames}>{Icon}</ItemPreviewIcon>
         </Box>
       )}
 
@@ -77,6 +81,9 @@ function CustomLabel({
 
 const ItemPreviewIcon = styled('div')(({ theme }) => {
   return {
+    '&.check-mark img': {
+      padding: 2,
+    },
     '& img': {
       width: 16,
       height: 16,
@@ -94,14 +101,34 @@ const CustomTreeItemContent = styled(TreeItem2Content)(({ theme, depth }) => {
     fontWeight: 400,
     backgroundColor: theme.palette.mode === 'dark' ? '#121212' : '#fff',
     '&.is-action': {
+      position: 'relative',
       paddingLeft: depth * 16 + 32,
       backgroundColor: 'transparent',
+    },
+    '&.is-action::before': {
+      content: '""',
+      position: 'absolute',
+      left: 8,
+      right: 8,
+      top: 4,
+      bottom: 4,
+      borderRadius: 8,
+      transitionProperty: 'top, bottom, left, right',
+      transitionDuration: '0.2s',
+      transitionTimingFunction: 'ease',
+    },
+    '&.is-action:not(.action-selected):hover::before': {
+      backgroundColor: theme.palette.mode === 'dark' ? '#3e639b' : '#d1def4',
     },
     '&:not(.is-action):hover': {
       backgroundColor: theme.palette.mode === 'dark' ? '#272727' : '#F2F4F7',
     },
-    '&.is-action:hover': {
-      textDecoration: 'underline',
+    '&.action-selected::before': {
+      left: 4,
+      right: 4,
+      top: 0,
+      bottom: 0,
+      backgroundColor: theme.palette.mode === 'dark' ? '#3488ff' : '#b1cff9',
     },
     [`&.is-actions-group.Mui-expanded`]: {
       backgroundColor: theme.palette.mode === 'dark' ? '#3488ff' : '#b1cff9',
@@ -116,6 +143,9 @@ const CustomTreeItem2Root = styled(TreeItem2Root)(({ theme }) => {
     '&.is-actions-group': {
       backgroundColor: theme.palette.mode === 'dark' ? '#2e4d7d' : '#e3edfe',
     },
+    '&.is-actions-group .MuiCollapse-wrapperInner': {
+      paddingBlock: 4,
+    },
   }
 })
 
@@ -126,7 +156,7 @@ const isExpandable = (reactChildren: React.ReactNode) => {
   return Boolean(reactChildren)
 }
 
-const getIconFromFileType = (fileType: FileType) => {
+const getIconFromFileType = (fileType: FileType | 'action-selected') => {
   let path
   switch (fileType) {
     case 'app': {
@@ -135,6 +165,10 @@ const getIconFromFileType = (fileType: FileType) => {
     }
     case 'action': {
       path = ActionIcon
+      break
+    }
+    case 'action-selected': {
+      path = CheckIcon
       break
     }
     default: {
@@ -168,6 +202,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   const item = publicAPI.getItem(itemId)
   const expandable = isExpandable(children)
   const icon = getIconFromFileType(item.fileType)
+  const [selectedAction, setSelectedAction] = useState(false)
   const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemStates()
 
   const wrappedHandleMouseLeave = () => {
@@ -186,9 +221,13 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
       !status.expanded &&
       item.fileType === 'action'
     ) {
-      dispatch({ type: 'set-action', id: itemId })
+      // dispatch({ type: 'set-action', id: itemId })
     }
   }, [status.expanded, status.selected])
+
+  useEffect(() => {
+    setSelectedAction(item.selected)
+  }, [item.selected])
 
   return (
     <TreeItem2Provider itemId={itemId}>
@@ -200,8 +239,8 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
         })}
       >
         <CustomTreeItemContent
-          onMouseEnter={wrappedHandleMouseEnter}
-          onMouseLeave={wrappedHandleMouseLeave}
+          // onMouseEnter={wrappedHandleMouseEnter}
+          // onMouseLeave={wrappedHandleMouseLeave}
           {...getContentProps({
             depth: item.depth,
             className: clsx('content', {
@@ -211,6 +250,7 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
               'Mui-disabled': status.disabled,
               'is-actions-group': item.isActionsGroup,
               'is-action': item.fileType === 'action',
+              'action-selected': selectedAction,
             }),
           })}
         >
@@ -224,10 +264,12 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
               />
             </TreeItem2IconContainer>
           )}
-
           <CustomLabel
             {...getLabelProps({
-              icon,
+              icon: selectedAction
+                ? getIconFromFileType('action-selected')
+                : icon,
+              iconClassnames: selectedAction ? 'check-mark' : '',
               expandable: expandable && status.expanded,
             })}
           />
@@ -250,10 +292,102 @@ function getItemLabel(item) {
 }
 
 export const SidebarTree: FC = ({ actions }) => {
+  const apiRef = useTreeViewApiRef()
+  const [items, setItems] = useState<string[]>([])
+  const [selectedAction, setSelectedAction] = useState('')
+  const [expandedItems, setExpandedItems] = React.useState<string[]>([])
+  const dispatch = useActionDispatch()
+  const { handleSelect, handleUnselect } = useSidebarTreeItemStates()
+
+  useEffect(() => {
+    if (actions?.data) {
+      setItems(treeBuilder(actions))
+    }
+  }, [actions])
+
+  const onSelectedItemsChange = (
+    event: React.SyntheticEvent,
+    itemIds: Array | string
+  ) => {
+    if (itemIds.includes(':')) {
+      if (selectedAction) {
+        const prevSelectedActionData = apiRef.current!.getItem(selectedAction)
+        prevSelectedActionData.selected = false
+        handleUnselect(selectedAction)
+      }
+      const item = apiRef.current!.getItem(itemIds)
+      item.selected = selectedAction !== itemIds
+      if (item.selected) {
+        handleSelect(itemIds)
+      } else {
+        handleUnselect(itemIds)
+      }
+      dispatch({
+        type: item.selected ? 'set-action' : 'default',
+        id: item.selected ? itemIds : '',
+      })
+      setSelectedAction(selectedAction === itemIds ? '' : itemIds)
+    }
+  }
+
+  const deselectAction = (id) => {
+    const selectedActionData = apiRef.current!.getItem(id)
+    selectedActionData.selected = false
+    setSelectedAction('')
+    dispatch({
+      type: 'default',
+      id: '',
+    })
+  }
+
+  const onExpandedItemsChange = (
+    event: React.SyntheticEvent,
+    itemIds: string[]
+  ) => {
+    let filteredItemIds = itemIds
+    const cur = itemIds[0]
+    if (cur) {
+      const parts = cur.split('.')
+      parts.pop()
+      if (parts.length) {
+        const siblingsExpanded = itemIds.find(
+          (a) => a.startsWith(`${parts.join('.')}.`) && a !== cur
+        )
+        if (siblingsExpanded) {
+          filteredItemIds = itemIds.filter((a) => {
+            if (
+              siblingsExpanded !== a &&
+              selectedAction &&
+              selectedAction.includes(`${siblingsExpanded}:`)
+            ) {
+              deselectAction(selectedAction)
+            }
+            return siblingsExpanded !== a
+          })
+        }
+      } else {
+        filteredItemIds = [cur]
+
+        if (selectedAction) {
+          deselectAction(selectedAction)
+        }
+      }
+    }
+
+    if (!itemIds.length && selectedAction) {
+      deselectAction(selectedAction)
+    }
+    setExpandedItems(filteredItemIds)
+  }
+
   return (
     <RichTreeView
+      apiRef={apiRef}
+      onSelectedItemsChange={onSelectedItemsChange}
+      expandedItems={expandedItems}
+      onExpandedItemsChange={onExpandedItemsChange}
       getItemLabel={getItemLabel}
-      items={treeBuilder(actions)}
+      items={items}
       slots={{ item: CustomTreeItem }}
     ></RichTreeView>
   )

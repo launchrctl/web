@@ -17,8 +17,11 @@ import ReactFlow, {
   Handle,
   MiniMap,
   Position,
+  ReactFlowInstance,
   useEdgesState,
   useNodesState,
+  useReactFlow,
+  useStoreApi,
 } from 'reactflow'
 import { useSidebarTreeItemStates } from '../context/SidebarTreeItemStatesContext'
 import {
@@ -243,6 +246,8 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   )
   const dispatch = useActionDispatch()
   const { state: nodeUIState } = useSidebarTreeItemStates()
+  const [flowInstance, setFlowInstance] = useState()
+  // const { setCenter } = useReactFlow()
 
   useEffect(() => {
     const [receivedNodes, receivedEdges] = getNodesAndEdges(
@@ -271,10 +276,23 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
               prevMatched.data.isHovered = false
             })
         }
+        if (nodeUIState.isActive === true) {
+          prev
+            .filter((a) => a.id !== nodeUIState.id && a.data.isActive === true)
+            .forEach((prevMatched) => {
+              prevMatched.data.isActive = false
+            })
+        }
         const matched = prev.find((a) => a.id === nodeUIState.id)
         matched.data.isHovered = nodeUIState.isHovered
+        matched.data.isActive = nodeUIState.isActive
         return [...prev]
       })
+      if (nodeUIState.isActive) {
+        flowInstance.fitView({
+          nodes: [{ id: nodeUIState.id }],
+        })
+      }
     }
   }, [nodeUIState])
 
@@ -306,6 +324,10 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
     }
   }
 
+  const onInit = (instance: ReactFlowInstance) => {
+    setFlowInstance(instance)
+  }
+
   return isLoading ? (
     <CircularProgress
       sx={{
@@ -325,6 +347,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       onNodeClick={nodeClickHandler}
       onConnect={onConnect}
       nodesConnectable={false}
+      onInit={onInit}
     >
       <Controls />
       <Background
