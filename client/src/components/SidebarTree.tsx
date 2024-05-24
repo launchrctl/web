@@ -329,7 +329,7 @@ export const SidebarTree: FC = ({ actions }) => {
           acc.push(newSubstring)
           return acc
         }, [])
-      setExpandedItems(expandItems)
+      setExpandedItems(expandItems.reverse())
       if (selectedAction) {
         const prevSelectedAction = apiRef.current!.getItem(selectedAction)
         prevSelectedAction.selected = false
