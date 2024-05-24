@@ -10,10 +10,13 @@ import { FC, useContext, useEffect, useState } from 'react'
 import { useCallback } from 'react'
 import ActionIcon from '/images/action.svg'
 import CheckIcon from '/images/check.svg'
+import { debounce } from 'lodash'
 import ReactFlow, {
   addEdge,
   Background,
   Controls,
+  Edge,
+  EdgeChange,
   Handle,
   MiniMap,
   Position,
@@ -23,7 +26,10 @@ import ReactFlow, {
   useReactFlow,
   useStoreApi,
 } from 'reactflow'
-import { useSidebarTreeItemStates } from '../context/SidebarTreeItemStatesContext'
+import {
+  useSidebarTreeItemClickStates,
+  useSidebarTreeItemMouseStates,
+} from '../context/SidebarTreeItemStatesContext'
 import {
   getNodesAndEdges,
   elementsScaleCoef,
@@ -40,6 +46,7 @@ import { treeBuilder } from '../utils/tree-builder'
 import { styled, useTheme } from '@mui/material/styles'
 import * as React from 'react'
 import { useActionDispatch } from '../context/ActionContext'
+import { useFlowClickedActionID } from '../context/ActionsFlowContext'
 
 const nodeTypes = {
   'node-start': NodeStart,
@@ -239,15 +246,12 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   const { palette } = useTheme()
   const [isLoading, setLoading] = useState(true)
   const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    []
-  )
+  const [edges, setEdges] = useEdgesState([])
   const dispatch = useActionDispatch()
-  const { state: nodeUIState } = useSidebarTreeItemStates()
+  const { state: nodeClickState } = useSidebarTreeItemClickStates()
+  const { state: nodeMouseState } = useSidebarTreeItemMouseStates()
   const [flowInstance, setFlowInstance] = useState()
-  // const { setCenter } = useReactFlow()
+  const { setFlowClickedActionId } = useFlowClickedActionID()
 
   useEffect(() => {
     const [receivedNodes, receivedEdges] = getNodesAndEdges(
@@ -263,38 +267,87 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
   useEffect(() => {
     if (
-      nodeUIState &&
-      nodeUIState.id &&
+      nodeClickState &&
+      nodeClickState.id &&
       nodes &&
-      nodes.some((a) => a.id === nodeUIState.id)
+      nodes.some((a) => a.id === nodeClickState.id)
     ) {
       setNodes((prev) => {
-        if (nodeUIState.isHovered === true) {
+        if (nodeClickState.isActive === true) {
           prev
-            .filter((a) => a.id !== nodeUIState.id && a.data.isHovered === true)
-            .forEach((prevMatched) => {
-              prevMatched.data.isHovered = false
-            })
-        }
-        if (nodeUIState.isActive === true) {
-          prev
-            .filter((a) => a.id !== nodeUIState.id && a.data.isActive === true)
+            .filter(
+              (a) => a.id !== nodeClickState.id && a.data.isActive === true
+            )
             .forEach((prevMatched) => {
               prevMatched.data.isActive = false
             })
         }
-        const matched = prev.find((a) => a.id === nodeUIState.id)
-        matched.data.isHovered = nodeUIState.isHovered
-        matched.data.isActive = nodeUIState.isActive
+        const matched = prev.find((a) => a.id === nodeClickState.id)
+        matched.data.isActive = nodeClickState.isActive
         return [...prev]
       })
-      if (nodeUIState.isActive) {
+      if (nodeClickState.isActive) {
+        let maxZoom = 0.6
+        if (nodeClickState.id.includes(':')) {
+          maxZoom = 0.8
+        }
+        if (nodeClickState.isActionsGroup) {
+          maxZoom = 0.7
+        }
         flowInstance.fitView({
-          nodes: [{ id: nodeUIState.id }],
+          duration: 400,
+          maxZoom,
+          nodes: [{ id: nodeClickState.id }],
         })
       }
     }
-  }, [nodeUIState])
+  }, [nodeClickState])
+
+  useEffect(() => {
+    const componentUpdate = (initial = false) => {
+      if (
+        nodeMouseState &&
+        nodeMouseState.id &&
+        nodes &&
+        nodes.some((a) => a.id === nodeMouseState.id)
+      ) {
+        setNodes((prev) => {
+          if (nodeMouseState.isHovered === true) {
+            prev
+              .filter(
+                (a) => a.id !== nodeMouseState.id && a.data.isHovered === true
+              )
+              .forEach((prevMatched) => {
+                prevMatched.data.isHovered = false
+              })
+          }
+          prev.map((a) => {
+            if (!initial && a.id === nodeMouseState.id) {
+              a.data.isHovered = nodeMouseState.isHovered
+            }
+            if (initial && a.data.isHovered) {
+              a.data.isHovered = false
+            }
+            return a
+          })
+          return [...prev]
+        })
+      }
+    }
+
+    const debouncedUpdate = debounce(() => {
+      componentUpdate()
+    }, 10)
+
+    if (nodeMouseState.useDebounce) {
+      debouncedUpdate()
+    } else {
+      componentUpdate(true)
+    }
+    return () => {
+      debouncedUpdate.cancel()
+    }
+  }, [nodeMouseState])
 
   useEffect(() => {
     const [, receivedEdges] = getNodesAndEdges(actions, palette?.mode)
@@ -304,22 +357,117 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   const [nodeData, setNodeData] = useState(undefined)
 
   const nodeClickHandler = (e, node) => {
-    if (!nodeData) {
-      node.data.isActive = true
-      setNodeData(node)
-      dispatch({ type: 'set-action', id: node.id })
-    } else {
-      setNodeData((prev) => {
-        prev.data.isActive = false
-        return prev
-      })
-      setNodeData(undefined)
-      dispatch({ type: 'default' })
+    if (nodeClickState?.isActive) {
+      if (nodeClickState.id === node.id) {
+        setNodes((prev) => {
+          const matched = prev.find((a) => a.id === nodeClickState.id)
+          matched.data.isActive = false
 
-      if (nodeData.id !== node.id) {
+          return [...prev]
+        })
+        setFlowClickedActionId({
+          id: node.id,
+          isActive: false,
+        })
+        setNodeData(undefined)
+        dispatch({
+          type: 'default',
+          id: '',
+        })
+        nodeClickState.isActive = false
+      } else {
+        setNodes((prev) => {
+          const oldMatched = prev.find((a) => a.id === nodeClickState.id)
+          oldMatched.data.isActive = false
+
+          const newMatched = prev.find((a) => a.id === node.id)
+          newMatched.data.isActive = true
+
+          return [...prev]
+        })
+        setFlowClickedActionId({
+          id: node.id,
+          isActive: true,
+        })
+        setNodeData(node)
+        dispatch({
+          type: 'set-action',
+          id: node.id,
+        })
+        nodeClickState.isActive = false
+      }
+    } else {
+      if (!nodeData) {
+        setNodes((prev) => {
+          const matched = prev.find((a) => a.id === node.id)
+          matched.data.isActive = true
+
+          return [...prev]
+        })
+        setFlowClickedActionId({
+          id: node.id,
+          isActive: true,
+        })
         node.data.isActive = true
         setNodeData(node)
-        dispatch({ type: 'set-action', id: node.id })
+        dispatch({
+          type: 'set-action',
+          id: node.id,
+        })
+      } else {
+        if (node.id === nodeData.id && !nodeData.data.isActive) {
+          setNodes((prev) => {
+            const matched = prev.find((a) => a.id === node.id)
+            matched.data.isActive = true
+
+            return [...prev]
+          })
+          setFlowClickedActionId({
+            id: node.id,
+            isActive: true,
+          })
+          node.data.isActive = true
+          setNodeData(node)
+          dispatch({
+            type: 'set-action',
+            id: node.id,
+          })
+        } else if (node.id === nodeData.id && nodeData.data.isActive) {
+          setNodes((prev) => {
+            const matched = prev.find((a) => a.id === node.id)
+            matched.data.isActive = false
+
+            return [...prev]
+          })
+          setFlowClickedActionId({
+            id: node.id,
+            isActive: false,
+          })
+          setNodeData(undefined)
+          dispatch({
+            type: 'default',
+            id: '',
+          })
+        } else if (node.id !== nodeData.id) {
+          setNodes((prev) => {
+            const oldMatched = prev.find((a) => a.id === nodeData.id)
+            oldMatched.data.isActive = false
+
+            const newMatched = prev.find((a) => a.id === node.id)
+            newMatched.data.isActive = true
+
+            return [...prev]
+          })
+          setFlowClickedActionId({
+            id: node.id,
+            isActive: true,
+          })
+          setNodeData(node)
+          dispatch({
+            type: 'set-action',
+            id: node.id,
+          })
+        }
       }
     }
   }
@@ -345,7 +493,6 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       nodeTypes={nodeTypes}
       edges={edges}
       onNodeClick={nodeClickHandler}
-      onConnect={onConnect}
       nodesConnectable={false}
       onInit={onInit}
     >

@@ -7,15 +7,21 @@ import { FormFlow } from './FormFlow'
 const Form = withTheme(Theme)
 
 export const SecondSIdebarFlow: FC = () => {
-  const [actionsGroup, setActionsGroup] = useState(false)
+  const [actionsGroup, setActionsGroup] = useState([])
   const [actionId, setActionId] = useState('')
   const action = useAction()
 
   const isAction = () => actionId.split(':')[1]?.length
 
   useEffect(() => {
-    if (action?.id?.length > 0) {
+    if (action?.type === 'action' && action?.id?.length > 0) {
       setActionId(action.id)
+    } else if (
+      action?.type === 'actions-list' &&
+      action?.id?.length > 0 &&
+      action?.actionsListIds?.length
+    ) {
+      setActionsGroup(action.actionsListIds)
     }
   }, [action])
 
@@ -23,6 +29,8 @@ export const SecondSIdebarFlow: FC = () => {
 
   if (action?.type === 'action' && actionId.length && isAction()) {
     content = <FormFlow actionId={actionId} />
+  } else if (action?.type === 'actions-list' && actionsGroup.length) {
+    content = actionsGroup.map((a, index) => <div key={index}>{a}</div>)
   } else {
     content = <h1>Default</h1>
   }

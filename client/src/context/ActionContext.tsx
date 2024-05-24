@@ -20,12 +20,14 @@ interface State {
   id: string
   type: 'action' | 'actions-list' | 'default'
   runningActions: ActionDetails[]
+  actionsListIds: string[]
 }
 
 interface Action {
   type: string
   id: string
   output?: string
+  actionsListIds: string[]
 }
 
 interface Props {
@@ -53,6 +55,7 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         id: action.id,
+        actionsListIds: action.actionsListIds,
         type: 'actions-list',
       }
     case 'start-action':

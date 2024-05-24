@@ -8,16 +8,26 @@ import {
 
 type ItemId = string
 
-interface ItemProps {
-  isHovered: boolean
-  isActive: boolean
+interface MouseItemProps {
   id: ItemId
+  isHovered: boolean
+  useDebounce: true
 }
 
-interface ISidebarTreeItemStatesContext {
-  state: ItemProps
+interface ClickItemProps {
+  id: ItemId
+  isActive: boolean
+  isActionsGroup: boolean
+}
+
+interface ISidebarTreeItemClickStatesContext {
+  state: ClickItemProps
   handleSelect: (id: ItemId) => void
   handleUnselect: (id: ItemId) => void
+}
+
+interface ISidebarTreeItemMouseStatesContext {
+  state: MouseItemProps
   handleMouseEnter: (id: ItemId) => void
   handleMouseLeave: (id: ItemId) => void
 }
@@ -26,32 +36,58 @@ interface Props {
   children: ReactNode
 }
 
-const StatesContext = createContext<ISidebarTreeItemStatesContext>(null)
+const ClickStatesContext =
+  createContext<ISidebarTreeItemClickStatesContext>(null)
 
-export const SidebarTreeItemStatesProvider: FC<Props> = ({ children }) => {
-  const [state, setState] = useState<ItemProps>({
-    isHovered: false,
+const MouseStatesContext =
+  createContext<ISidebarTreeItemMouseStatesContext>(null)
+
+export const SidebarTreeItemClickStatesProvider: FC<Props> = ({ children }) => {
+  const [state, setState] = useState<ClickItemProps>({
     isActive: false,
     id: '',
+    isActionsGroup: false,
   })
 
-  const handleSelect = (id: string) => {
+  const handleSelect = (id: string, isActionsGroup = false) => {
     setState((prev) => {
       return {
         ...prev,
         id,
         isActive: true,
+        isActionsGroup,
       }
     })
   }
 
-  const handleUnselect = (id: string) => {
+  const handleUnselect = (id: string, isActionsGroup = false) => {
     setState((prev) => ({
       ...prev,
       id,
       isActive: false,
+      isActionsGroup,
     }))
   }
+
+  return (
+    <ClickStatesContext.Provider
+      value={{
+        state,
+        handleSelect,
+        handleUnselect,
+      }}
+    >
+      {children}
+    </ClickStatesContext.Provider>
+  )
+}
+
+export const SidebarTreeItemMouseStatesProvider: FC<Props> = ({ children }) => {
+  const [state, setState] = useState<MouseItemProps>({
+    isHovered: false,
+    id: '',
+    useDebounce: true,
+  })
 
   const handleMouseEnter = (id: string) => {
     setState((prev) => {
@@ -59,34 +95,41 @@ export const SidebarTreeItemStatesProvider: FC<Props> = ({ children }) => {
         ...prev,
         id,
         isHovered: true,
+        useDebounce: true,
       }
     })
   }
 
-  const handleMouseLeave = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      id,
-      isHovered: false,
-    }))
+  const handleMouseLeave = (id: string, useDebounce = true) => {
+    setState((prev) => {
+      return {
+        ...prev,
+        id,
+        isHovered: false,
+        useDebounce,
+      }
+    })
   }
 
   return (
-    <StatesContext.Provider
+    <MouseStatesContext.Provider
       value={{
         state,
-        handleSelect,
-        handleUnselect,
         handleMouseEnter,
         handleMouseLeave,
       }}
     >
       {children}
-    </StatesContext.Provider>
+    </MouseStatesContext.Provider>
   )
 }
 
-export const useSidebarTreeItemStates = () => {
-  const context = useContext(StatesContext)
+export const useSidebarTreeItemClickStates = () => {
+  const context = useContext(ClickStatesContext)
+  return context || undefined
+}
+
+export const useSidebarTreeItemMouseStates = () => {
+  const context = useContext(MouseStatesContext)
   return context || undefined
 }

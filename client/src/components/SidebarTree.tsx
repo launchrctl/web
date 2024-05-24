@@ -25,10 +25,14 @@ import Collapse from '@mui/material/Collapse'
 import Typography from '@mui/material/Typography'
 import Box from '@mui/material/Box'
 import { useState, createContext } from 'react'
-import { useSidebarTreeItemStates } from '../context/SidebarTreeItemStatesContext'
+import {
+  useSidebarTreeItemClickStates,
+  useSidebarTreeItemMouseStates,
+} from '../context/SidebarTreeItemStatesContext'
 import { sanitizeDataForNewSchema } from '@rjsf/utils'
 import { useTreeViewApiRef } from '@mui/x-tree-view'
 import CheckIcon from '/images/check.svg'
+import { useFlowClickedActionID } from '../context/ActionsFlowContext'
 
 const StyledTreeItemLabelText = styled(Typography)({
   fontSize: '11px',
@@ -203,44 +207,24 @@ const CustomTreeItem = React.forwardRef(function CustomTreeItem(
   const expandable = isExpandable(children)
   const icon = getIconFromFileType(item.fileType)
   const [selectedAction, setSelectedAction] = useState(false)
-  const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemStates()
-
-  const wrappedHandleMouseLeave = () => {
-    handleMouseLeave(itemId)
-  }
-
-  const wrappedHandleMouseEnter = () => {
-    handleMouseEnter(itemId)
-  }
 
   useEffect(() => {
-    if (status.expanded && status.selected && item.isActionsGroup) {
-      dispatch({ type: 'set-actions-list', id: itemId })
-    } else if (
-      status.selected &&
-      !status.expanded &&
-      item.fileType === 'action'
-    ) {
-      // dispatch({ type: 'set-action', id: itemId })
+    if (!['app', 'folder'].includes(item.fileType)) {
+      setSelectedAction(item.selected)
     }
-  }, [status.expanded, status.selected])
-
-  useEffect(() => {
-    setSelectedAction(item.selected)
   }, [item.selected])
 
   return (
     <TreeItem2Provider itemId={itemId}>
       <CustomTreeItem2Root
         {...getRootProps({
+          'data-element-id': itemId,
           className: clsx('content', {
             'is-actions-group': item.isActionsGroup,
           }),
         })}
       >
         <CustomTreeItemContent
-          // onMouseEnter={wrappedHandleMouseEnter}
-          // onMouseLeave={wrappedHandleMouseLeave}
           {...getContentProps({
             depth: item.depth,
             className: clsx('content', {
@@ -295,15 +279,69 @@ export const SidebarTree: FC = ({ actions }) => {
   const apiRef = useTreeViewApiRef()
   const [items, setItems] = useState<string[]>([])
   const [selectedAction, setSelectedAction] = useState('')
+  const [selectedActionsGroup, setSelectedActionsGroup] = useState({})
   const [expandedItems, setExpandedItems] = React.useState<string[]>([])
   const dispatch = useActionDispatch()
-  const { handleSelect, handleUnselect } = useSidebarTreeItemStates()
+  const { handleSelect, handleUnselect } = useSidebarTreeItemClickStates()
+  const { flowClickedActionId } = useFlowClickedActionID()
+  const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemMouseStates()
+  const [hoveredId, setHoveredId] = useState('')
+
+  const wrappedHandleMouseMove = (e) => {
+    const targetEl = e.target.closest('[data-element-id]')
+
+    if (targetEl && targetEl.getAttribute('data-element-id') !== hoveredId) {
+      const id = targetEl.getAttribute('data-element-id')
+
+      if (!hoveredId) {
+        setHoveredId(id)
+        handleMouseEnter(id)
+      } else if (id !== hoveredId) {
+        handleMouseLeave(hoveredId)
+        setHoveredId(id)
+        handleMouseEnter(id)
+      }
+    }
+  }
+
+  const wrappedHandleMouseLeave = () => {
+    if (hoveredId) {
+      handleMouseLeave(hoveredId, false)
+      setHoveredId('')
+    }
+  }
 
   useEffect(() => {
     if (actions?.data) {
       setItems(treeBuilder(actions))
     }
   }, [actions])
+
+  useEffect(() => {
+    if (flowClickedActionId?.id) {
+      const expandItems = flowClickedActionId.id
+        .split(':')[0]
+        .split('.')
+        .reduce((acc, part) => {
+          const lastSubstring = acc.length > 0 ? acc[acc.length - 1] : ''
+          const newSubstring =
+            lastSubstring.length > 0 ? `${lastSubstring}.${part}` : part
+          acc.push(newSubstring)
+          return acc
+        }, [])
+      setExpandedItems(expandItems)
+      if (selectedAction) {
+        const prevSelectedAction = apiRef.current!.getItem(selectedAction)
+        prevSelectedAction.selected = false
+        setSelectedAction(undefined)
+      }
+      const curSelectedAction = apiRef.current!.getItem(flowClickedActionId.id)
+      curSelectedAction.selected = flowClickedActionId.isActive
+      setSelectedAction(
+        flowClickedActionId.isActive ? flowClickedActionId.id : ''
+      )
+    }
+  }, [flowClickedActionId])
 
   const onSelectedItemsChange = (
     event: React.SyntheticEvent,
@@ -327,10 +365,51 @@ export const SidebarTree: FC = ({ actions }) => {
         id: item.selected ? itemIds : '',
       })
       setSelectedAction(selectedAction === itemIds ? '' : itemIds)
+    } else {
+      if (Object.keys(selectedActionsGroup).length) {
+        const prevSelectedActionData = apiRef.current!.getItem(
+          selectedActionsGroup.id
+        )
+        prevSelectedActionData.selected = false
+        handleUnselect(
+          selectedActionsGroup,
+          selectedActionsGroup.isActionsGroup
+        )
+      }
+      const item = apiRef.current!.getItem(itemIds)
+      item.selected = selectedActionsGroup.id !== itemIds
+      if (item.selected) {
+        handleSelect(itemIds, item.isActionsGroup)
+      } else {
+        handleUnselect(itemIds, item.isActionsGroup)
+        if (selectedAction) {
+          const prevSelectedActionData = apiRef.current!.getItem(selectedAction)
+          prevSelectedActionData.selected = false
+          handleUnselect(selectedAction)
+          setSelectedAction('')
+        }
+      }
+      dispatch({
+        type:
+          item.selected && item.isActionsGroup ? 'set-actions-list' : 'default',
+        id: item.selected && item.isActionsGroup ? itemIds : '',
+        actionsListIds:
+          item.selected && item.isActionsGroup
+            ? Object.values(actions.data)
+                .filter(
+                  (a) => a.id.includes(':') && a.id.startsWith(`${itemIds}`)
+                )
+                .map((a) => a.id)
+            : [],
+      })
+      setSelectedActionsGroup({
+        id: selectedActionsGroup === itemIds ? '' : itemIds,
+        isActionsGroup: item.isActionsGroup,
+      })
     }
   }
 
-  const deselectAction = (id) => {
+  const deselectAction = (id: string) => {
     const selectedActionData = apiRef.current!.getItem(id)
     selectedActionData.selected = false
     setSelectedAction('')
@@ -382,6 +461,8 @@ export const SidebarTree: FC = ({ actions }) => {
 
   return (
     <RichTreeView
+      onMouseMove={wrappedHandleMouseMove}
+      onMouseLeave={wrappedHandleMouseLeave}
       apiRef={apiRef}
       onSelectedItemsChange={onSelectedItemsChange}
       expandedItems={expandedItems}
