@@ -7,3 +7,4 @@
 dist/
 /swagger-ui
 /.husky/_
+.idea

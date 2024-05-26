@@ -74,27 +74,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	}
 
 	// Serve frontend files.
-	if opts.ProxyClient != "" {
-		target, _ := url.Parse(opts.ProxyClient)
-		proxy := httputil.NewSingleHostReverseProxy(target)
-
-		// @todo: Add same SPA serving for proxy aswell.
-		r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
-			proxy.ServeHTTP(w, r)
-		})
-	} else {
-		r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
-			f, err := opts.ClientFS.Open(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
-			if err == nil {
-				defer f.Close()
-			}
-			if os.IsNotExist(err) {
-				r.URL.Path = "/"
-			}
-			http.FileServer(http.FS(opts.ClientFS)).ServeHTTP(w, r)
-		})
-
-	}
+	r.HandleFunc("/*", spaHandler(opts))
 
 	// Use the validation middleware to check all requests against the OpenAPI schema on Api subroutes.
 	r.Route(opts.APIPrefix, func(r chi.Router) {
@@ -121,6 +101,28 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		fmt.Println("swagger.json: " + baseURL + opts.APIPrefix + swaggerJSONPath)
 	}
 	return s.ListenAndServe()
+}
+
+func spaHandler(opts *RunOptions) http.HandlerFunc {
+	if opts.ProxyClient != "" {
+		target, _ := url.Parse(opts.ProxyClient)
+		proxy := httputil.NewSingleHostReverseProxy(target)
+
+		return func(w http.ResponseWriter, r *http.Request) {
+			proxy.ServeHTTP(w, r)
+		}
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		f, err := opts.ClientFS.Open(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
+		if err == nil {
+			defer f.Close()
+		}
+		if os.IsNotExist(err) {
+			r.URL.Path = "/"
+		}
+		http.FileServer(http.FS(opts.ClientFS)).ServeHTTP(w, r)
+	}
 }
 
 func serveSwaggerUI(swagger *openapi3.T, r chi.Router, opts *RunOptions) {

@@ -9,6 +9,8 @@ import (
 	"os"
 	"sort"
 
+	"github.com/launchrctl/launchr/pkg/log"
+
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
 	"gopkg.in/yaml.v3"
@@ -35,27 +37,27 @@ func (l *launchrServer) GetOneRunningActionByID(w http.ResponseWriter, _ *http.R
 	})
 }
 
-func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.Request, id ActionId, runID ActionRunInfoId, _ GetRunningActionStreamsParams) {
-	_, ok := l.actionMngr.RunInfoByID(runID)
+func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.Request, id ActionId, runID ActionRunInfoId, params GetRunningActionStreamsParams) {
+	ri, ok := l.actionMngr.RunInfoByID(runID)
 	if !ok {
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action run info with id %q is not found", id))
 		return
 	}
-	outputFile, err := os.ReadFile(fmt.Sprintf("%s-out.txt", id))
+	streams := ri.Action.GetInput().IO
+	fStreams, ok := streams.(fileStreams)
+	if !ok {
+		panic("not supported")
+	}
+	sd, err := fStreams.GetStreamData(params)
 	if err != nil {
-		if os.IsNotExist(err) {
-			sendError(w, http.StatusNotFound, fmt.Sprintf("Output file associated with actionId %q not found", id))
-		}
-		sendError(w, http.StatusInternalServerError, "Error accessing file")
+		log.Debug(err.Error())
+		sendError(w, http.StatusInternalServerError, "Error reading streams")
 	}
 
-	// @todo: care about error file aswell.
+	// @todo: care about error file as well
 
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(ActionRunStreamData{
-		Type:    "stdOut",
-		Content: string(outputFile),
-	})
+	_ = json.NewEncoder(w).Encode(sd[0])
 }
 
 func (l *launchrServer) basePath() string {
@@ -88,8 +90,14 @@ func (l *launchrServer) GetActionByID(w http.ResponseWriter, _ *http.Request, id
 		return
 	}
 
+	afull, err := apiActionFull(l.basePath(), a)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on building actionFull %q", id))
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(apiActionFull(l.basePath(), a))
+	_ = json.NewEncoder(w).Encode(afull)
 }
 
 func (l *launchrServer) GetActionJSONSchema(w http.ResponseWriter, _ *http.Request, id string) {
@@ -102,7 +110,13 @@ func (l *launchrServer) GetActionJSONSchema(w http.ResponseWriter, _ *http.Reque
 		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on loading action %q", id))
 		return
 	}
-	afull := apiActionFull(l.basePath(), a)
+
+	afull, err := apiActionFull(l.basePath(), a)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on building actionFull %q", id))
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(afull.JSONSchema)
 }
@@ -110,14 +124,13 @@ func (l *launchrServer) GetActionJSONSchema(w http.ResponseWriter, _ *http.Reque
 func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Request, id string) {
 	runningActions := l.actionMngr.RunInfoByAction(id)
 
-	sortFunc := func(i, j int) bool {
-		if runningActions[i].Status != runningActions[j].Status {
-			return runningActions[i].Status < runningActions[j].Status
+	sort.Slice(runningActions, func(i, j int) bool {
+		if runningActions[i].Status == runningActions[j].Status {
+			return runningActions[i].ID < runningActions[j].ID
 		}
-		return runningActions[i].ID < runningActions[j].ID
-	}
 
-	sort.Slice(runningActions, sortFunc)
+		return runningActions[i].Status < runningActions[j].Status
+	})
 
 	var result = make([]ActionRunInfo, 0, len(runningActions))
 	for _, ri := range runningActions {
@@ -147,9 +160,10 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams, err := fileStreams(id)
+	streams, err := createFileStreams(id)
 	if err != nil {
-		sendError(w, http.StatusBadRequest, "Error creation files")
+		log.Debug(err.Error())
+		sendError(w, http.StatusInternalServerError, "Error preparing streams")
 	}
 
 	defer func() {
@@ -182,28 +196,26 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	})
 }
 
-func apiActionFull(baseURL string, a *action.Action) ActionFull {
+func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
 	jsonschema := a.JSONSchema()
 	jsonschema.ID = fmt.Sprintf("%s/actions/%s/schema.json", baseURL, url.QueryEscape(a.ID))
 	def := a.ActionDef()
 
-	var resultMap map[string]interface{}
+	var uiSchema map[string]interface{}
 
 	yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", a.Dir()))
 	if err != nil {
-		if os.IsNotExist(err) {
-			fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
-			resultMap = map[string]interface{}{}
-		} else {
-			panic(err)
+		if !os.IsNotExist(err) {
+			return ActionFull{}, err
 		}
+
+		fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
+		uiSchema = map[string]interface{}{}
 	} else {
-		var data interface{}
-		err = yaml.Unmarshal(yamlData, &data)
+		err = yaml.Unmarshal(yamlData, &uiSchema)
 		if err != nil {
-			panic(err)
+			return ActionFull{}, err
 		}
-		resultMap, _ = data.(map[string]interface{})
 	}
 
 	return ActionFull{
@@ -211,8 +223,8 @@ func apiActionFull(baseURL string, a *action.Action) ActionFull {
 		Title:       def.Title,
 		Description: def.Description,
 		JSONSchema:  jsonschema,
-		UISchema:    resultMap,
-	}
+		UISchema:    uiSchema,
+	}, nil
 }
 
 func apiActionShort(a *action.Action) (ActionShort, error) {

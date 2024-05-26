@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +9,10 @@ import (
 
 	"github.com/launchrctl/launchr/pkg/cli"
 )
+
+type fileStreams interface {
+	GetStreamData(GetRunningActionStreamsParams) ([]*ActionRunStreamData, error)
+}
 
 // webCli implements Streams interface.
 // @todo Maybe refactor original streams.
@@ -41,6 +46,43 @@ func (cli *webCli) Close() (err error) {
 	return nil
 }
 
+// GetStreamData implements fileStreams.
+func (cli *webCli) GetStreamData(_ GetRunningActionStreamsParams) ([]*ActionRunStreamData, error) {
+	// @todo include GetRunningActionStreamsParams
+	_, err := cli.files[0].Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(cli.files[0])
+	outData, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	outSd := &ActionRunStreamData{
+		Type:    StdOut,
+		Content: string(outData),
+	}
+
+	_, err = cli.files[1].Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, err
+	}
+	reader = bufio.NewReader(cli.files[1])
+	errData, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	errSd := &ActionRunStreamData{
+		Type:    StdErr,
+		Content: string(errData),
+	}
+
+	result := []*ActionRunStreamData{outSd, errSd}
+	return result, nil
+}
+
 type wrappedWriter struct {
 	p ActionRunStreamDataType
 	w io.Writer
@@ -50,7 +92,7 @@ func (w *wrappedWriter) Write(p []byte) (int, error) {
 	return w.w.Write(p)
 }
 
-func fileStreams(actionId ActionId) (*webCli, error) {
+func createFileStreams(actionId ActionId) (*webCli, error) {
 	outfile, err := os.Create(fmt.Sprintf("%s-out.txt", actionId))
 	if err != nil {
 		return nil, fmt.Errorf("error creating output file: %w", err)
