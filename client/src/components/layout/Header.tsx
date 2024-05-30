@@ -16,7 +16,14 @@ import { DarkModeSwitcher } from './DarkModeSwitcher'
 import { ThemedTitleV2 as Title } from './Title'
 
 export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
-  <AppBar position="sticky" color="secondary">
+  <AppBar
+    position="sticky"
+    color="secondary"
+    sx={{
+      boxShadow: 'none',
+      borderBottom: (theme) => `1px solid ${theme.palette.action.focus}`,
+    }}
+  >
     <Toolbar>
       <Title collapsed={false} />
       <Box

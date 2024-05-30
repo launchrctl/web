@@ -75,17 +75,30 @@ const WhiteBand = ({ data, type }) => {
         textAlign: 'start',
         gap: `${12 * elementsScaleCoef}px`,
         justifyContent: 'space-between',
-        backgroundColor: active
-          ? 'rgba(255, 255, 255, 0.65)'
-          : data.isHovered
-            ? 'rgba(255, 255, 255, 0.8)'
+        backgroundColor:
+          data.layerIndex !== undefined
+            ? buildNodeColor({
+                index: data.layerIndex,
+                isFilled: true,
+              })
             : '',
+        backgroundImage:
+          data.layerIndex !== undefined
+            ? active
+              ? 'linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65))'
+              : data.isHovered
+                ? 'linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8))'
+                : 'linear-gradient(#fff, #fff)'
+            : 'linear-gradient(#fff, #fff)',
         display: 'flex',
         alignItems: 'center',
         fontSize: `${16 * elementsScaleCoef}px`,
         cursor: type === 'node-action' ? 'pointer' : 'auto',
         '&:hover': {
-          backgroundColor: `rgba(255, 255, 255, ${active ? '0.65' : '0.8'})`,
+          backgroundImage:
+            data.layerIndex !== undefined
+              ? `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`
+              : 'linear-gradient(#fff, #fff)',
         },
       }}
     >
@@ -177,6 +190,7 @@ function NodeWrapper({ data }) {
         {data?.label}
         {data.actionsAmount && (
           <Box
+            className={'actions-pill'}
             sx={{
               backgroundColor: '#fff',
               borderRadius: `${5 * elementsScaleCoef}px`,
@@ -187,6 +201,10 @@ function NodeWrapper({ data }) {
               padding: `${2 * elementsScaleCoef}px ${11 * elementsScaleCoef}px ${2 * elementsScaleCoef}px ${7 * elementsScaleCoef}px`,
               color: '#000',
               marginInlineStart: data.filled && 'auto',
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: `rgba(255, 255, 255, 0.8)`,
+              },
               '& img': {
                 display: 'block',
                 width: `${16 * elementsScaleCoef}px`,
@@ -337,7 +355,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
     const debouncedUpdate = debounce(() => {
       componentUpdate()
-    }, 10)
+    }, 15)
 
     if (nodeMouseState.useDebounce) {
       debouncedUpdate()
@@ -357,6 +375,34 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   const [nodeData, setNodeData] = useState(undefined)
 
   const nodeClickHandler = (e, node) => {
+    if (
+      e.target.classList.contains('actions-pill') ||
+      e.target.closest('.actions-pill')
+    ) {
+      setNodes((prev) => {
+        const oldMatched = prev.find((a) => a.data.isActive === true)
+        if (oldMatched) {
+          oldMatched.data.isActive = false
+        }
+
+        return [...prev]
+      })
+      setFlowClickedActionId({
+        id: node.id,
+        isActive: false,
+      })
+      setNodeData(undefined)
+      dispatch({
+        type: 'set-actions-list',
+        id: node.id,
+        actionsListIds: Object.values(actions.data)
+          .filter((a) => a.id.includes(':') && a.id.startsWith(`${node.id}`))
+          .map((a) => a.id),
+      })
+
+      return
+    }
+    if (node.type !== 'node-action') return
     if (nodeClickState?.isActive) {
       if (nodeClickState.id === node.id) {
         setNodes((prev) => {

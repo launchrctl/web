@@ -22,8 +22,22 @@ const addAction = (
   })
 }
 
+const sortMoveActionsAboveFolders = (tree) => {
+  if (tree.children) {
+    const actionChildren = tree.children.filter(
+      (child) => child.fileType === 'action'
+    )
+    const otherChildren = tree.children.filter(
+      (child) => child.fileType !== 'action'
+    )
+    tree.children = actionChildren.concat(otherChildren)
+    tree.children.forEach((child) => sortMoveActionsAboveFolders(child))
+  }
+}
+
 export const treeBuilder = (actions: any = []) => {
   const tree = []
+  console.log(actions.data)
   if (actions.data)
     for (const action of actions.data) {
       const [path] = action.id.split(':')
@@ -49,7 +63,9 @@ export const treeBuilder = (actions: any = []) => {
         obj.isActionsGroup = false
 
         if (index === levels.length - 1) {
-          obj.isActionsGroup = true
+          obj.isActionsGroup = !actions.data.some((a) =>
+            a.id.includes(`${idPath}.`)
+          )
           addAction(obj, action, index + 1)
         }
 
@@ -58,6 +74,10 @@ export const treeBuilder = (actions: any = []) => {
         return acc.find((a) => a.id === idPath).children
       }, tree)
     }
+
+  Object.values(tree).forEach((child) => {
+    sortMoveActionsAboveFolders(child)
+  })
 
   return tree
 }

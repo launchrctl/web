@@ -443,6 +443,10 @@ export const SidebarTree: FC = ({ actions }) => {
             }
             return siblingsExpanded !== a
           })
+        } else {
+          if (selectedAction) {
+            deselectAction(selectedAction)
+          }
         }
       } else {
         filteredItemIds = [cur]

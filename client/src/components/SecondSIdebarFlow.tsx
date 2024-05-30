@@ -4,10 +4,19 @@ import { useAction } from '../context/ActionContext'
 import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
 import { FormFlow } from './FormFlow'
+import { ActionsListFlow } from './ActionsListFlow'
 const Form = withTheme(Theme)
 
+export type IActionsGroup = {
+  id: string
+  list: string[]
+}
+
 export const SecondSIdebarFlow: FC = () => {
-  const [actionsGroup, setActionsGroup] = useState([])
+  const [actionsGroup, setActionsGroup] = useState<IActionsGroup>({
+    id: '',
+    list: [],
+  })
   const [actionId, setActionId] = useState('')
   const action = useAction()
 
@@ -21,7 +30,10 @@ export const SecondSIdebarFlow: FC = () => {
       action?.id?.length > 0 &&
       action?.actionsListIds?.length
     ) {
-      setActionsGroup(action.actionsListIds)
+      setActionsGroup({
+        id: action.id,
+        list: action.actionsListIds,
+      })
     }
   }, [action])
 
@@ -29,8 +41,8 @@ export const SecondSIdebarFlow: FC = () => {
 
   if (action?.type === 'action' && actionId.length && isAction()) {
     content = <FormFlow actionId={actionId} />
-  } else if (action?.type === 'actions-list' && actionsGroup.length) {
-    content = actionsGroup.map((a, index) => <div key={index}>{a}</div>)
+  } else if (action?.type === 'actions-list' && actionsGroup.list.length > 0) {
+    content = <ActionsListFlow actionsGroup={actionsGroup} />
   } else {
     content = <h1>Default</h1>
   }

@@ -152,7 +152,6 @@ const setInnerBlocksCoordinates = (
   parentFolder = false
 ) => {
   const { containerWidth, containerHeight } = containerSize
-
   if (folder._params) {
     let verticalMode = false
     folder._params.x = 0
@@ -320,7 +319,8 @@ const setFolderCoordinates = (data) => {
           containerWidth: folder._params.width,
           containerHeight: folder._params.height,
         },
-        i
+        i,
+        folder
       )
     })
   })
@@ -391,6 +391,12 @@ const setLayerIndexes = (folders, index) => {
   Object.values(folders).forEach((folder) => {
     if (folder.data) {
       folder.data.layerIndex = index
+    }
+
+    if (folder.actions && Object.keys(folder.actions)) {
+      Object.values(folder.actions).forEach((action) => {
+        action.data.layerIndex = index
+      })
     }
 
     if (folder.folders && Object.keys(folder.folders)) {
@@ -520,6 +526,12 @@ export const getNodesAndEdges = (actions, colorMode) => {
       if (folder.data) {
         folder.data.layerIndex = layerIndex
         folder.data.topLayer = true
+      }
+
+      if (folder.actions && Object.keys(folder.actions)) {
+        Object.values(folder.actions).forEach((action) => {
+          action.data.layerIndex = layerIndex
+        })
       }
 
       if (folder.folders && Object.keys(folder.folders)) {
