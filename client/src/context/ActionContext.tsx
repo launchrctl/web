@@ -10,8 +10,9 @@ import React, {
 type ActionState = 'running' | 'finished' | 'error'
 type TerminalOutput = string[]
 
-interface ActionDetails {
+interface RunningActionDetails {
   id: string
+  runId: string
   state: ActionState
   output: TerminalOutput
 }
@@ -19,7 +20,7 @@ interface ActionDetails {
 interface State {
   id: string
   type: 'action' | 'actions-list' | 'default'
-  runningActions: ActionDetails[]
+  runningActions: RunningActionDetails[]
   actionsListIds: string[]
 }
 

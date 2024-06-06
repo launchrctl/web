@@ -35,13 +35,17 @@ const sortMoveActionsAboveFolders = (tree) => {
   }
 }
 
+export const splitActionId = (actionId:string) => {
+  const [path, id] = actionId.split(':')
+  const levels = path.split('.')
+  return { levels, id }
+}
+
 export const treeBuilder = (actions: any = []) => {
   const tree = []
-  console.log(actions.data)
   if (actions.data)
     for (const action of actions.data) {
-      const [path] = action.id.split(':')
-      const levels = path.split('.')
+      const { levels } = splitActionId(action.id)
       let idPath: string
       levels.reduce((acc, level, index) => {
         let obj: ExtendedTreeItemProps = {}

@@ -5,7 +5,6 @@ import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
 import { FormFlow } from './FormFlow'
 import { ActionsListFlow } from './ActionsListFlow'
-const Form = withTheme(Theme)
 
 export type IActionsGroup = {
   id: string
