@@ -4,9 +4,9 @@ package web
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/launchrctl/launchr"
+	"github.com/launchrctl/launchr/pkg/action"
+	"github.com/spf13/cobra"
 
 	"github.com/launchrctl/web/server"
 )
@@ -31,6 +31,11 @@ func (p *Plugin) PluginInfo() launchr.PluginInfo {
 // OnAppInit implements launchr.Plugin interface.
 func (p *Plugin) OnAppInit(app launchr.App) error {
 	p.app = app
+
+	var m action.Manager
+	app.GetService(&m)
+	p.addActions(m)
+
 	return nil
 }
 

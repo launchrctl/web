@@ -1,0 +1,13 @@
+definitions:
+- id: web.test
+  definition:
+    action:
+      target: callback
+      title: test1
+      description: desc1
+      arguments:
+        - name: arg1
+          title: arg1
+      options:
+        - name: opt1
+          title: opt1
