@@ -85,3 +85,11 @@ Useful make commands:
 make front-install front-build
 make EMBED=1
 ```
+
+## To push new client release.
+
+```shell
+git tag v0.0.X
+git push --tags
+```
+and wait for github action will finished.
