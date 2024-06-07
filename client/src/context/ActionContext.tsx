@@ -1,10 +1,10 @@
 import React, {
   createContext,
+  FC,
+  ReactNode,
+  useCallback,
   useContext,
   useReducer,
-  ReactNode,
-  FC,
-  useCallback,
 } from 'react'
 
 type ActionState = 'running' | 'finished' | 'error'
@@ -21,14 +21,22 @@ interface State {
   id: string
   type: 'action' | 'actions-list' | 'default'
   runningActions: RunningActionDetails[]
-  actionsListIds: string[]
+  actionsList: {
+    id: string
+    title: string
+    description: string
+  }[]
 }
 
 interface Action {
   type: string
   id: string
   output?: string
-  actionsListIds: string[]
+  actionsList: {
+    id: string
+    title: string
+    description: string
+  }[]
 }
 
 interface Props {
@@ -46,20 +54,22 @@ const ActionDispatchContext = createContext<React.Dispatch<Action> | null>(null)
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case 'set-action':
+    case 'set-action': {
       return {
         ...state,
         id: action.id,
         type: 'action',
       }
-    case 'set-actions-list':
+    }
+    case 'set-actions-list': {
       return {
         ...state,
         id: action.id,
-        actionsListIds: action.actionsListIds,
+        actionsList: action.actionsList,
         type: 'actions-list',
       }
-    case 'start-action':
+    }
+    case 'start-action': {
       return {
         ...state,
         runningActions: [
@@ -67,21 +77,24 @@ const reducer = (state: State, action: Action): State => {
           { id: action.id, state: 'running', output: [] },
         ],
       }
-    case 'finish-action':
+    }
+    case 'finish-action': {
       return {
         ...state,
         runningActions: state.runningActions.map((act) =>
           act.id === action.id ? { ...act, state: 'finished' } : act
         ),
       }
-    case 'error-action':
+    }
+    case 'error-action': {
       return {
         ...state,
         runningActions: state.runningActions.map((act) =>
           act.id === action.id ? { ...act, state: 'error' } : act
         ),
       }
-    case 'update-output':
+    }
+    case 'update-output': {
       return {
         ...state,
         runningActions: state.runningActions.map((act) =>
@@ -90,17 +103,20 @@ const reducer = (state: State, action: Action): State => {
             : act
         ),
       }
-    case 'clear-actions':
+    }
+    case 'clear-actions': {
       return {
         ...state,
         runningActions: [],
       }
-    default:
+    }
+    default: {
       return {
         ...state,
         id: '',
         type: 'default',
       }
+    }
   }
 }
 

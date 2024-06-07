@@ -1,10 +1,9 @@
 import Box from '@mui/material/Box'
-import { type FC, useState, useEffect } from 'react'
+import { type FC, useEffect, useState } from 'react'
+
 import { useAction } from '../context/ActionContext'
-import { withTheme } from '@rjsf/core'
-import { Theme } from '@rjsf/mui'
-import { FormFlow } from './FormFlow'
 import { ActionsListFlow } from './ActionsListFlow'
+import { FormFlow } from './FormFlow'
 
 export type IActionsGroup = {
   id: string
@@ -27,18 +26,18 @@ export const SecondSIdebarFlow: FC = () => {
     } else if (
       action?.type === 'actions-list' &&
       action?.id?.length > 0 &&
-      action?.actionsListIds?.length
+      action?.actionsList?.length
     ) {
       setActionsGroup({
         id: action.id,
-        list: action.actionsListIds,
+        list: action.actionsList,
       })
     }
   }, [action])
 
   let content
 
-  if (action?.type === 'action' && actionId.length && isAction()) {
+  if (action?.type === 'action' && actionId.length > 0 && isAction()) {
     content = <FormFlow actionId={actionId} />
   } else if (action?.type === 'actions-list' && actionsGroup.list.length > 0) {
     content = <ActionsListFlow actionsGroup={actionsGroup} />

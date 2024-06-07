@@ -1,38 +1,38 @@
-import * as React from 'react'
+import Box from '@mui/material/Box'
+import Collapse from '@mui/material/Collapse'
+import { styled } from '@mui/material/styles'
+import Typography from '@mui/material/Typography'
+import { useTreeViewApiRef } from '@mui/x-tree-view'
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView'
-import { FC, useEffect } from 'react'
-import FolderIcon from '/images/folder.svg'
-import AppIcon from '/images/app.svg'
-import ActionIcon from '/images/action.svg'
-import type { FileType } from '../utils/tree-builder'
-import { treeBuilder } from '../utils/tree-builder'
-import { useActionDispatch } from '../context/ActionContext'
-import clsx from 'clsx'
-import {
-  unstable_useTreeItem2 as useTreeItem2,
-  UseTreeItem2Parameters,
-} from '@mui/x-tree-view/useTreeItem2'
-import { TreeItem2Provider } from '@mui/x-tree-view/TreeItem2Provider'
 import {
   TreeItem2Content,
   TreeItem2IconContainer,
   TreeItem2Label,
   TreeItem2Root,
 } from '@mui/x-tree-view/TreeItem2'
-import { styled } from '@mui/material/styles'
 import { TreeItem2Icon } from '@mui/x-tree-view/TreeItem2Icon'
-import Collapse from '@mui/material/Collapse'
-import Typography from '@mui/material/Typography'
-import Box from '@mui/material/Box'
-import { useState, createContext } from 'react'
+import { TreeItem2Provider } from '@mui/x-tree-view/TreeItem2Provider'
+import {
+  unstable_useTreeItem2 as useTreeItem2,
+  UseTreeItem2Parameters,
+} from '@mui/x-tree-view/useTreeItem2'
+import clsx from 'clsx'
+import * as React from 'react'
+import { FC, useEffect, useState } from 'react'
+
+import ActionIcon from '/images/action.svg'
+import AppIcon from '/images/app.svg'
+import CheckIcon from '/images/check.svg'
+import FolderIcon from '/images/folder.svg'
+
+import { useActionDispatch } from '../context/ActionContext'
+import { useFlowClickedActionID } from '../context/ActionsFlowContext'
 import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
 } from '../context/SidebarTreeItemStatesContext'
-import { sanitizeDataForNewSchema } from '@rjsf/utils'
-import { useTreeViewApiRef } from '@mui/x-tree-view'
-import CheckIcon from '/images/check.svg'
-import { useFlowClickedActionID } from '../context/ActionsFlowContext'
+import type { FileType } from '../utils/tree-builder'
+import { treeBuilder } from '../utils/tree-builder'
 
 const StyledTreeItemLabelText = styled(Typography)({
   fontSize: '11px',
@@ -155,7 +155,7 @@ const CustomTreeItem2Root = styled(TreeItem2Root)(({ theme }) => {
 
 const isExpandable = (reactChildren: React.ReactNode) => {
   if (Array.isArray(reactChildren)) {
-    return reactChildren.length > 0 && reactChildren.some(isExpandable)
+    return reactChildren.some(isExpandable)
   }
   return Boolean(reactChildren)
 }
@@ -290,8 +290,8 @@ export const SidebarTree: FC = ({ actions }) => {
   const wrappedHandleMouseMove = (e) => {
     const targetEl = e.target.closest('[data-element-id]')
 
-    if (targetEl && targetEl.getAttribute('data-element-id') !== hoveredId) {
-      const id = targetEl.getAttribute('data-element-id')
+    if (targetEl && targetEl.dataset.elementId !== hoveredId) {
+      const id = targetEl.dataset.elementId
 
       if (!hoveredId) {
         setHoveredId(id)
@@ -323,7 +323,7 @@ export const SidebarTree: FC = ({ actions }) => {
         .split(':')[0]
         .split('.')
         .reduce((acc, part) => {
-          const lastSubstring = acc.length > 0 ? acc[acc.length - 1] : ''
+          const lastSubstring = acc.length > 0 ? acc.at(-1) : ''
           const newSubstring =
             lastSubstring.length > 0 ? `${lastSubstring}.${part}` : part
           acc.push(newSubstring)
@@ -366,17 +366,39 @@ export const SidebarTree: FC = ({ actions }) => {
       })
       setSelectedAction(selectedAction === itemIds ? '' : itemIds)
     } else {
-      if (Object.keys(selectedActionsGroup).length) {
+      if (Object.keys(selectedActionsGroup).length > 0) {
         const prevSelectedActionData = apiRef.current!.getItem(
           selectedActionsGroup.id
         )
-        prevSelectedActionData.selected = false
+        if (prevSelectedActionData) {
+          prevSelectedActionData.selected = false
+        }
         handleUnselect(
           selectedActionsGroup,
           selectedActionsGroup.isActionsGroup
         )
       }
       const item = apiRef.current!.getItem(itemIds)
+      if (selectedActionsGroup.id === itemIds) {
+        item.selected = false
+        handleUnselect(itemIds, item.isActionsGroup)
+        if (selectedAction) {
+          const prevSelectedActionData = apiRef.current!.getItem(selectedAction)
+          prevSelectedActionData.selected = false
+          handleUnselect(selectedAction)
+          setSelectedAction('')
+        }
+        dispatch({
+          type: 'default',
+          id: '',
+          actionsList: [],
+        })
+        setSelectedActionsGroup({
+          id: '',
+          isActionsGroup: item.isActionsGroup,
+        })
+        return
+      }
       item.selected = selectedActionsGroup.id !== itemIds
       if (item.selected) {
         handleSelect(itemIds, item.isActionsGroup)
@@ -393,13 +415,17 @@ export const SidebarTree: FC = ({ actions }) => {
         type:
           item.selected && item.isActionsGroup ? 'set-actions-list' : 'default',
         id: item.selected && item.isActionsGroup ? itemIds : '',
-        actionsListIds:
+        actionsList:
           item.selected && item.isActionsGroup
             ? Object.values(actions.data)
                 .filter(
                   (a) => a.id.includes(':') && a.id.startsWith(`${itemIds}`)
                 )
-                .map((a) => a.id)
+                .map((a) => ({
+                  id: a.id,
+                  title: a.title,
+                  description: a.description,
+                }))
             : [],
       })
       setSelectedActionsGroup({
@@ -428,7 +454,7 @@ export const SidebarTree: FC = ({ actions }) => {
     if (cur) {
       const parts = cur.split('.')
       parts.pop()
-      if (parts.length) {
+      if (parts.length > 0) {
         const siblingsExpanded = itemIds.find(
           (a) => a.startsWith(`${parts.join('.')}.`) && a !== cur
         )
@@ -457,7 +483,7 @@ export const SidebarTree: FC = ({ actions }) => {
       }
     }
 
-    if (!itemIds.length && selectedAction) {
+    if (itemIds.length === 0 && selectedAction) {
       deselectAction(selectedAction)
     }
     setExpandedItems(filteredItemIds)

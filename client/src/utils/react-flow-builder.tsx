@@ -1,3 +1,5 @@
+import { sentenceCase } from '../utils/helpers'
+
 // Coefficient less than 0.51 behaves unpredictably.
 // Use coefficient between 0.51 till endless
 export const elementsScaleCoef = 1
@@ -31,22 +33,17 @@ export const buildNodeColor = ({
   `
 }
 
-const generateReadableLabel = (phrase) => {
-  const label = phrase.replaceAll(/[_-]/g, ' ')
-  return label.charAt(0).toUpperCase() + label.slice(1)
-}
-
 function setActionsAndItsFolderSize(folder) {
   let currentWidth = 0
   let currentHeight = 0
 
-  if (folder.actions && Object.keys(folder.actions).length) {
-    Object.values(folder.actions).forEach((action) => {
+  if (folder.actions && Object.keys(folder.actions).length > 0) {
+    for (const action of Object.values(folder.actions)) {
       action._params = {
         width: actionWidth,
         height: actionHeight,
       }
-    })
+    }
 
     currentWidth = actionWidth
     currentHeight =
@@ -58,7 +55,7 @@ function setActionsAndItsFolderSize(folder) {
       height: currentHeight,
     }
 
-    if (!Object.keys(folder.folders).length) {
+    if (Object.keys(folder.folders).length === 0) {
       currentWidth = folder.actions._params.width
       currentHeight =
         folderLabelHeight + folder.actions._params.height + actionsGroupOuterGap
@@ -72,10 +69,10 @@ function setActionsAndItsFolderSize(folder) {
     }
   }
 
-  if (folder.folders && Object.keys(folder.folders).length) {
-    Object.values(folder.folders).forEach((subFolder) => {
+  if (folder.folders && Object.keys(folder.folders).length > 0) {
+    for (const subFolder of Object.values(folder.folders)) {
       setActionsAndItsFolderSize(subFolder)
-    })
+    }
   }
 }
 
@@ -99,9 +96,9 @@ function setElementsSize(folder) {
     folder.folders &&
     Object.keys(folder.folders).length > 1 &&
     (!folder.actions ||
-      (folder.actions && !Object.keys(folder.actions).length)) &&
+      (folder.actions && Object.keys(folder.actions).length === 0)) &&
     Object.values(folder.folders).every(
-      (e) => !e.actions || (e.actions && !Object.keys(e.actions).length)
+      (e) => !e.actions || (e.actions && Object.keys(e.actions).length === 0)
     )
   ) {
     verticalMode = true
@@ -130,12 +127,10 @@ function setElementsSize(folder) {
   }
 
   // Folder height is max of action height and subfolder height
-  if (subfoldersHeight === 0) {
-    folderHeight = actionsHeight + folderLabelHeight
-  } else {
-    folderHeight =
-      grandFolderGap * 2 + Math.max(actionsHeight, subfoldersHeight)
-  }
+  folderHeight =
+    subfoldersHeight === 0
+      ? actionsHeight + folderLabelHeight
+      : grandFolderGap * 2 + Math.max(actionsHeight, subfoldersHeight)
 
   if (folder.id !== 'start') {
     // Update folder width and height
@@ -159,11 +154,12 @@ const setInnerBlocksCoordinates = (
 
     if (
       parentFolder.folders &&
-      Object.keys(parentFolder.folders).length &&
+      Object.keys(parentFolder.folders).length > 0 &&
       (!parentFolder.actions ||
-        (parentFolder.actions && !Object.keys(parentFolder.actions).length)) &&
+        (parentFolder.actions &&
+          Object.keys(parentFolder.actions).length === 0)) &&
       Object.values(parentFolder.folders).every(
-        (e) => !e.actions || (e.actions && !Object.keys(e.actions).length)
+        (e) => !e.actions || (e.actions && Object.keys(e.actions).length === 0)
       )
     ) {
       verticalMode = true
@@ -188,9 +184,9 @@ const setInnerBlocksCoordinates = (
     } else {
       if (
         folder.folders &&
-        Object.keys(folder.folders).length &&
+        Object.keys(folder.folders).length > 0 &&
         (!folder.actions ||
-          (folder.actions && !Object.keys(folder.actions).length))
+          (folder.actions && Object.keys(folder.actions).length === 0))
       ) {
         folder._params.x = (index + 1) * grandFolderGap
         folder._params.y = grandFolderGap
@@ -198,12 +194,12 @@ const setInnerBlocksCoordinates = (
 
       if (
         folder.actions &&
-        Object.keys(folder.actions).length &&
+        Object.keys(folder.actions).length > 0 &&
         (!folder.folders ||
-          (folder.folders && !Object.keys(folder.folders).length))
+          (folder.folders && Object.keys(folder.folders).length === 0))
       ) {
         const prefixWidth =
-          parentFolder.actions && Object.keys(parentFolder.actions).length
+          parentFolder.actions && Object.keys(parentFolder.actions).length > 0
             ? parentFolder.actions._params.width + grandFolderGap
             : 0
         folder._params.x =
@@ -215,16 +211,16 @@ const setInnerBlocksCoordinates = (
 
       if (
         (!folder.actions ||
-          (folder.actions && !Object.keys(folder.actions).length)) &&
+          (folder.actions && Object.keys(folder.actions).length === 0)) &&
         (!folder.folders ||
-          (folder.folders && !Object.keys(folder.folders).length))
+          (folder.folders && Object.keys(folder.folders).length === 0))
       ) {
         folder._params.x =
-          parentFolder.folders && Object.keys(parentFolder.folders).length
+          parentFolder.folders && Object.keys(parentFolder.folders).length > 0
             ? grandFolderGap
             : 0
         folder._params.y =
-          parentFolder.folders && Object.keys(parentFolder.folders).length
+          parentFolder.folders && Object.keys(parentFolder.folders).length > 0
             ? index === 0
               ? grandFolderGap
               : grandFolderGap +
@@ -239,12 +235,12 @@ const setInnerBlocksCoordinates = (
 
       if (
         folder.actions &&
-        Object.keys(folder.actions).length &&
+        Object.keys(folder.actions).length > 0 &&
         folder.folders &&
-        Object.keys(folder.folders).length
+        Object.keys(folder.folders).length > 0
       ) {
         let prefixWidth =
-          parentFolder.actions && Object.keys(parentFolder.actions).length
+          parentFolder.actions && Object.keys(parentFolder.actions).length > 0
             ? parentFolder.actions._params.width + grandFolderGap
             : 0
 
@@ -260,8 +256,8 @@ const setInnerBlocksCoordinates = (
       }
     }
 
-    if (folder.folders && Object.keys(folder.folders).length) {
-      Object.values(folder.folders).forEach((subFolder, i) => {
+    if (folder.folders && Object.keys(folder.folders).length > 0) {
+      for (const [i, subFolder] of Object.values(folder.folders).entries()) {
         setInnerBlocksCoordinates(
           subFolder,
           {
@@ -271,11 +267,11 @@ const setInnerBlocksCoordinates = (
           i,
           folder
         )
-      })
+      }
     }
 
-    if (folder.actions && Object.keys(folder.actions).length) {
-      Object.values(folder.actions).forEach((action, i) => {
+    if (folder.actions && Object.keys(folder.actions).length > 0) {
+      for (const [i, action] of Object.values(folder.actions).entries()) {
         setInnerBlocksCoordinates(
           action,
           {
@@ -285,14 +281,14 @@ const setInnerBlocksCoordinates = (
           i,
           folder
         )
-      })
+      }
     }
   }
 }
 
 const setFolderCoordinates = (data) => {
   let offset = grandFolderGap * 2 * elementsScaleCoef
-  Object.values(data.folders).forEach((folder) => {
+  for (const folder of Object.values(data.folders)) {
     folder._params.y = offset
     folder._params.x = actionWidth + grandFolderGap * 2
     offset =
@@ -300,7 +296,7 @@ const setFolderCoordinates = (data) => {
       folder._params.y +
       grandFolderGap * elementsScaleCoef
 
-    Object.values(folder.folders).forEach((subFolder, i) => {
+    for (const [i, subFolder] of Object.values(folder.folders).entries()) {
       setInnerBlocksCoordinates(
         subFolder,
         {
@@ -310,9 +306,9 @@ const setFolderCoordinates = (data) => {
         i,
         folder
       )
-    })
+    }
 
-    Object.values(folder.actions).forEach((action, i) => {
+    for (const [i, action] of Object.values(folder.actions).entries()) {
       setInnerBlocksCoordinates(
         action,
         {
@@ -322,8 +318,8 @@ const setFolderCoordinates = (data) => {
         i,
         folder
       )
-    })
-  })
+    }
+  }
 }
 
 function buildGraph(data) {
@@ -348,10 +344,9 @@ const destructureThroughNodes = (arr, nodes) => {
   const obj = {}
   if (nodes.id) {
     for (const [key, value] of Object.entries(nodes)) {
-      if (key)
-        if (key !== 'folders' && key !== 'actions') {
-          obj[key] = value
-        }
+      if (key && key !== 'folders' && key !== 'actions') {
+        obj[key] = value
+      }
 
       if (key === '_params') {
         obj.style = {
@@ -367,16 +362,16 @@ const destructureThroughNodes = (arr, nodes) => {
 
     arr.push(obj)
 
-    if (nodes.folders && Object.keys(nodes.folders).length) {
-      Object.values(nodes.folders).forEach((folder) => {
+    if (nodes.folders && Object.keys(nodes.folders).length > 0) {
+      for (const folder of Object.values(nodes.folders)) {
         destructureThroughNodes(arr, folder)
-      })
+      }
     }
 
-    if (nodes.actions && Object.keys(nodes.actions).length) {
-      Object.values(nodes.actions).forEach((action) => {
+    if (nodes.actions && Object.keys(nodes.actions).length > 0) {
+      for (const action of Object.values(nodes.actions)) {
         destructureThroughNodes(arr, action)
-      })
+      }
     }
   }
 
@@ -388,21 +383,21 @@ const destructureNodesObj = (nodes) => {
 }
 
 const setLayerIndexes = (folders, index) => {
-  Object.values(folders).forEach((folder) => {
+  for (const folder of Object.values(folders)) {
     if (folder.data) {
       folder.data.layerIndex = index
     }
 
     if (folder.actions && Object.keys(folder.actions)) {
-      Object.values(folder.actions).forEach((action) => {
+      for (const action of Object.values(folder.actions)) {
         action.data.layerIndex = index
-      })
+      }
     }
 
     if (folder.folders && Object.keys(folder.folders)) {
       setLayerIndexes(folder.folders, index)
     }
-  })
+  }
 }
 
 const calculateAmountOfActions = (nodes, writeInto = false) => {
@@ -420,7 +415,10 @@ const calculateAmountOfActions = (nodes, writeInto = false) => {
     ).length
   }
 
-  if (nodes.hasOwnProperty('folders') && Object.keys(nodes.folders).length) {
+  if (
+    nodes.hasOwnProperty('folders') &&
+    Object.keys(nodes.folders).length > 0
+  ) {
     for (const folderKey in nodes.folders) {
       const subFolder = nodes.folders[folderKey]
 
@@ -448,7 +446,7 @@ export const getNodesAndEdges = (actions, colorMode) => {
     actions: {},
   }
 
-  actions.data.forEach((item) => {
+  for (const item of actions.data) {
     const idParts = item.id.split(':')
     const folders = idParts[0].split('.')
 
@@ -459,7 +457,7 @@ export const getNodesAndEdges = (actions, colorMode) => {
         currentFolder[folder] = {
           id: folder,
           data: {
-            label: generateReadableLabel(folder),
+            label: sentenceCase(folder),
           },
           type: 'node-wrapper',
           folders: {},
@@ -487,6 +485,7 @@ export const getNodesAndEdges = (actions, colorMode) => {
         id: item.id,
         data: {
           label: item.title,
+          description: item.description,
           isActive: false,
         },
         type: 'node-action',
@@ -494,27 +493,27 @@ export const getNodesAndEdges = (actions, colorMode) => {
       }
     } else {
       const folderName = idParts[0]
-      if (!currentFolder[folderName]) {
+      if (currentFolder[folderName]) {
+        currentFolder[folderName].id = item.id
+        currentFolder[folderName].data = {
+          label: sentenceCase(item.title),
+        }
+        currentFolder[folderName].type = 'node-wrapper'
+        currentFolder[folderName].parentId = parentId
+      } else {
         currentFolder[folderName] = {
           id: item.id,
           data: {
-            label: generateReadableLabel(item.title),
+            label: sentenceCase(item.title),
           },
           type: 'node-wrapper',
           folders: {},
           actions: {},
           parentId,
         }
-      } else {
-        currentFolder[folderName].id = item.id
-        currentFolder[folderName].data = {
-          label: generateReadableLabel(item.title),
-        }
-        currentFolder[folderName].type = 'node-wrapper'
-        currentFolder[folderName].parentId = parentId
       }
     }
-  })
+  }
 
   const edges = []
 
@@ -522,16 +521,16 @@ export const getNodesAndEdges = (actions, colorMode) => {
     // Set layer indexes
 
     let layerIndex = 0
-    Object.values(nodes.folders).forEach((folder) => {
+    for (const folder of Object.values(nodes.folders)) {
       if (folder.data) {
         folder.data.layerIndex = layerIndex
         folder.data.topLayer = true
       }
 
       if (folder.actions && Object.keys(folder.actions)) {
-        Object.values(folder.actions).forEach((action) => {
+        for (const action of Object.values(folder.actions)) {
           action.data.layerIndex = layerIndex
-        })
+        }
       }
 
       if (folder.folders && Object.keys(folder.folders)) {
@@ -539,9 +538,9 @@ export const getNodesAndEdges = (actions, colorMode) => {
       }
 
       layerIndex += 1
-    })
+    }
 
-    Object.keys(nodes.folders).forEach((folder) => {
+    for (const folder of Object.keys(nodes.folders)) {
       edges.push({
         id: `start-${folder}`,
         source: 'start',
@@ -555,7 +554,7 @@ export const getNodesAndEdges = (actions, colorMode) => {
           borderRadius: 20 * elementsScaleCoef,
         },
       })
-    })
+    }
   }
 
   nodesSetCoordinates(nodes)

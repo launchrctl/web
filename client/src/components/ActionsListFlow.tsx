@@ -1,23 +1,22 @@
-import { type FC, useState, useEffect, Fragment } from 'react'
-import { type IActionsGroup } from './SecondSIdebarFlow'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import Box from '@mui/material/Box'
+import Breadcrumbs from '@mui/material/Breadcrumbs'
+import Divider from '@mui/material/Divider'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
-import ListItemButton from '@mui/material/ListItemButton'
-import ListItemText from '@mui/material/ListItemText'
-import Divider from '@mui/material/Divider'
-import Box from '@mui/material/Box'
 import ListItemIcon from '@mui/material/ListItemIcon'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import Breadcrumbs from '@mui/material/Breadcrumbs'
-import AddToPhotosIcon from '@mui/icons-material/AddToPhotos'
 import Typography from '@mui/material/Typography'
+import { type FC, Fragment, useState } from 'react'
+import { sentenceCase } from '../utils/helpers'
 import { useActionDispatch } from '../context/ActionContext'
 import { useFlowClickedActionID } from '../context/ActionsFlowContext'
 import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
 } from '../context/SidebarTreeItemStatesContext'
-
+import { type IActionsGroup } from './SecondSIdebarFlow'
+import ArrowRightIcon from '/images/arrow-right.svg'
+import * as React from 'react'
 interface ActionsListFlowProps {
   actionsGroup: IActionsGroup
 }
@@ -32,14 +31,18 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
   const groups: {
     folderId: string
     label: string
-    items: string[]
+    items: {
+      id: string
+      title: string
+      description: string
+    }[]
   }[] = []
 
   const breadcrumbs = actionsGroup.id.includes('.')
     ? actionsGroup.id
         .split('.')
         .slice(0, -1)
-        .map((a) => a.charAt(0).toUpperCase() + a.slice(1))
+        .map((a) => sentenceCase(a))
     : []
   const title = actionsGroup.id.includes('.')
     ? actionsGroup.id.split('.').pop()
@@ -47,43 +50,60 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
 
   if (actionsGroup.list.length > 0) {
     const attachedActions = actionsGroup.list.filter((a) =>
-      a.includes(`${actionsGroup.id}:`)
+      a.id.includes(`${actionsGroup.id}:`)
     )
 
     if (attachedActions.length > 0) {
       groups.push({
         folderId: actionsGroup.id,
         label: '',
-        items: attachedActions.map((action) => action.split(':').pop()),
+        items: attachedActions.map((action) => ({
+          id: action.id.split(':').pop(),
+          title: action.title,
+          description: action.description,
+        })),
       })
     }
 
-    actionsGroup.list.forEach((item) => {
-      const parts = item.split(':')
-      const actionName = parts[1]
+    for (const item of actionsGroup.list) {
+      const parts = item.id.split(':')
+      const actionId = parts[1]
       const group = parts[0].split('.').pop()
 
       if (group !== actionsGroup.id) {
-        if (!groups.find((a) => a.folderId === parts[0])) {
+        if (groups.find((a) => a.folderId === parts[0])) {
+          groups.map((a) => {
+            if (
+              a.folderId === parts[0] &&
+              !Object.values(a.items).some((a) => a.id.includes(actionId))
+            )
+              a.items.push({
+                id: actionId,
+                title: item.title,
+                description: item.description,
+              })
+            return a
+          })
+        } else {
           groups.push({
             folderId: parts[0],
             label: parts[0]
               .split(`${actionsGroup.id}.`)
               .pop()
               .split('.')
-              .map((a) => a?.charAt(0).toUpperCase() + a.slice(1))
+              .map((a) => sentenceCase(a))
               .join(' / '),
-            items: [actionName],
-          })
-        } else {
-          groups.map((a) => {
-            if (a.folderId === parts[0] && !a.items.includes(actionName))
-              a.items.push(actionName)
-            return a
+            items: [
+              {
+                id: actionId,
+                title: item.title,
+                description: item.description,
+              },
+            ],
           })
         }
       }
-    })
+    }
   }
 
   const wrappedHandleMouseMove = (id: string) => {
@@ -113,6 +133,10 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
       id,
       isActive: true,
     })
+    if (hoveredId) {
+      handleMouseLeave(hoveredId, true)
+      setHoveredId('')
+    }
     handleSelect(id)
   }
 
@@ -125,7 +149,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
           borderBottom: (theme) => `1px solid ${theme.palette.action.focus}`,
         }}
       >
-        {!breadcrumbs.length ? (
+        {breadcrumbs.length === 0 ? (
           ''
         ) : (
           <Breadcrumbs
@@ -161,7 +185,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
             color: (theme) => (theme.palette.mode === 'dark' ? '#fff' : '#000'),
           }}
         >
-          {title && title.charAt(0).toUpperCase() + title.slice(1)}
+          {title && sentenceCase(title)}
         </Typography>
       </Box>
       {groups.map((group, i) => {
@@ -177,7 +201,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
               <Box
                 sx={{
                   color: (theme) =>
-                    theme.palette.mode === 'dark' ? '#667085' : '#667085',
+                    theme.palette.mode === 'dark' ? '#fff' : '#667085',
                   fontSize: 11,
                   fontWeight: 600,
                   lineHeight: 1.45,
@@ -196,20 +220,27 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
               >
                 {group.items.map((item, itemIndex) => {
                   return (
-                    <ListItem disablePadding key={`${i}-${itemIndex}`}>
+                    <ListItem
+                      disablePadding
+                      key={`${i}-${itemIndex}`}
+                      sx={{
+                        minWidth: 0,
+                      }}
+                    >
                       <Box
                         className={'action-button'}
                         onMouseMove={() =>
-                          wrappedHandleMouseMove(`${group.folderId}:${item}`)
+                          wrappedHandleMouseMove(`${group.folderId}:${item.id}`)
                         }
                         onMouseLeave={() => wrappedHandleMouseLeave()}
                         onClick={() =>
-                          actionClickHandler(`${group.folderId}:${item}`)
+                          actionClickHandler(`${group.folderId}:${item.id}`)
                         }
                         sx={{
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
+                          gap: 1,
                           width: '100%',
                           backgroundColor: (theme) =>
                             theme.palette.mode === 'dark'
@@ -234,16 +265,63 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
                           },
                         }}
                       >
-                        <ListItemText
-                          primary={item}
+                        <Box
                           sx={{
-                            '.MuiListItemText-primary': {
-                              fontSize: 11,
-                              lineHeight: 1.54,
-                              letterSpacing: '0.11px',
-                            },
+                            fontSize: 11,
+                            lineHeight: 1.54,
+                            letterSpacing: '0.11px',
+                            display: 'flex',
+                            gap: 0.75,
+                            alignItems: 'center',
+                            overflow: 'hidden',
                           }}
-                        />
+                        >
+                          <Box
+                            sx={{
+                              flexGrow: 1,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {item.title}
+                          </Box>
+                          {item.description && (
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                gap: 0.75,
+                                alignItems: 'center',
+                                overflow: 'hidden',
+                                img: {
+                                  filter: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? 'brightness(0) invert(1)'
+                                      : '',
+                                },
+                              }}
+                            >
+                              <img style={{ width: 13 }} src={ArrowRightIcon} />
+                              <Box
+                                sx={{
+                                  backgroundColor: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? '#383838'
+                                      : '#F2F4F7',
+                                  borderRadius: 1.5,
+                                  borderColor: '#D0D5DD',
+                                  borderWidth: 1,
+                                  paddingBlock: 0.5,
+                                  paddingInline: 0.75,
+                                  borderStyle: 'solid',
+                                  whiteSpace: 'nowrap',
+                                  textOverflow: 'ellipsis',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                {item.description}
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
                         <ListItemIcon
                           sx={{
                             minWidth: '0',

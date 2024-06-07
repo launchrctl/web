@@ -1,3 +1,5 @@
+import { sentenceCase } from '../utils/helpers'
+
 export type FileType = 'folder' | 'app' | 'action'
 
 interface ExtendedTreeItemProps {
@@ -22,20 +24,7 @@ const addAction = (
   })
 }
 
-const sortMoveActionsAboveFolders = (tree) => {
-  if (tree.children) {
-    const actionChildren = tree.children.filter(
-      (child) => child.fileType === 'action'
-    )
-    const otherChildren = tree.children.filter(
-      (child) => child.fileType !== 'action'
-    )
-    tree.children = actionChildren.concat(otherChildren)
-    tree.children.forEach((child) => sortMoveActionsAboveFolders(child))
-  }
-}
-
-export const splitActionId = (actionId:string) => {
+export const splitActionId = (actionId: string) => {
   const [path, id] = actionId.split(':')
   const levels = path.split('.')
   return { levels, id }
@@ -48,7 +37,7 @@ export const treeBuilder = (actions: any = []) => {
       const { levels } = splitActionId(action.id)
       let idPath: string
       levels.reduce((acc, level, index) => {
-        let obj: ExtendedTreeItemProps = {}
+        const obj: ExtendedTreeItemProps = {}
         idPath = idPath ? `${idPath}.${level}` : level
         const alreadyExist = acc.find((a) => a.id === idPath)
         if (alreadyExist) {
@@ -60,7 +49,7 @@ export const treeBuilder = (actions: any = []) => {
         }
 
         obj.id = idPath
-        obj.label = level.charAt(0).toUpperCase() + level.substring(1)
+        obj.label = sentenceCase(level)
         obj.fileType = levels[index - 1] === 'roles' ? 'app' : 'folder'
         obj.depth = index
         obj.children = []
@@ -78,10 +67,6 @@ export const treeBuilder = (actions: any = []) => {
         return acc.find((a) => a.id === idPath).children
       }, tree)
     }
-
-  Object.values(tree).forEach((child) => {
-    sortMoveActionsAboveFolders(child)
-  })
 
   return tree
 }

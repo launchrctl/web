@@ -1,32 +1,26 @@
-import {
-  useApiUrl,
-  useCustomMutation,
-  useNotification,
-  useOne,
-  useResource,
-} from '@refinedev/core'
-import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
-import { type FC, useState, useEffect } from 'react'
+import { useApiUrl, useCustomMutation, useOne } from '@refinedev/core'
+import type { IChangeEvent } from '@rjsf/core'
 import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
-import type { IChangeEvent } from '@rjsf/core'
-import validator from '@rjsf/validator-ajv8'
 import {
   FormContextType,
-  TitleFieldProps,
   RJSFSchema,
   StrictRJSFSchema,
+  TitleFieldProps,
 } from '@rjsf/utils'
+import validator from '@rjsf/validator-ajv8'
+import { type FC, useState } from 'react'
+
 import {
+  useErrorAction,
+  useFinishAction,
   useStartAction,
   useUpdateOutput,
-  useFinishAction,
-  useErrorAction,
 } from '../context/ActionContext'
-
 import type { IActionData, IFormValues } from '../types'
 
 const Form = withTheme(Theme)
@@ -47,9 +41,6 @@ function TitleFieldTemplate<
 export const FormFlow: FC = ({ actionId }) => {
   const [actionRunning, setActionRunning] = useState(false)
   const startAction = useStartAction()
-  const updateOutput = useUpdateOutput()
-  const finishAction = useFinishAction()
-  const errorAction = useErrorAction()
   const apiUrl = useApiUrl()
   const { mutateAsync } = useCustomMutation()
 
@@ -91,11 +82,11 @@ export const FormFlow: FC = ({ actionId }) => {
         values: formData,
       },
       {
-        onError: (error, variables, context) => {
-          console.log('error');
+        onError: () => {
+          console.log('error')
         },
-        onSuccess: (data, variables, context) => {
-          console.log(data);
+        onSuccess: (data) => {
+          console.log(data)
         },
       }
     )

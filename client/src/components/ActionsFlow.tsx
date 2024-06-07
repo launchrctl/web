@@ -1,52 +1,42 @@
 import 'reactflow/dist/style.css'
 
-import FlowBg from '/images/flow-bg.svg'
-import FlowBgDark from '/images/flow-bg-dark.svg'
-import Dagre from '@dagrejs/dagre'
 import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
 import CircularProgress from '@mui/material/CircularProgress'
-import { FC, useContext, useEffect, useState } from 'react'
-import { useCallback } from 'react'
-import ActionIcon from '/images/action.svg'
-import CheckIcon from '/images/check.svg'
+import Paper from '@mui/material/Paper'
+import { styled, useTheme } from '@mui/material/styles'
+import { GetListResponse } from '@refinedev/core'
 import { debounce } from 'lodash'
+import { FC, useEffect, useState } from 'react'
+import * as React from 'react'
 import ReactFlow, {
-  addEdge,
   Background,
   Controls,
-  Edge,
-  EdgeChange,
   Handle,
-  MiniMap,
   Position,
   ReactFlowInstance,
   useEdgesState,
   useNodesState,
-  useReactFlow,
-  useStoreApi,
 } from 'reactflow'
+
+import ActionIcon from '/images/action.svg'
+import CheckIcon from '/images/check.svg'
+import FlowBg from '/images/flow-bg.svg'
+import FlowBgDark from '/images/flow-bg-dark.svg'
+
+import { useActionDispatch } from '../context/ActionContext'
+import { useFlowClickedActionID } from '../context/ActionsFlowContext'
 import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
 } from '../context/SidebarTreeItemStatesContext'
 import {
-  getNodesAndEdges,
-  elementsScaleCoef,
-  actionWidth,
   actionHeight,
-  grandFolderGap,
-  folderLabelHeight,
-  actionsGroupOuterGap,
-  gapBetweenActions,
+  actionWidth,
   buildNodeColor,
+  elementsScaleCoef,
+  folderLabelHeight,
+  getNodesAndEdges,
 } from '../utils/react-flow-builder'
-import { GetListResponse, useList } from '@refinedev/core'
-import { treeBuilder } from '../utils/tree-builder'
-import { styled, useTheme } from '@mui/material/styles'
-import * as React from 'react'
-import { useActionDispatch } from '../context/ActionContext'
-import { useFlowClickedActionID } from '../context/ActionsFlowContext'
 
 const nodeTypes = {
   'node-start': NodeStart,
@@ -65,7 +55,6 @@ const WhiteBand = ({ data, type }) => {
     <Box
       className="react-flow__node-default"
       sx={{
-        typography: 'subtitle2',
         width: `${actionWidth}px`,
         height: `${actionHeight}px`,
         boxShadow: `0 ${elementsScaleCoef}px ${elementsScaleCoef}px rgba(0, 0, 0, 0.2)`,
@@ -76,33 +65,59 @@ const WhiteBand = ({ data, type }) => {
         gap: `${12 * elementsScaleCoef}px`,
         justifyContent: 'space-between',
         backgroundColor:
-          data.layerIndex !== undefined
-            ? buildNodeColor({
+          data.layerIndex === undefined
+            ? ''
+            : buildNodeColor({
                 index: data.layerIndex,
                 isFilled: true,
-              })
-            : '',
+              }),
         backgroundImage:
-          data.layerIndex !== undefined
-            ? active
+          data.layerIndex === undefined
+            ? 'linear-gradient(#fff, #fff)'
+            : active
               ? 'linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65))'
               : data.isHovered
                 ? 'linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8))'
-                : 'linear-gradient(#fff, #fff)'
-            : 'linear-gradient(#fff, #fff)',
+                : 'linear-gradient(#fff, #fff)',
         display: 'flex',
         alignItems: 'center',
-        fontSize: `${16 * elementsScaleCoef}px`,
         cursor: type === 'node-action' ? 'pointer' : 'auto',
         '&:hover': {
           backgroundImage:
-            data.layerIndex !== undefined
-              ? `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`
-              : 'linear-gradient(#fff, #fff)',
+            data.layerIndex === undefined
+              ? 'linear-gradient(#fff, #fff)'
+              : `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`,
         },
       }}
     >
-      {data?.label}
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 0.5,
+        }}
+      >
+        <Box
+          sx={{
+            typography: 'subtitle2',
+            fontSize: `${16 * elementsScaleCoef}px`,
+            lineHeight: 1,
+          }}
+        >
+          {data?.label}
+        </Box>
+        {data?.description && (
+          <Box
+            sx={{
+              typography: 'subtitle2',
+              fontSize: `${11 * elementsScaleCoef}px`,
+              color: '#667085',
+              lineHeight: 1.2,
+            }}
+          >
+            {data?.description}
+          </Box>
+        )}
+      </Box>
       {type === 'node-action' && (
         <Box
           sx={{
@@ -263,7 +278,7 @@ interface IActionsFlowProps {
 export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   const { palette } = useTheme()
   const [isLoading, setLoading] = useState(true)
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
+  const [nodes, setNodes] = useNodesState([])
   const [edges, setEdges] = useEdgesState([])
   const dispatch = useActionDispatch()
   const { state: nodeClickState } = useSidebarTreeItemClickStates()
@@ -292,13 +307,11 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
     ) {
       setNodes((prev) => {
         if (nodeClickState.isActive === true) {
-          prev
-            .filter(
-              (a) => a.id !== nodeClickState.id && a.data.isActive === true
-            )
-            .forEach((prevMatched) => {
-              prevMatched.data.isActive = false
-            })
+          for (const prevMatched of prev.filter(
+            (a) => a.id !== nodeClickState.id && a.data.isActive === true
+          )) {
+            prevMatched.data.isActive = false
+          }
         }
         const matched = prev.find((a) => a.id === nodeClickState.id)
         matched.data.isActive = nodeClickState.isActive
@@ -331,13 +344,11 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       ) {
         setNodes((prev) => {
           if (nodeMouseState.isHovered === true) {
-            prev
-              .filter(
-                (a) => a.id !== nodeMouseState.id && a.data.isHovered === true
-              )
-              .forEach((prevMatched) => {
-                prevMatched.data.isHovered = false
-              })
+            for (const prevMatched of prev.filter(
+              (a) => a.id !== nodeMouseState.id && a.data.isHovered === true
+            )) {
+              prevMatched.data.isHovered = false
+            }
           }
           prev.map((a) => {
             if (!initial && a.id === nodeMouseState.id) {
@@ -372,7 +383,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
     setEdges(receivedEdges)
   }, [palette.mode])
 
-  const [nodeData, setNodeData] = useState(undefined)
+  const [nodeData, setNodeData] = useState()
 
   const nodeClickHandler = (e, node) => {
     if (
@@ -391,13 +402,18 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         id: node.id,
         isActive: false,
       })
+      nodeClickState.isActive = false
       setNodeData(undefined)
       dispatch({
         type: 'set-actions-list',
         id: node.id,
-        actionsListIds: Object.values(nodes)
+        actionsList: Object.values(actions.data)
           .filter((a) => a.id.includes(':') && a.id.startsWith(`${node.id}`))
-          .map((a) => a.id),
+          .map((a) => ({
+            id: a.id,
+            title: a.title,
+            description: a.description,
+          })),
       })
 
       return
@@ -443,24 +459,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         nodeClickState.isActive = false
       }
     } else {
-      if (!nodeData) {
-        setNodes((prev) => {
-          const matched = prev.find((a) => a.id === node.id)
-          matched.data.isActive = true
-
-          return [...prev]
-        })
-        setFlowClickedActionId({
-          id: node.id,
-          isActive: true,
-        })
-        node.data.isActive = true
-        setNodeData(node)
-        dispatch({
-          type: 'set-action',
-          id: node.id,
-        })
-      } else {
+      if (nodeData) {
         if (node.id === nodeData.id && !nodeData.data.isActive) {
           setNodes((prev) => {
             const matched = prev.find((a) => a.id === node.id)
@@ -514,6 +513,23 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
             id: node.id,
           })
         }
+      } else {
+        setNodes((prev) => {
+          const matched = prev.find((a) => a.id === node.id)
+          matched.data.isActive = true
+
+          return [...prev]
+        })
+        setFlowClickedActionId({
+          id: node.id,
+          isActive: true,
+        })
+        node.data.isActive = true
+        setNodeData(node)
+        dispatch({
+          type: 'set-action',
+          id: node.id,
+        })
       }
     }
   }
