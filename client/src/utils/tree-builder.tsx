@@ -60,7 +60,7 @@ export const treeBuilder = (actions: any = []) => {
         }
 
         obj.id = idPath
-        obj.label = level
+        obj.label = level.charAt(0).toUpperCase() + level.substring(1)
         obj.fileType = levels[index - 1] === 'roles' ? 'app' : 'folder'
         obj.depth = index
         obj.children = []

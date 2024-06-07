@@ -43,11 +43,14 @@ export const SecondSIdebarFlow: FC = () => {
   } else if (action?.type === 'actions-list' && actionsGroup.list.length > 0) {
     content = <ActionsListFlow actionsGroup={actionsGroup} />
   } else {
-    content = <h1>Default</h1>
+    content = <h1>Choose something. We don't know what to place here yet</h1>
   }
 
   return (
-    <Box role="presentation" sx={{ p: 2, overflowY: 'scroll', height: '100%' }}>
+    <Box
+      role="presentation"
+      sx={{ py: 2, overflowY: 'scroll', height: '100%' }}
+    >
       {content}
     </Box>
   )

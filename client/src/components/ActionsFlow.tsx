@@ -395,7 +395,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       dispatch({
         type: 'set-actions-list',
         id: node.id,
-        actionsListIds: Object.values(actions.data)
+        actionsListIds: Object.values(nodes)
           .filter((a) => a.id.includes(':') && a.id.startsWith(`${node.id}`))
           .map((a) => a.id),
       })
