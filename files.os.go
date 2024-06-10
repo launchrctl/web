@@ -1,16 +1,31 @@
-//go:build !embed
+//go:build !dev
 
 package web
 
 import (
 	"io/fs"
-	"os"
+
+	"github.com/launchrctl/web/server"
 )
 
-func defaultSwaggerUIFS() fs.FS {
-	return os.DirFS("./swagger-ui")
+func prepareRunOption(p *Plugin, opts *server.RunOptions) {
+	assetsFs := p.app.GetPluginAssets(p)
+	opts.SwaggerUIFS = defaultSwaggerUIFS(assetsFs)
+	opts.ClientFS = defaultClientFS(assetsFs)
 }
 
-func defaultClientFS() fs.FS {
-	return os.DirFS("./client/dist")
+func defaultSwaggerUIFS(assets fs.FS) fs.FS {
+	sub, err := fs.Sub(assets, "swagger-ui")
+	if err != nil {
+		panic(err)
+	}
+	return sub
+}
+
+func defaultClientFS(assets fs.FS) fs.FS {
+	sub, err := fs.Sub(assets, "dist")
+	if err != nil {
+		panic(err)
+	}
+	return sub
 }

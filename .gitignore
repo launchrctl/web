@@ -5,6 +5,7 @@
 *.tar
 *.gz
 dist/
-/swagger-ui
 /.husky/_
 .idea
+assets/
+swagger-ui/

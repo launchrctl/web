@@ -10,10 +10,11 @@ require (
 	github.com/go-chi/chi/v5 v5.0.11
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/render v1.0.3
-	github.com/launchrctl/launchr v0.5.7
+	github.com/launchrctl/launchr v0.8.2-0.20240513162729-0023678afad2
 	github.com/oapi-codegen/nethttp-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/spf13/cobra v1.8.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -50,7 +51,7 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc6 // indirect
+	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
@@ -64,7 +65,6 @@ require (
 	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/tools v0.17.0 // indirect
+	golang.org/x/tools v0.18.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

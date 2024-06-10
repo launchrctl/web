@@ -4,11 +4,9 @@ package web
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/launchrctl/launchr"
-
 	"github.com/launchrctl/web/server"
+	"github.com/spf13/cobra"
 )
 
 // APIPrefix is a default api prefix on the server.
@@ -46,15 +44,18 @@ func (p *Plugin) CobraAddCommands(rootCmd *cobra.Command) error {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Don't show usage help on a runtime error.
 			cmd.SilenceUsage = true
-			return server.Run(cmd.Context(), p.app, &server.RunOptions{
+
+			runOpts := &server.RunOptions{
 				Addr:        fmt.Sprintf(":%s", port), // @todo use proper addr
 				APIPrefix:   APIPrefix,
 				SwaggerJSON: useSwaggerUI,
-				SwaggerUIFS: defaultSwaggerUIFS(),
-				ClientFS:    defaultClientFS(),
 				ProxyClient: proxyClient,
 				// @todo use embed fs for client or provide path ?
-			})
+			}
+
+			prepareRunOption(p, runOpts)
+
+			return server.Run(cmd.Context(), p.app, runOpts)
 		},
 	}
 	cmd.Flags().StringVarP(&port, "port", "p", "8080", `Web server port`)
