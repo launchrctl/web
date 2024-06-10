@@ -5,10 +5,10 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Paper from '@mui/material/Paper'
 import { styled, useTheme } from '@mui/material/styles'
 import { GetListResponse } from '@refinedev/core'
-import { debounce } from 'lodash'
+import _debounce from 'lodash/debounce'
 import { FC, useEffect, useState } from 'react'
 import * as React from 'react'
-import ReactFlow, {
+import Flow, {
   Background,
   Controls,
   Handle,
@@ -23,12 +23,12 @@ import CheckIcon from '/images/check.svg'
 import FlowBg from '/images/flow-bg.svg'
 import FlowBgDark from '/images/flow-bg-dark.svg'
 
-import { useActionDispatch } from '../context/ActionContext'
-import { useFlowClickedActionID } from '../context/ActionsFlowContext'
+import { useActionDispatch } from '../hooks/ActionHooks'
+import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
 import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
-} from '../context/SidebarTreeItemStatesContext'
+} from '../hooks/SidebarTreeItemStatesHooks'
 import {
   actionHeight,
   actionWidth,
@@ -72,13 +72,17 @@ const WhiteBand = ({ data, type }) => {
                 isFilled: true,
               }),
         backgroundImage:
-          data.layerIndex === undefined
+          data.layerIndex === undefined || (!active && !data.isHovered)
             ? 'linear-gradient(#fff, #fff)'
-            : active
-              ? 'linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65))'
-              : data.isHovered
-                ? 'linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8))'
-                : 'linear-gradient(#fff, #fff)',
+            : `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`,
+
+        // data.layerIndex === undefined
+        //   ? 'linear-gradient(#fff, #fff)'
+        //   : active
+        //     ? 'linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65))'
+        //     : data.isHovered
+        //       ? 'linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8))'
+        //       : 'linear-gradient(#fff, #fff)',
         display: 'flex',
         alignItems: 'center',
         cursor: type === 'node-action' ? 'pointer' : 'auto',
@@ -259,7 +263,7 @@ function NodeAction({ data, type }) {
   return <WhiteBand data={data} type={type}></WhiteBand>
 }
 
-const ReactFlowStyled = styled(ReactFlow)(() => ({
+const ReactFlowStyled = styled(Flow)(() => ({
   '.react-flow__node.nopan': {
     cursor: 'auto',
   },
@@ -296,6 +300,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
     setEdges(receivedEdges)
 
     setLoading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actions])
 
   useEffect(() => {
@@ -332,6 +337,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         })
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeClickState])
 
   useEffect(() => {
@@ -364,9 +370,9 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       }
     }
 
-    const debouncedUpdate = debounce(() => {
+    const debouncedUpdate = _debounce(() => {
       componentUpdate()
-    }, 15)
+    }, 20)
 
     if (nodeMouseState.useDebounce) {
       debouncedUpdate()
@@ -376,11 +382,13 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
     return () => {
       debouncedUpdate.cancel()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeMouseState])
 
   useEffect(() => {
     const [, receivedEdges] = getNodesAndEdges(actions, palette?.mode)
     setEdges(receivedEdges)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [palette.mode])
 
   const [nodeData, setNodeData] = useState()

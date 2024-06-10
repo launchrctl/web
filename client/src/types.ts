@@ -1,4 +1,4 @@
-import type { BaseRecord, IResourceComponentsProps } from '@refinedev/core'
+import type { BaseRecord } from '@refinedev/core'
 import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 
 interface IActionData extends BaseRecord {

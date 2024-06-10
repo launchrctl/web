@@ -4,18 +4,14 @@ import { ThemedLayoutContextProvider } from '@refinedev/mui'
 import type { FC } from 'react'
 
 import { ThemedHeaderV2 as DefaultHeader } from './Header'
-import { ThemedSiderV2 as DefaultSider } from './Sider'
 
 export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
-  Sider,
   Header,
-  Title,
   Footer,
   OffLayoutArea,
   children,
   initialSiderCollapsed,
 }) => {
-  const SiderToRender = Sider ?? DefaultSider
   const HeaderToRender = Header ?? DefaultHeader
 
   return (

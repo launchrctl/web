@@ -1,11 +1,4 @@
-import React, {
-  createContext,
-  FC,
-  ReactNode,
-  useCallback,
-  useContext,
-  useReducer,
-} from 'react'
+import { createContext, Dispatch, FC, ReactNode, useReducer } from 'react'
 
 type ActionState = 'running' | 'finished' | 'error'
 type TerminalOutput = string[]
@@ -17,7 +10,7 @@ interface RunningActionDetails {
   output: TerminalOutput
 }
 
-interface State {
+export interface State {
   id: string
   type: 'action' | 'actions-list' | 'default'
   runningActions: RunningActionDetails[]
@@ -28,7 +21,7 @@ interface State {
   }[]
 }
 
-interface Action {
+export interface Action {
   type: string
   id: string
   output?: string
@@ -49,8 +42,10 @@ const initialState: State = {
   runningActions: [],
 }
 
-const ActionContext = createContext<State>(initialState)
-const ActionDispatchContext = createContext<React.Dispatch<Action> | null>(null)
+export const ActionContext = createContext<State>(initialState)
+export const ActionDispatchContext = createContext<Dispatch<Action> | null>(
+  undefined
+)
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
@@ -99,7 +94,8 @@ const reducer = (state: State, action: Action): State => {
         ...state,
         runningActions: state.runningActions.map((act) =>
           act.id === action.id
-            ? { ...act, output: [...act.output, action.output!] }
+            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              { ...act, output: [...act.output, action.output!] }
             : act
         ),
       }
@@ -130,56 +126,4 @@ export const ActionProvider: FC<Props> = ({ children }) => {
       </ActionDispatchContext.Provider>
     </ActionContext.Provider>
   )
-}
-
-export const useAction = (): State => useContext(ActionContext)
-export const useActionDispatch = (): React.Dispatch<Action> | null =>
-  useContext(ActionDispatchContext)
-
-// Custom hooks for easier usage
-export const useStartAction = () => {
-  const dispatch = useActionDispatch()
-  return useCallback(
-    (id: string) => {
-      dispatch?.({ type: 'start-action', id })
-    },
-    [dispatch]
-  )
-}
-
-export const useFinishAction = () => {
-  const dispatch = useActionDispatch()
-  return useCallback(
-    (id: string) => {
-      dispatch?.({ type: 'finish-action', id })
-    },
-    [dispatch]
-  )
-}
-
-export const useErrorAction = () => {
-  const dispatch = useActionDispatch()
-  return useCallback(
-    (id: string) => {
-      dispatch?.({ type: 'error-action', id })
-    },
-    [dispatch]
-  )
-}
-
-export const useUpdateOutput = () => {
-  const dispatch = useActionDispatch()
-  return useCallback(
-    (id: string, output: string) => {
-      dispatch?.({ type: 'update-output', id, output })
-    },
-    [dispatch]
-  )
-}
-
-export const useClearActions = () => {
-  const dispatch = useActionDispatch()
-  return useCallback(() => {
-    dispatch?.({ type: 'clear-actions' })
-  }, [dispatch])
 }

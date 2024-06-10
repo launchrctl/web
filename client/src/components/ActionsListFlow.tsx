@@ -7,16 +7,18 @@ import ListItem from '@mui/material/ListItem'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import Typography from '@mui/material/Typography'
 import { type FC, Fragment, useState } from 'react'
-import { sentenceCase } from '../utils/helpers'
-import { useActionDispatch } from '../context/ActionContext'
-import { useFlowClickedActionID } from '../context/ActionsFlowContext'
+import * as React from 'react'
+
+import ArrowRightIcon from '/images/arrow-right.svg'
+
+import { useActionDispatch } from '../hooks/ActionHooks'
+import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
 import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
-} from '../context/SidebarTreeItemStatesContext'
+} from '../hooks/SidebarTreeItemStatesHooks'
+import { sentenceCase } from '../utils/helpers'
 import { type IActionsGroup } from './SecondSIdebarFlow'
-import ArrowRightIcon from '/images/arrow-right.svg'
-import * as React from 'react'
 interface ActionsListFlowProps {
   actionsGroup: IActionsGroup
 }
@@ -71,7 +73,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
       const group = parts[0].split('.').pop()
 
       if (group !== actionsGroup.id) {
-        if (groups.find((a) => a.folderId === parts[0])) {
+        if (groups.some((a) => a.folderId === parts[0])) {
           groups.map((a) => {
             if (
               a.folderId === parts[0] &&

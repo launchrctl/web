@@ -5,18 +5,25 @@ import { type FC, useEffect, useState } from 'react'
 import { ActionsFlow } from '../../components/ActionsFlow'
 import { SecondSIdebarFlow } from '../../components/SecondSIdebarFlow'
 import { SidebarFlow } from '../../components/SidebarFlow'
-import { ActionProvider } from '../../context/ActionContext'
 import { FlowClickedActionIDProvider } from '../../context/ActionsFlowContext'
 import {
   SidebarTreeItemClickStatesProvider,
   SidebarTreeItemMouseStatesProvider,
 } from '../../context/SidebarTreeItemStatesContext'
+import { useAction } from '../../hooks/ActionHooks'
 
 export const FlowShow: FC = () => {
   const { data: actions } = useList({
     resource: 'actions',
   })
   const [dataReceived, setData] = useState<GetListResponse>()
+  const action = useAction()
+  const [renderEndSidebar, setRenderEndSidebar] = useState(false)
+
+  useEffect(() => {
+    setRenderEndSidebar(action?.type !== 'default')
+  }, [action])
+
   useEffect(() => {
     if (actions) {
       // Sorting actions data to have alphabetical order and actions presented always above subfolders.
@@ -37,33 +44,38 @@ export const FlowShow: FC = () => {
       setData(actions)
     }
   }, [actions])
+
   return (
-    <ActionProvider>
-      <FlowClickedActionIDProvider>
-        <SidebarTreeItemMouseStatesProvider>
-          <SidebarTreeItemClickStatesProvider>
-            <Grid
-              container
-              sx={{ height: 'calc(100vh - 68px)' }}
-              columns={{ xs: 36 }}
-            >
-              {dataReceived && (
-                <>
-                  <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
-                    <SidebarFlow actions={dataReceived} />
-                  </Grid>
-                  <Grid item xs={21} sx={{ height: 'calc(100vh - 68px)' }}>
-                    <ActionsFlow actions={dataReceived} />
-                  </Grid>
+    <FlowClickedActionIDProvider>
+      <SidebarTreeItemMouseStatesProvider>
+        <SidebarTreeItemClickStatesProvider>
+          <Grid
+            container
+            sx={{ height: 'calc(100vh - 68px)' }}
+            columns={{ xs: 36 }}
+          >
+            {dataReceived && (
+              <>
+                <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
+                  <SidebarFlow actions={dataReceived} />
+                </Grid>
+                <Grid
+                  item
+                  xs={renderEndSidebar ? 21 : 29}
+                  sx={{ height: 'calc(100vh - 68px)' }}
+                >
+                  <ActionsFlow actions={dataReceived} />
+                </Grid>
+                {renderEndSidebar && (
                   <Grid item xs={8} sx={{ height: 'calc(100vh - 68px)' }}>
-                    <SecondSIdebarFlow />
+                    <SecondSIdebarFlow action={action} />
                   </Grid>
-                </>
-              )}
-            </Grid>
-          </SidebarTreeItemClickStatesProvider>
-        </SidebarTreeItemMouseStatesProvider>
-      </FlowClickedActionIDProvider>
-    </ActionProvider>
+                )}
+              </>
+            )}
+          </Grid>
+        </SidebarTreeItemClickStatesProvider>
+      </SidebarTreeItemMouseStatesProvider>
+    </FlowClickedActionIDProvider>
   )
 }

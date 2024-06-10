@@ -1,10 +1,4 @@
-import {
-  createContext,
-  type FC,
-  type ReactNode,
-  useContext,
-  useState,
-} from 'react'
+import { createContext, type FC, type ReactNode, useState } from 'react'
 
 type ItemId = string
 
@@ -36,11 +30,11 @@ interface Props {
   children: ReactNode
 }
 
-const ClickStatesContext =
-  createContext<ISidebarTreeItemClickStatesContext>(null)
+export const ClickStatesContext =
+  createContext<ISidebarTreeItemClickStatesContext>(undefined)
 
-const MouseStatesContext =
-  createContext<ISidebarTreeItemMouseStatesContext>(null)
+export const MouseStatesContext =
+  createContext<ISidebarTreeItemMouseStatesContext>(undefined)
 
 export const SidebarTreeItemClickStatesProvider: FC<Props> = ({ children }) => {
   const [state, setState] = useState<ClickItemProps>({
@@ -122,14 +116,4 @@ export const SidebarTreeItemMouseStatesProvider: FC<Props> = ({ children }) => {
       {children}
     </MouseStatesContext.Provider>
   )
-}
-
-export const useSidebarTreeItemClickStates = () => {
-  const context = useContext(ClickStatesContext)
-  return context || undefined
-}
-
-export const useSidebarTreeItemMouseStates = () => {
-  const context = useContext(MouseStatesContext)
-  return context || undefined
 }

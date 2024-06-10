@@ -142,11 +142,9 @@ function setElementsSize(folder) {
 
 const setInnerBlocksCoordinates = (
   folder,
-  containerSize,
   index = false,
   parentFolder = false
 ) => {
-  const { containerWidth, containerHeight } = containerSize
   if (folder._params) {
     let verticalMode = false
     folder._params.x = 0
@@ -219,18 +217,40 @@ const setInnerBlocksCoordinates = (
           parentFolder.folders && Object.keys(parentFolder.folders).length > 0
             ? grandFolderGap
             : 0
-        folder._params.y =
-          parentFolder.folders && Object.keys(parentFolder.folders).length > 0
-            ? index === 0
-              ? grandFolderGap
-              : grandFolderGap +
-                index * actionHeight +
-                (index * gapBetweenActions) / 2
-            : index === 0
-              ? folderLabelHeight + gapBetweenActions / 2
-              : folderLabelHeight +
-                ((index + 1) * gapBetweenActions) / 2 +
-                index * actionHeight
+        if (
+          parentFolder.folders &&
+          Object.keys(parentFolder.folders).length > 0 &&
+          index === 0
+        ) {
+          folder._params.y = grandFolderGap
+        }
+        if (
+          parentFolder.folders &&
+          Object.keys(parentFolder.folders).length > 0 &&
+          index !== 0
+        ) {
+          folder._params.y =
+            grandFolderGap +
+            index * actionHeight +
+            (index * gapBetweenActions) / 2
+        }
+        if (
+          parentFolder.folders &&
+          Object.keys(parentFolder.folders).length <= 0 &&
+          index === 0
+        ) {
+          folder._params.y = folderLabelHeight + gapBetweenActions / 2
+        }
+        if (
+          parentFolder.folders &&
+          Object.keys(parentFolder.folders).length <= 0 &&
+          index !== 0
+        ) {
+          folder._params.y =
+            folderLabelHeight +
+            ((index + 1) * gapBetweenActions) / 2 +
+            index * actionHeight
+        }
       }
 
       if (
@@ -258,29 +278,13 @@ const setInnerBlocksCoordinates = (
 
     if (folder.folders && Object.keys(folder.folders).length > 0) {
       for (const [i, subFolder] of Object.values(folder.folders).entries()) {
-        setInnerBlocksCoordinates(
-          subFolder,
-          {
-            containerWidth: folder._params.width,
-            containerHeight: folder._params.height,
-          },
-          i,
-          folder
-        )
+        setInnerBlocksCoordinates(subFolder, i, folder)
       }
     }
 
     if (folder.actions && Object.keys(folder.actions).length > 0) {
       for (const [i, action] of Object.values(folder.actions).entries()) {
-        setInnerBlocksCoordinates(
-          action,
-          {
-            containerWidth: folder._params.width,
-            containerHeight: folder._params.height,
-          },
-          i,
-          folder
-        )
+        setInnerBlocksCoordinates(action, i, folder)
       }
     }
   }
@@ -297,27 +301,11 @@ const setFolderCoordinates = (data) => {
       grandFolderGap * elementsScaleCoef
 
     for (const [i, subFolder] of Object.values(folder.folders).entries()) {
-      setInnerBlocksCoordinates(
-        subFolder,
-        {
-          containerWidth: folder._params.width,
-          containerHeight: folder._params.height,
-        },
-        i,
-        folder
-      )
+      setInnerBlocksCoordinates(subFolder, i, folder)
     }
 
     for (const [i, action] of Object.values(folder.actions).entries()) {
-      setInnerBlocksCoordinates(
-        action,
-        {
-          containerWidth: folder._params.width,
-          containerHeight: folder._params.height,
-        },
-        i,
-        folder
-      )
+      setInnerBlocksCoordinates(action, i, folder)
     }
   }
 }
@@ -406,7 +394,7 @@ const calculateAmountOfActions = (nodes, writeInto = false) => {
   }
 
   if (
-    nodes.hasOwnProperty('actions') &&
+    Object.prototype.hasOwnProperty.call(nodes, 'actions') &&
     Object.keys(nodes.actions).length > 0 &&
     writeInto
   ) {
@@ -416,7 +404,7 @@ const calculateAmountOfActions = (nodes, writeInto = false) => {
   }
 
   if (
-    nodes.hasOwnProperty('folders') &&
+    Object.prototype.hasOwnProperty.call(nodes, 'folders') &&
     Object.keys(nodes.folders).length > 0
   ) {
     for (const folderKey in nodes.folders) {

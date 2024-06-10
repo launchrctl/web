@@ -13,6 +13,7 @@ import { ThemedLayoutV2 } from './components/layout'
 import { ThemedHeaderV2 } from './components/layout/Header'
 import { ThemedSiderV2 } from './components/layout/Sider'
 import { ThemedTitleV2 } from './components/layout/Title'
+import { ActionProvider } from './context/ActionContext'
 import { ActionList, ActionShow } from './pages/actions'
 import { FlowShow } from './pages/flow'
 import { dataProvider as launchrDataProvider } from './rest-data-provider'
@@ -70,7 +71,14 @@ export function App() {
                   {/*<Route path=":id/edit" element={<ActionEdit />} />*/}
                 </Route>
                 <Route path="/flow">
-                  <Route index element={<FlowShow />} />
+                  <Route
+                    index
+                    element={
+                      <ActionProvider>
+                        <FlowShow />
+                      </ActionProvider>
+                    }
+                  />
                 </Route>
                 <Route path="*" element={<ErrorComponent />} />
               </Route>

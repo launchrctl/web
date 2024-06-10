@@ -1,6 +1,6 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useState } from 'react'
 
-const FlowClickedActionIDContext = createContext()
+export const FlowClickedActionIDContext = createContext()
 
 interface State {
   id: string
@@ -21,6 +21,3 @@ export const FlowClickedActionIDProvider = ({ children }) => {
     </FlowClickedActionIDContext.Provider>
   )
 }
-
-export const useFlowClickedActionID = () =>
-  useContext(FlowClickedActionIDContext)
