@@ -33,15 +33,48 @@ export const buildNodeColor = ({
   `
 }
 
-function setActionsAndItsFolderSize(folder) {
-  let currentWidth = 0
-  let currentHeight = 0
+interface IParams {
+  width?: number
+  height?: number
+  x?: number
+  y?: number
+  _params?: IParams
+}
+
+interface IFolder {
+  id?: string
+  parentId?: string
+  type?: 'node-start' | 'node-wrapper' | 'node-action'
+  actions?:
+    | {
+        [key: string]: IFolder & IParams
+      }
+    | undefined
+  folders?: {
+    [key: string]: IFolder & IParams
+  }
+  data?: {
+    label?: string
+    description?: string
+    filled?: boolean
+    actionsAmount?: number
+    layerIndex?: number
+    topLayer?: boolean
+  }
+  _params?: IParams
+}
+
+function setActionsAndItsFolderSize(folder: IFolder) {
+  let currentWidth: number | undefined = 0
+  let currentHeight: number | undefined = 0
 
   if (folder.actions && Object.keys(folder.actions).length > 0) {
     for (const action of Object.values(folder.actions)) {
-      action._params = {
-        width: actionWidth,
-        height: actionHeight,
+      if (action) {
+        action._params = {
+          width: actionWidth,
+          height: actionHeight,
+        }
       }
     }
 
@@ -58,14 +91,18 @@ function setActionsAndItsFolderSize(folder) {
     if (Object.keys(folder.folders).length === 0) {
       currentWidth = folder.actions._params.width
       currentHeight =
-        folderLabelHeight + folder.actions._params.height + actionsGroupOuterGap
+        folderLabelHeight +
+        (folder.actions._params.height ?? 0) +
+        actionsGroupOuterGap
 
       folder._params = {
         width: currentWidth,
         height: currentHeight,
       }
 
-      folder.data.filled = true
+      if (folder.data) {
+        folder.data.filled = true
+      }
     }
   }
 
@@ -76,7 +113,7 @@ function setActionsAndItsFolderSize(folder) {
   }
 }
 
-function setElementsSize(folder) {
+function setElementsSize(folder: IFolder) {
   let folderWidth = 0
   let folderHeight = 0
 
@@ -507,7 +544,6 @@ export const getNodesAndEdges = (actions, colorMode) => {
 
   if (nodes.folders) {
     // Set layer indexes
-
     let layerIndex = 0
     for (const folder of Object.values(nodes.folders)) {
       if (folder.data) {
