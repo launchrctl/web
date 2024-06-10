@@ -7,6 +7,21 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 paths:
+  /customisation:
+    get:
+      summary: Customisation config
+      operationId: getCustomisationConfig
+      responses:
+        '200':
+          description: config response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customisation'
+        default:
+          $ref: '#/components/responses/DefaultError'
   /actions:
     get:
       summary: Lists all actions
@@ -172,6 +187,11 @@ components:
         minimum: 1
         maximum: 100
   schemas:
+    Customisation:
+      type: object
+      x-go-name: "CustomisationConfig"
+      x-go-type: "map[string]interface{}"
+      x-go-type-skip-optional-pointer: true
     ActionShort:
       allOf:
         - type: object
