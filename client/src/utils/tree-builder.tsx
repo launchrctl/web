@@ -1,6 +1,7 @@
-import { BaseRecord, GetListResponse } from '@refinedev/core'
+import { GetListResponse } from '@refinedev/core'
 
-import { sentenceCase } from '../utils/helpers'
+import { IAction } from '../types'
+import { sentenceCase, splitActionId } from '../utils/helpers'
 
 export type FileType = 'folder' | 'app' | 'action'
 
@@ -14,24 +15,12 @@ interface ExtendedTreeItemProps {
   children?: ExtendedTreeItemProps[]
 }
 
-interface IAction {
-  id: string
-  title?: string
-  description?: string
-}
-
 const addAction = (to: ExtendedTreeItemProps, what: IAction, depth: number) => {
   to.children?.push({
     ...what,
     fileType: 'action',
     depth,
   })
-}
-
-export const splitActionId = (actionId: string) => {
-  const [path, id] = actionId.split(':')
-  const levels = path.split('.')
-  return { levels, id }
 }
 
 export const treeBuilder = (actions: GetListResponse<IAction>) => {

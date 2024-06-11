@@ -40,7 +40,7 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
             display: 'flex',
             alignItems: 'center',
             flexGrow: 0,
-            width: 480
+            width: 480,
           }}
         >
           <ListItem disablePadding disableGutters>

@@ -25,8 +25,8 @@ export const buildNodeColor = ({
 }) => {
   return `
     hsla(
-      ${layerColorSchemesHSL[index || 0][0]}deg 
-      ${layerColorSchemesHSL[index || 0][1]}% 
+      ${layerColorSchemesHSL[index || 0][0]}deg
+      ${layerColorSchemesHSL[index || 0][1]}%
       ${isDarker ? layerColorSchemesHSL[index || 0][2] - 20 : layerColorSchemesHSL[index || 0][2]}%
       ${isFilled ? '' : `/ ${isHovered ? '40%' : '10%'}`}
     )

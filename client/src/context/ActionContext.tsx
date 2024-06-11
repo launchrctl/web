@@ -40,11 +40,12 @@ const initialState: State = {
   id: '',
   type: 'default',
   runningActions: [],
+  actionsList: []
 }
 
 export const ActionContext = createContext<State>(initialState)
 export const ActionDispatchContext = createContext<Dispatch<Action> | null>(
-  undefined
+  null
 )
 
 const reducer = (state: State, action: Action): State => {
@@ -69,7 +70,10 @@ const reducer = (state: State, action: Action): State => {
         ...state,
         runningActions: [
           ...state.runningActions,
-          { id: action.id, state: 'running', output: [] },
+          {
+            id: action.id, state: 'running', output: [],
+            runId: ''
+          },
         ],
       }
     }
