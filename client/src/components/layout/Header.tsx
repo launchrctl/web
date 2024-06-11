@@ -39,16 +39,16 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
           sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-start',
             flexGrow: 0,
+            width: 480
           }}
         >
-          <ListItem disablePadding>
+          <ListItem disablePadding disableGutters>
             <ListItemButton href="/flow">
               <ListItemIcon>
                 <AddToPhotosIcon />
               </ListItemIcon>
-              <ListItemText primary="Applications" />
+              <ListItemText primary="Flow (Experimental)" />
             </ListItemButton>
           </ListItem>
           <ListItem disablePadding disableGutters>
@@ -59,6 +59,7 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
               <ListItemIcon>
                 <GitHubIcon />
               </ListItemIcon>
+              <ListItemText primary="Report bug" />
             </ListItemButton>
           </ListItem>
         </List>

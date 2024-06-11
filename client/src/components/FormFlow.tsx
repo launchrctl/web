@@ -100,8 +100,9 @@ export const FormFlow: FC = ({ actionId }) => {
           templates={{ TitleFieldTemplate }}
         >
           <Button variant="contained" type="submit" disabled={actionRunning}>
-            Submit
+            Form not working yet
           </Button>
+          <Button type="button" href={`/actions/${actionId}/show`}>Go to form</Button>
         </Form>
       )}
     </>
