@@ -137,6 +137,11 @@ func (l *launchrServer) GetActions(w http.ResponseWriter, _ *http.Request) {
 		}
 		result = append(result, ab)
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ID < result[j].ID
+	})
+
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(result)
 }
@@ -246,6 +251,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	}
 
 	ri, chErr := l.actionMngr.RunBackground(l.ctx, a)
+
 	go func() {
 		// @todo handle error somehow. We cant notify client, but must save the status
 		//defer streams.Close()

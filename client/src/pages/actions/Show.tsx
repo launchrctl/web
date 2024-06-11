@@ -1,6 +1,5 @@
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
-import type { BaseRecord, IResourceComponentsProps } from '@refinedev/core'
 import {
   useApiUrl,
   useCustomMutation,
@@ -12,27 +11,17 @@ import { Show } from '@refinedev/mui'
 import type { IChangeEvent } from '@rjsf/core'
 import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
-import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 import type { FC } from 'react'
 import { useState } from 'react'
 
 import { RunningActionsList } from '../../components/RunningActionsList'
-
-// @todo move to types
-interface IActionData extends BaseRecord {
-  jsonschema: RJSFSchema
-  uischema: UiSchema
-}
-
-interface IFormValues {
-  id: string
-}
+import type { IActionData, IFormValues } from '../../types'
 
 // Make modifications to the theme with your own fields and widgets
 const Form = withTheme(Theme)
 
-export const ActionShow: FC<IResourceComponentsProps> = () => {
+export const ActionShow: FC = () => {
   // @todo const translate = useTranslate();
   const {
     // resource,
@@ -49,6 +38,7 @@ export const ActionShow: FC<IResourceComponentsProps> = () => {
     resource: identifier,
     id: idFromRoute,
   })
+
   const { isFetching } = queryResult
 
   const jsonschema = queryResult?.data?.data?.jsonschema

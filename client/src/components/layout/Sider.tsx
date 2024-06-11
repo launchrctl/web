@@ -283,6 +283,26 @@ export const ThemedSiderV2: FC<RefineThemedLayoutV2SiderProps> = ({
               />
             </ListItemButton>
           </ListItem>
+          <ListItem key={'flow'} disablePadding={true}>
+            <ListItemButton
+              component={Link}
+              to={'/flow'}
+              sx={{
+                pl: 2,
+                py: 1,
+                justifyContent: 'center',
+                color: 'text.primary',
+              }}
+            >
+              <ListItemText
+                primary={'Simple actions group'}
+                primaryTypographyProps={{
+                  noWrap: true,
+                  fontSize: '10px',
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
         </CanAccess>
       )
     })

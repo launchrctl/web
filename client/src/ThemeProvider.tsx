@@ -20,7 +20,6 @@ interface IThemeProviderProps {
 
 const typographyOptions: TypographyVariantsOptions = {
   fontFamily: ['Inter', 'Arial', 'sans-serif'].join(','),
-  fontSize: 16,
 }
 
 interface IThemeContextType {
@@ -72,23 +71,23 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
     typography: {
       ...typographyOptions,
     },
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            fontSize: 18,
-            padding: '13px 31px',
-            borderRadius: 28,
-            textTransform: 'none',
-            fontWeight: 600,
-            lineHeight: 1.55,
-            '& .MuiButton-startIcon > *:nth-of-type(1)': {
-              fontSize: 24,
-            },
-          },
-        },
-      },
-    },
+    // TODO: Apply these styles to exact button and not globally.
+    // components: {
+    //   MuiButton: {
+    //     styleOverrides: {
+    //       root: {
+    //         fontSize: 18,
+    //         borderRadius: 28,
+    //         textTransform: 'none',
+    //         fontWeight: 600,
+    //         lineHeight: 1.55,
+    //         '& .MuiButton-startIcon > *:nth-of-type(1)': {
+    //           fontSize: 24,
+    //         },
+    //       },
+    //     },
+    //   },
+    // },
   })
 
   return (
