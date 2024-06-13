@@ -1,35 +1,31 @@
-import React from 'react'
-import {
-  useDataGrid,
-  ShowButton,
-  List,
-} from '@refinedev/mui'
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid'
+import { List, ShowButton, useDataGrid } from '@refinedev/mui'
+import { useMemo } from 'react'
 
 export const ActionList = () => {
   const { dataGridProps } = useDataGrid()
 
-  const columns = React.useMemo<GridColDef[]>(
+  const columns = useMemo<GridColDef[]>(
     () => [
       {
         field: 'title',
         flex: 1,
         headerName: 'Title',
-        type: "string",
+        type: 'string',
         sortable: false,
       },
       {
         field: 'description',
         flex: 1,
         headerName: 'Description',
-        type: "string",
+        type: 'string',
         sortable: false,
       },
       {
         field: 'id',
         flex: 1,
         headerName: 'Id',
-        type: "string",
+        type: 'string',
         sortable: false,
       },
       {
@@ -53,7 +49,12 @@ export const ActionList = () => {
 
   return (
     <List>
-      <DataGrid {...dataGridProps} columns={columns} autoHeight disableColumnFilter />
+      <DataGrid
+        {...dataGridProps}
+        columns={columns}
+        autoHeight
+        disableColumnFilter
+      />
     </List>
   )
 }

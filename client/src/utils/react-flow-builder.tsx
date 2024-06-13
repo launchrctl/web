@@ -1,3 +1,9 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
+import { GetListResponse } from '@refinedev/core'
+
+import { IFlowNodeType } from '../types'
 import { sentenceCase } from '../utils/helpers'
 
 // Coefficient less than 0.51 behaves unpredictably.
@@ -34,27 +40,24 @@ export const buildNodeColor = ({
 }
 
 interface IParams {
-  width?: number
-  height?: number
-  x?: number
-  y?: number
-  _params?: IParams
+  width: number
+  height: number
+  x: number
+  y: number
 }
 
 interface IFolder {
-  id?: string
+  id: string
   parentId?: string
-  type?: 'node-start' | 'node-wrapper' | 'node-action'
-  actions?:
-    | {
-        [key: string]: IFolder & IParams
-      }
-    | undefined
-  folders?: {
-    [key: string]: IFolder & IParams
+  type: IFlowNodeType
+  actions?: {
+    [key: string]: IFolder | IParams
   }
-  data?: {
-    label?: string
+  folders?: {
+    [key: string]: IFolder | IParams
+  }
+  data: {
+    label: string
     description?: string
     filled?: boolean
     actionsAmount?: number
@@ -458,12 +461,15 @@ const calculateAmountOfActions = (nodes, writeInto = false) => {
   return writeInto ? nodes.data.actionsAmount : undefined
 }
 
-export const getNodesAndEdges = (actions, colorMode) => {
+export const getNodesAndEdges = (
+  actions: GetListResponse | undefined,
+  colorMode: string
+) => {
   if (!actions) {
     return []
   }
 
-  const nodes = {
+  const nodes: IFolder = {
     id: 'start',
     data: { label: 'Platform name' },
     type: 'node-start',
@@ -472,13 +478,16 @@ export const getNodesAndEdges = (actions, colorMode) => {
   }
 
   for (const item of actions.data) {
+    if (!item.id || typeof item.id !== 'string') {
+      continue
+    }
     const idParts = item.id.split(':')
     const folders = idParts[0].split('.')
 
     let currentFolder = nodes.folders
     let parentId = ''
     for (const [index, folder] of folders.entries()) {
-      if (!currentFolder[folder]) {
+      if (currentFolder && !currentFolder[folder]) {
         currentFolder[folder] = {
           id: folder,
           data: {

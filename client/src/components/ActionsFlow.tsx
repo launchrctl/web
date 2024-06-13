@@ -6,12 +6,19 @@ import Paper from '@mui/material/Paper'
 import { styled, useTheme } from '@mui/material/styles'
 import { GetListResponse } from '@refinedev/core'
 import _debounce from 'lodash/debounce'
-import { FC, useEffect, useState } from 'react'
+import {
+  FC,
+  type MouseEvent as ReactMouseEvent,
+  useEffect,
+  useState,
+} from 'react'
 import * as React from 'react'
 import Flow, {
   Background,
   Controls,
   Handle,
+  type Node,
+  NodeTypes,
   Position,
   ReactFlowInstance,
   useEdgesState,
@@ -29,6 +36,7 @@ import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
 } from '../hooks/SidebarTreeItemStatesHooks'
+import { IFlowNodeType } from '../types'
 import {
   actionHeight,
   actionWidth,
@@ -38,13 +46,24 @@ import {
   getNodesAndEdges,
 } from '../utils/react-flow-builder'
 
-const nodeTypes = {
+type INodeData = {
+  actionsAmount?: number
+  filled?: boolean
+  topLayer?: boolean
+  description?: string
+  isActive: boolean
+  isHovered: boolean
+  label?: string
+  layerIndex?: boolean
+  type: IFlowNodeType
+}
+
+const nodeTypes: NodeTypes = {
   'node-start': NodeStart,
   'node-wrapper': NodeWrapper,
   'node-action': NodeAction,
 }
-
-const WhiteBand = ({ data, type }) => {
+const WhiteBand = ({ data }: { data: INodeData }) => {
   const [active, setActive] = useState(false)
 
   useEffect(() => {
@@ -68,24 +87,16 @@ const WhiteBand = ({ data, type }) => {
           data.layerIndex === undefined
             ? ''
             : buildNodeColor({
-                index: data.layerIndex,
+                index: Number(data.layerIndex),
                 isFilled: true,
               }),
         backgroundImage:
           data.layerIndex === undefined || (!active && !data.isHovered)
             ? 'linear-gradient(#fff, #fff)'
             : `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`,
-
-        // data.layerIndex === undefined
-        //   ? 'linear-gradient(#fff, #fff)'
-        //   : active
-        //     ? 'linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65))'
-        //     : data.isHovered
-        //       ? 'linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8))'
-        //       : 'linear-gradient(#fff, #fff)',
         display: 'flex',
         alignItems: 'center',
-        cursor: type === 'node-action' ? 'pointer' : 'auto',
+        cursor: data.type === 'node-action' ? 'pointer' : 'auto',
         '&:hover': {
           backgroundImage:
             data.layerIndex === undefined
@@ -122,7 +133,7 @@ const WhiteBand = ({ data, type }) => {
           </Box>
         )}
       </Box>
-      {type === 'node-action' && (
+      {data.type === 'node-action' && (
         <Box
           sx={{
             color: '#000',
@@ -139,8 +150,7 @@ const WhiteBand = ({ data, type }) => {
     </Box>
   )
 }
-
-function NodeStart({ data }) {
+function NodeStart({ data }: { data: INodeData }) {
   const { palette } = useTheme()
   return (
     <>
@@ -162,15 +172,14 @@ function NodeStart({ data }) {
     </>
   )
 }
-
-function NodeWrapper({ data }) {
+function NodeWrapper({ data }: { data: INodeData }) {
   const { palette } = useTheme()
   return (
     <Paper
       sx={{
         height: '100%',
         backgroundColor: buildNodeColor({
-          index: data.layerIndex,
+          index: Number(data.layerIndex),
           isFilled: data.filled,
           isDarker: data.filled && data.isHovered,
           isHovered: data.isHovered,
@@ -178,7 +187,7 @@ function NodeWrapper({ data }) {
         backgroundImage: 'none',
         borderRadius: `${6 * elementsScaleCoef}px`,
         outline: `${2 * elementsScaleCoef}px solid ${buildNodeColor({
-          index: data.layerIndex,
+          index: Number(data.layerIndex),
           isFilled: true,
           isDarker: data.isHovered,
         })}`,
@@ -188,7 +197,7 @@ function NodeWrapper({ data }) {
         sx={{
           typography: 'subtitle2',
           backgroundColor: buildNodeColor({
-            index: data.layerIndex,
+            index: Number(data.layerIndex),
             isFilled: true,
             isDarker: data.isHovered,
           }),
@@ -201,8 +210,8 @@ function NodeWrapper({ data }) {
           height: `${folderLabelHeight}px`,
           alignItems: 'center',
           paddingInline: `${12 * elementsScaleCoef}px`,
-          paddingBlockEnd: !data.filled && `${2 * elementsScaleCoef}px`,
-          width: data.filled && '100%',
+          paddingBlockEnd: data.filled ? '' : `${2 * elementsScaleCoef}px`,
+          width: data.filled ? '100%' : 'auto',
           color: '#fff',
         }}
       >
@@ -219,7 +228,7 @@ function NodeWrapper({ data }) {
               gap: `${2 * elementsScaleCoef}px`,
               padding: `${2 * elementsScaleCoef}px ${11 * elementsScaleCoef}px ${2 * elementsScaleCoef}px ${7 * elementsScaleCoef}px`,
               color: '#000',
-              marginInlineStart: data.filled && 'auto',
+              marginInlineStart: data.filled ? 'auto' : '',
               cursor: 'pointer',
               '&:hover': {
                 backgroundColor: `rgba(255, 255, 255, 0.8)`,
@@ -259,8 +268,15 @@ function NodeWrapper({ data }) {
   )
 }
 
-function NodeAction({ data, type }) {
-  return <WhiteBand data={data} type={type}></WhiteBand>
+function NodeAction({ data }: { data: INodeData }) {
+  return (
+    <WhiteBand
+      data={{
+        ...data,
+        type: 'node-action',
+      }}
+    ></WhiteBand>
+  )
 }
 
 const ReactFlowStyled = styled(Flow)(() => ({
@@ -287,7 +303,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   const dispatch = useActionDispatch()
   const { state: nodeClickState } = useSidebarTreeItemClickStates()
   const { state: nodeMouseState } = useSidebarTreeItemMouseStates()
-  const [flowInstance, setFlowInstance] = useState()
+  const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>()
   const { setFlowClickedActionId } = useFlowClickedActionID()
 
   useEffect(() => {
@@ -311,7 +327,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       nodes.some((a) => a.id === nodeClickState.id)
     ) {
       setNodes((prev) => {
-        if (nodeClickState.isActive === true) {
+        if (nodeClickState.isActive) {
           for (const prevMatched of prev.filter(
             (a) => a.id !== nodeClickState.id && a.data.isActive === true
           )) {
@@ -319,7 +335,9 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
           }
         }
         const matched = prev.find((a) => a.id === nodeClickState.id)
-        matched.data.isActive = nodeClickState.isActive
+        if (matched) {
+          matched.data.isActive = nodeClickState.isActive
+        }
         return [...prev]
       })
       if (nodeClickState.isActive) {
@@ -330,11 +348,13 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         if (nodeClickState.isActionsGroup) {
           maxZoom = 0.7
         }
-        flowInstance.fitView({
-          duration: 400,
-          maxZoom,
-          nodes: [{ id: nodeClickState.id }],
-        })
+        if (flowInstance) {
+          flowInstance.fitView({
+            duration: 400,
+            maxZoom,
+            nodes: [{ id: nodeClickState.id }],
+          })
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -349,7 +369,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         nodes.some((a) => a.id === nodeMouseState.id)
       ) {
         setNodes((prev) => {
-          if (nodeMouseState.isHovered === true) {
+          if (nodeMouseState.isHovered) {
             for (const prevMatched of prev.filter(
               (a) => a.id !== nodeMouseState.id && a.data.isHovered === true
             )) {
@@ -372,9 +392,9 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
     const debouncedUpdate = _debounce(() => {
       componentUpdate()
-    }, 20)
+    }, 25)
 
-    if (nodeMouseState.useDebounce) {
+    if (nodeMouseState && nodeMouseState.useDebounce) {
       debouncedUpdate()
     } else {
       componentUpdate(true)
@@ -391,12 +411,13 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [palette.mode])
 
-  const [nodeData, setNodeData] = useState()
+  const [nodeData, setNodeData] = useState<Node>()
 
-  const nodeClickHandler = (e, node) => {
+  const nodeClickHandler = (e: ReactMouseEvent, node: Node) => {
+    const target = e.target as HTMLElement
     if (
-      e.target.classList.contains('actions-pill') ||
-      e.target.closest('.actions-pill')
+      target.classList.contains('actions-pill') ||
+      target.closest('.actions-pill')
     ) {
       setNodes((prev) => {
         const oldMatched = prev.find((a) => a.data.isActive === true)
@@ -410,18 +431,13 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         id: node.id,
         isActive: false,
       })
-      nodeClickState.isActive = false
+      if (nodeClickState) {
+        nodeClickState.isActive = false
+      }
       setNodeData(undefined)
-      dispatch({
-        type: 'set-actions-list',
+      dispatch?.({
+        type: 'set-actions-sidebar',
         id: node.id,
-        actionsList: Object.values(actions.data)
-          .filter((a) => a.id.includes(':') && a.id.startsWith(`${node.id}`))
-          .map((a) => ({
-            id: a.id,
-            title: a.title,
-            description: a.description,
-          })),
       })
 
       return
@@ -431,7 +447,9 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       if (nodeClickState.id === node.id) {
         setNodes((prev) => {
           const matched = prev.find((a) => a.id === nodeClickState.id)
-          matched.data.isActive = false
+          if (matched) {
+            matched.data.isActive = false
+          }
 
           return [...prev]
         })
@@ -440,18 +458,21 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
           isActive: false,
         })
         setNodeData(undefined)
-        dispatch({
-          type: 'default',
+        dispatch?.({
           id: '',
         })
         nodeClickState.isActive = false
       } else {
         setNodes((prev) => {
           const oldMatched = prev.find((a) => a.id === nodeClickState.id)
-          oldMatched.data.isActive = false
+          if (oldMatched) {
+            oldMatched.data.isActive = false
+          }
 
           const newMatched = prev.find((a) => a.id === node.id)
-          newMatched.data.isActive = true
+          if (newMatched) {
+            newMatched.data.isActive = true
+          }
 
           return [...prev]
         })
@@ -460,8 +481,8 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
           isActive: true,
         })
         setNodeData(node)
-        dispatch({
-          type: 'set-action',
+        dispatch?.({
+          type: 'set-actions-sidebar',
           id: node.id,
         })
         nodeClickState.isActive = false
@@ -471,7 +492,9 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         if (node.id === nodeData.id && !nodeData.data.isActive) {
           setNodes((prev) => {
             const matched = prev.find((a) => a.id === node.id)
-            matched.data.isActive = true
+            if (matched) {
+              matched.data.isActive = true
+            }
 
             return [...prev]
           })
@@ -481,14 +504,16 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
           })
           node.data.isActive = true
           setNodeData(node)
-          dispatch({
-            type: 'set-action',
+          dispatch?.({
+            type: 'set-actions-sidebar',
             id: node.id,
           })
         } else if (node.id === nodeData.id && nodeData.data.isActive) {
           setNodes((prev) => {
             const matched = prev.find((a) => a.id === node.id)
-            matched.data.isActive = false
+            if (matched) {
+              matched.data.isActive = false
+            }
 
             return [...prev]
           })
@@ -497,17 +522,20 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
             isActive: false,
           })
           setNodeData(undefined)
-          dispatch({
-            type: 'default',
+          dispatch?.({
             id: '',
           })
         } else if (node.id !== nodeData.id) {
           setNodes((prev) => {
             const oldMatched = prev.find((a) => a.id === nodeData.id)
-            oldMatched.data.isActive = false
+            if (oldMatched) {
+              oldMatched.data.isActive = false
+            }
 
             const newMatched = prev.find((a) => a.id === node.id)
-            newMatched.data.isActive = true
+            if (newMatched) {
+              newMatched.data.isActive = true
+            }
 
             return [...prev]
           })
@@ -516,15 +544,17 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
             isActive: true,
           })
           setNodeData(node)
-          dispatch({
-            type: 'set-action',
+          dispatch?.({
+            type: 'set-actions-sidebar',
             id: node.id,
           })
         }
       } else {
         setNodes((prev) => {
           const matched = prev.find((a) => a.id === node.id)
-          matched.data.isActive = true
+          if (matched) {
+            matched.data.isActive = true
+          }
 
           return [...prev]
         })
@@ -534,8 +564,8 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
         })
         node.data.isActive = true
         setNodeData(node)
-        dispatch({
-          type: 'set-action',
+        dispatch?.({
+          type: 'set-actions-sidebar',
           id: node.id,
         })
       }

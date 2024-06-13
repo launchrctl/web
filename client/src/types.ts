@@ -1,6 +1,8 @@
 import type { BaseRecord } from '@refinedev/core'
 import type { RJSFSchema, UiSchema } from '@rjsf/utils'
 
+type IFlowNodeType = 'node-start' | 'node-wrapper' | 'node-action'
+
 interface IAction {
   id: string
   title?: string
@@ -15,4 +17,4 @@ interface IFormValues {
   id: string
 }
 
-export type { IAction, IActionData, IFormValues }
+export type { IAction, IActionData, IFlowNodeType, IFormValues }

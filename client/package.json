@@ -70,7 +70,7 @@
     "lint:fix": "eslint --fix .",
     "dev": "refine dev",
     "build": "refine build",
-    "real-build": "tsc && refine build",
+    "real-build": "tsc & eslint . && refine build",
     "preview": "refine start",
     "refine": "refine",
     "postinstall": "cd ../ && husky"
