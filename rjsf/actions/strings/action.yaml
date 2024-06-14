@@ -23,3 +23,10 @@ action:
       title: Color picker
       type: string
       default: '#4a90e2'
+    - name: testpass
+      title: Label with word password
+      type: string
+    - name: testpass2
+      title: Label with word passphrase
+      type: string
+

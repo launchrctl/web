@@ -17,6 +17,7 @@ import { useState } from 'react'
 
 import { RunningActionsList } from '../../components/RunningActionsList'
 import type { IActionData, IFormValues } from '../../types'
+import { customizeUiSchema } from '../../utils/helpers'
 
 // Make modifications to the theme with your own fields and widgets
 const Form = withTheme(Theme)
@@ -42,8 +43,9 @@ export const ActionShow: FC = () => {
   const { isFetching } = queryResult
 
   const jsonschema = queryResult?.data?.data?.jsonschema
-
-  const uischema = queryResult?.data?.data?.uischema?.uiSchema || {}
+  let uischema = {
+    ...queryResult?.data?.data?.uischema?.uiSchema,
+  }
 
   if (jsonschema) {
     // @todo I actually don't know for the moment how to overcome error
@@ -51,6 +53,11 @@ export const ActionShow: FC = () => {
     // Maybe it's because the server returns "2020-12" and default is "draft-07"
     // @see https://ajv.js.org/json-schema.html
     delete jsonschema.$schema
+
+    uischema = {
+      ...uischema,
+      ...customizeUiSchema(jsonschema),
+    }
   }
 
   const apiUrl = useApiUrl()
