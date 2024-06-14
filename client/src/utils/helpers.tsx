@@ -37,3 +37,12 @@ export const customizeUiSchema = (
 
   return uiSchema
 }
+
+export const extractDateTimeFromId = (id: string) => {
+  const [timestampStr] = id.split('-')
+  const timestamp = Number.parseInt(timestampStr, 10)
+  const date = new Date(timestamp * 1000)
+  const formattedDate = date.toLocaleString()
+
+  return formattedDate
+}

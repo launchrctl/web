@@ -3,6 +3,7 @@ import type { RefineThemedLayoutV2Props } from '@refinedev/mui'
 import { ThemedLayoutContextProvider } from '@refinedev/mui'
 import type { FC } from 'react'
 
+import StatusBox from '../StatusBox'
 import { ThemedHeaderV2 as DefaultHeader } from './Header'
 
 export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
@@ -35,6 +36,7 @@ export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
             sx={{
               flexGrow: 1,
               bgcolor: (theme) => theme.palette.background.default,
+              paddingBlockEnd: '100px',
               '& > .MuiPaper-root, & > div:not([class]) > .MuiPaper-root': {
                 borderRadius: {
                   xs: 0,
@@ -48,6 +50,7 @@ export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
           {Footer && <Footer />}
         </Box>
         {OffLayoutArea && <OffLayoutArea />}
+        <StatusBox />
       </Box>
     </ThemedLayoutContextProvider>
   )
