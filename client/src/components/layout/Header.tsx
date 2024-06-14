@@ -1,18 +1,15 @@
-import AddToPhotosIcon from '@mui/icons-material/AddToPhotos'
 import GitHubIcon from '@mui/icons-material/GitHub'
+import ListIcon from '@mui/icons-material/List'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
-import List from '@mui/material/List'
-import ListItem from '@mui/material/ListItem'
-import ListItemButton from '@mui/material/ListItemButton'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
+import IconButton from '@mui/material/IconButton'
+import Stack from '@mui/material/Stack'
 import Toolbar from '@mui/material/Toolbar'
-import type { RefineThemedLayoutV2HeaderProps } from '@refinedev/mui'
-import type { FC } from 'react'
+import Tooltip from '@mui/material/Tooltip' // Added for tooltips
+import { RefineThemedLayoutV2HeaderProps } from '@refinedev/mui'
+import { FC } from 'react'
 
 import { DarkModeSwitcher } from './DarkModeSwitcher'
-// import { HamburgerMenu } from './HamburgerMenu'
 import { ThemedTitleV2 as Title } from './Title'
 
 export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
@@ -26,46 +23,27 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => (
   >
     <Toolbar>
       <Title collapsed={false} />
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: '6px',
-          flexGrow: 1,
-        }}
-      >
-        <List
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexGrow: 0,
-            width: 480,
-          }}
-        >
-          <ListItem disablePadding disableGutters>
-            <ListItemButton href="/flow">
-              <ListItemIcon>
-                <AddToPhotosIcon />
-              </ListItemIcon>
-              <ListItemText primary="Flow (Experimental)" />
-            </ListItemButton>
-          </ListItem>
-          <ListItem disablePadding disableGutters>
-            <ListItemButton
-              href="https://github.com/launchrctl/web/issues/new"
-              target={'_blank'}
-            >
-              <ListItemIcon>
-                <GitHubIcon />
-              </ListItemIcon>
-              <ListItemText primary="Report bug" />
-            </ListItemButton>
-          </ListItem>
-        </List>
+      <Box sx={{ flexGrow: 1 }} />
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Tooltip title="Actions list">
+          <IconButton href="/actions" size="small" color="inherit">
+            <ListIcon />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Report bug">
+          <IconButton
+            href="https://github.com/launchrctl/web/issues/new"
+            target="_blank"
+            size="small"
+            color="inherit"
+          >
+            <GitHubIcon />
+          </IconButton>
+        </Tooltip>
+
         <DarkModeSwitcher />
-        {/* <HamburgerMenu /> */}
-      </Box>
+      </Stack>
     </Toolbar>
   </AppBar>
 )

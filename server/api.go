@@ -9,6 +9,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"sync"
+	"time"
 
 	"github.com/launchrctl/launchr/pkg/log"
 
@@ -23,6 +26,7 @@ type launchrServer struct {
 	ctx        context.Context
 	baseURL    string
 	apiPrefix  string
+	wsMutex    sync.Mutex
 }
 
 type launchrWebConfig struct {
@@ -117,10 +121,8 @@ func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.R
 		sendError(w, http.StatusInternalServerError, "Error reading streams")
 	}
 
-	// @todo: care about error file as well
-
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(sd[0])
+	_ = json.NewEncoder(w).Encode(sd)
 }
 
 func (l *launchrServer) basePath() string {
@@ -193,11 +195,7 @@ func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Req
 	runningActions := l.actionMngr.RunInfoByAction(id)
 
 	sort.Slice(runningActions, func(i, j int) bool {
-		if runningActions[i].Status == runningActions[j].Status {
-			return runningActions[i].ID < runningActions[j].ID
-		}
-
-		return runningActions[i].Status < runningActions[j].Status
+		return runningActions[i].ID < runningActions[j].ID
 	})
 
 	var result = make([]ActionRunInfo, 0, len(runningActions))
@@ -226,9 +224,12 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		return
 	}
 
+	// Generate custom runId.
+	runId := strconv.FormatInt(time.Now().Unix(), 10) + "-" + a.ID
+
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams, err := createFileStreams(id)
+	streams, err := createFileStreams(runId)
 	if err != nil {
 		log.Debug(err.Error())
 		sendError(w, http.StatusInternalServerError, "Error preparing streams")
@@ -250,7 +251,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		return
 	}
 
-	ri, chErr := l.actionMngr.RunBackground(l.ctx, a)
+	ri, chErr := l.actionMngr.RunBackground(l.ctx, a, runId)
 
 	go func() {
 		// @todo handle error somehow. We cant notify client, but must save the status

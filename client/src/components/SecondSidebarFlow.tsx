@@ -1,6 +1,9 @@
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
+import { useTheme } from '@mui/system'
 import { GetListResponse } from '@refinedev/core'
 import { type FC, useEffect, useState } from 'react'
 
@@ -30,6 +33,8 @@ export const SecondSidebarFlow: FC<{
   const { flowClickedActionId, setFlowClickedActionId } =
     useFlowClickedActionID()
   const { handleUnselect } = useSidebarTreeItemClickStates()
+  const theme = useTheme()
+  const [expand, setExpand] = useState('25vw')
 
   useEffect(() => {
     if (actions.data && nodeId && !isAction(nodeId)) {
@@ -65,6 +70,9 @@ export const SecondSidebarFlow: FC<{
     }
   }
 
+  const onToggle = () =>
+    expand === '25vw' ? setExpand('50vw') : setExpand('25vw')
+
   if (!nodeId) {
     return null
   }
@@ -72,7 +80,14 @@ export const SecondSidebarFlow: FC<{
   return (
     <Box
       role="presentation"
-      sx={{ py: 2, overflowY: 'scroll', height: '100%', position: 'relative' }}
+      sx={{
+        py: 2,
+        overflowY: 'scroll',
+        height: '100%',
+        position: 'relative',
+        bgcolor: theme.palette.background.default,
+        width: expand,
+      }}
     >
       <IconButton
         size="small"
@@ -85,6 +100,16 @@ export const SecondSidebarFlow: FC<{
         }}
       >
         <CloseIcon />
+      </IconButton>
+      <IconButton
+        size="small"
+        onClick={() => onToggle()}
+        sx={{
+          zIndex: 1,
+          mx: 1,
+        }}
+      >
+        {expand === '25vw' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
       </IconButton>
       {isAction(nodeId) ? (
         <FormFlow actionId={nodeId} />

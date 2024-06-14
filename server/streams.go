@@ -92,13 +92,13 @@ func (w *wrappedWriter) Write(p []byte) (int, error) {
 	return w.w.Write(p)
 }
 
-func createFileStreams(actionId ActionId) (*webCli, error) {
-	outfile, err := os.Create(fmt.Sprintf("%s-out.txt", actionId))
+func createFileStreams(runId string) (*webCli, error) {
+	outfile, err := os.Create(fmt.Sprintf("%s-out.txt", runId))
 	if err != nil {
 		return nil, fmt.Errorf("error creating output file: %w", err)
 	}
 
-	errfile, err := os.Create(fmt.Sprintf("%s-err.txt", actionId))
+	errfile, err := os.Create(fmt.Sprintf("%s-err.txt", runId))
 	if err != nil {
 		return nil, fmt.Errorf("error creating error file: %w", err)
 	}
