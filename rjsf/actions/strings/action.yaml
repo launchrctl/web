@@ -2,7 +2,7 @@ action:
   title: RJSF Example of strings
   description: RJSF Example of strings arguments
   image: alpine:latest
-  command: [ "sh", "-c", "for i in $(seq 60); do echo $$i; sleep 1; done" ]
+  command: ["sh", "-c", "for i in $(seq 60); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
   arguments:
     - name: simpleString
       title: Simple inline string
