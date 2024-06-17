@@ -17,8 +17,9 @@ import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
 } from '../hooks/SidebarTreeItemStatesHooks'
+import { IAction } from '../types'
 import { sentenceCase } from '../utils/helpers'
-import { type IActionsGroup } from './SecondSIdebarFlow'
+import { type IActionsGroup } from './SecondSidebarFlow'
 interface ActionsListFlowProps {
   actionsGroup: IActionsGroup
 }
@@ -33,11 +34,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
   const groups: {
     folderId: string
     label: string
-    items: {
-      id: string
-      title: string
-      description: string
-    }[]
+    items: IAction[]
   }[] = []
 
   const breadcrumbs = actionsGroup.id.includes('.')
@@ -60,7 +57,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
         folderId: actionsGroup.id,
         label: '',
         items: attachedActions.map((action) => ({
-          id: action.id.split(':').pop(),
+          id: action.id.split(':').pop() || '',
           title: action.title,
           description: action.description,
         })),
@@ -87,11 +84,21 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
             return a
           })
         } else {
+          const label = parts[0]
+
+          if (!label) {
+            continue
+          }
+
+          const suffix = label.split(`${actionsGroup.id}.`).pop()
+
+          if (!suffix) {
+            continue
+          }
+
           groups.push({
             folderId: parts[0],
-            label: parts[0]
-              .split(`${actionsGroup.id}.`)
-              .pop()
+            label: suffix
               .split('.')
               .map((a) => sentenceCase(a))
               .join(' / '),
@@ -127,8 +134,8 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
   }
 
   const actionClickHandler = (id: string) => {
-    dispatch({
-      type: 'set-action',
+    dispatch?.({
+      type: 'set-actions-sidebar',
       id,
     })
     setFlowClickedActionId({

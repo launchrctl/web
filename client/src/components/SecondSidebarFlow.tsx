@@ -1,49 +1,59 @@
 import CloseIcon from '@mui/icons-material/Close'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
+import { GetListResponse } from '@refinedev/core'
 import { type FC, useEffect, useState } from 'react'
 
 import { useActionDispatch } from '../hooks/ActionHooks'
 import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
 import { useSidebarTreeItemClickStates } from '../hooks/SidebarTreeItemStatesHooks'
+import { IAction } from '../types'
 import { ActionsListFlow } from './ActionsListFlow'
 import { FormFlow } from './FormFlow'
 
 export type IActionsGroup = {
   id: string
-  list: string[]
+  list: IAction[]
 }
 
-export const SecondSIdebarFlow: FC = ({ action }) => {
+const isAction = (id: string) => id.split(':')[1]?.length
+
+export const SecondSidebarFlow: FC<{
+  actions: GetListResponse
+  nodeId: string
+}> = ({ actions, nodeId }) => {
   const [actionsGroup, setActionsGroup] = useState<IActionsGroup>({
     id: '',
     list: [],
   })
-  const [actionId, setActionId] = useState('')
   const dispatch = useActionDispatch()
   const { flowClickedActionId, setFlowClickedActionId } =
     useFlowClickedActionID()
   const { handleUnselect } = useSidebarTreeItemClickStates()
-  const isAction = () => actionId.split(':')[1]?.length
 
   useEffect(() => {
-    if (action?.type === 'action' && action?.id?.length > 0) {
-      setActionId(action.id)
-    } else if (
-      action?.type === 'actions-list' &&
-      action?.id?.length > 0 &&
-      action?.actionsList?.length
-    ) {
+    if (actions.data && nodeId && !isAction(nodeId)) {
       setActionsGroup({
-        id: action.id,
-        list: action.actionsList,
+        id: nodeId,
+        list: Object.values(actions.data)
+          .filter(
+            (a) =>
+              a.id &&
+              typeof a.id === 'string' &&
+              a.id.includes(':') &&
+              a.id.startsWith(`${nodeId}`)
+          )
+          .map((a) => ({
+            id: String(a.id),
+            title: a.title,
+            description: a.description,
+          })),
       })
     }
-  }, [action])
+  }, [actions, nodeId])
 
   const onClose = () => {
-    dispatch({
-      type: 'default',
+    dispatch?.({
       id: '',
     })
     if (flowClickedActionId) {
@@ -55,14 +65,8 @@ export const SecondSIdebarFlow: FC = ({ action }) => {
     }
   }
 
-  let content
-
-  if (action?.type === 'action' && actionId.length > 0 && isAction()) {
-    content = <FormFlow actionId={actionId} />
-  } else if (action?.type === 'actions-list' && actionsGroup.list.length > 0) {
-    content = <ActionsListFlow actionsGroup={actionsGroup} />
-  } else {
-    return
+  if (!nodeId) {
+    return null
   }
 
   return (
@@ -82,7 +86,11 @@ export const SecondSIdebarFlow: FC = ({ action }) => {
       >
         <CloseIcon />
       </IconButton>
-      {content}
+      {isAction(nodeId) ? (
+        <FormFlow actionId={nodeId} />
+      ) : (
+        <ActionsListFlow actionsGroup={actionsGroup} />
+      )}
     </Box>
   )
 }

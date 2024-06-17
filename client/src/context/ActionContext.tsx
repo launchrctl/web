@@ -12,24 +12,14 @@ interface RunningActionDetails {
 
 export interface State {
   id: string
-  type: 'action' | 'actions-list' | 'default'
-  runningActions: RunningActionDetails[]
-  actionsList: {
-    id: string
-    title: string
-    description: string
-  }[]
+  type?: 'set-actions-sidebar' | ''
+  runningActions?: RunningActionDetails[]
 }
 
 export interface Action {
-  type: string
-  id: string
+  id?: string
+  type?: string
   output?: string
-  actionsList: {
-    id: string
-    title: string
-    description: string
-  }[]
 }
 
 interface Props {
@@ -38,66 +28,67 @@ interface Props {
 
 const initialState: State = {
   id: '',
-  type: 'default',
+  type: '',
   runningActions: [],
 }
 
 export const ActionContext = createContext<State>(initialState)
 export const ActionDispatchContext = createContext<Dispatch<Action> | null>(
-  undefined
+  null
 )
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case 'set-action': {
+    case 'set-actions-sidebar': {
       return {
-        ...state,
-        id: action.id,
-        type: 'action',
-      }
-    }
-    case 'set-actions-list': {
-      return {
-        ...state,
-        id: action.id,
-        actionsList: action.actionsList,
-        type: 'actions-list',
+        id: action.id || '',
       }
     }
     case 'start-action': {
       return {
         ...state,
         runningActions: [
-          ...state.runningActions,
-          { id: action.id, state: 'running', output: [] },
+          ...(state.runningActions ?? []),
+          {
+            id: action.id as string,
+            state: 'running',
+            output: [],
+            runId: '',
+          },
         ],
       }
     }
     case 'finish-action': {
       return {
         ...state,
-        runningActions: state.runningActions.map((act) =>
-          act.id === action.id ? { ...act, state: 'finished' } : act
-        ),
+        runningActions: state.runningActions
+          ? state.runningActions.map((act) =>
+              act.id === action.id ? { ...act, state: 'finished' } : act
+            )
+          : [],
       }
     }
     case 'error-action': {
       return {
         ...state,
-        runningActions: state.runningActions.map((act) =>
-          act.id === action.id ? { ...act, state: 'error' } : act
-        ),
+        runningActions: state.runningActions
+          ? state.runningActions.map((act) =>
+              act.id === action.id ? { ...act, state: 'error' } : act
+            )
+          : [],
       }
     }
     case 'update-output': {
       return {
         ...state,
-        runningActions: state.runningActions.map((act) =>
-          act.id === action.id
-            ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              { ...act, output: [...act.output, action.output!] }
-            : act
-        ),
+        runningActions: state.runningActions
+          ? state.runningActions.map((act) =>
+              act.id === action.id
+                ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  { ...act, output: [...act.output, action.output!] }
+                : act
+            )
+          : [],
       }
     }
     case 'clear-actions': {
@@ -110,7 +101,6 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         id: '',
-        type: 'default',
       }
     }
   }

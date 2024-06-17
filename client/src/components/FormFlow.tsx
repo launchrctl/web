@@ -35,7 +35,7 @@ function TitleFieldTemplate<
   )
 }
 
-export const FormFlow: FC = ({ actionId }) => {
+export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
   const [actionRunning, setActionRunning] = useState(false)
   const startAction = useStartAction()
   const apiUrl = useApiUrl()
@@ -48,7 +48,7 @@ export const FormFlow: FC = ({ actionId }) => {
 
   const { isFetching } = queryResult
 
-  const jsonschema = queryResult?.data?.data?.jsonschema
+  const jsonschema = queryResult?.data?.data?.jsonschema || {}
 
   const uischema = queryResult?.data?.data?.uischema?.uiSchema || {}
 
@@ -102,7 +102,9 @@ export const FormFlow: FC = ({ actionId }) => {
           <Button variant="contained" type="submit" disabled={actionRunning}>
             Form not working yet
           </Button>
-          <Button type="button" href={`/actions/${actionId}/show`}>Go to form</Button>
+          <Button type="button" href={`/actions/${actionId}/show`}>
+            Go to form
+          </Button>
         </Form>
       )}
     </>

@@ -1,13 +1,36 @@
-import { createContext, useState } from 'react'
-
-export const FlowClickedActionIDContext = createContext()
+import {
+  createContext,
+  Dispatch,
+  FC,
+  type ReactNode,
+  SetStateAction,
+  useState,
+} from 'react'
 
 interface State {
   id: string
   isActive: boolean
 }
 
-export const FlowClickedActionIDProvider = ({ children }) => {
+interface FlowClickedActionIDContextType {
+  flowClickedActionId: State
+  setFlowClickedActionId: Dispatch<SetStateAction<State>>
+}
+
+export const FlowClickedActionIDContext =
+  createContext<FlowClickedActionIDContextType>({
+    flowClickedActionId: {
+      id: '',
+      isActive: false,
+    },
+    setFlowClickedActionId: () => {
+      // default function
+    },
+  })
+
+export const FlowClickedActionIDProvider: FC<{
+  children: ReactNode
+}> = ({ children }) => {
   const [flowClickedActionId, setFlowClickedActionId] = useState<State>({
     id: '',
     isActive: false,

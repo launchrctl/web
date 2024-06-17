@@ -3,7 +3,7 @@ import { GetListResponse, useList } from '@refinedev/core'
 import { type FC, useEffect, useState } from 'react'
 
 import { ActionsFlow } from '../../components/ActionsFlow'
-import { SecondSIdebarFlow } from '../../components/SecondSIdebarFlow'
+import { SecondSidebarFlow } from '../../components/SecondSidebarFlow'
 import { SidebarFlow } from '../../components/SidebarFlow'
 import { FlowClickedActionIDProvider } from '../../context/ActionsFlowContext'
 import {
@@ -17,12 +17,12 @@ export const FlowShow: FC = () => {
     resource: 'actions',
   })
   const [dataReceived, setData] = useState<GetListResponse>()
-  const action = useAction()
+  const { id: nodeId } = useAction()
   const [renderEndSidebar, setRenderEndSidebar] = useState(false)
 
   useEffect(() => {
-    setRenderEndSidebar(action?.type !== 'default')
-  }, [action])
+    setRenderEndSidebar(nodeId !== '')
+  }, [nodeId])
 
   useEffect(() => {
     if (actions) {
@@ -68,7 +68,7 @@ export const FlowShow: FC = () => {
                 </Grid>
                 {renderEndSidebar && (
                   <Grid item xs={8} sx={{ height: 'calc(100vh - 68px)' }}>
-                    <SecondSIdebarFlow action={action} />
+                    <SecondSidebarFlow actions={dataReceived} nodeId={nodeId} />
                   </Grid>
                 )}
               </>

@@ -45,6 +45,7 @@ module.exports = {
         ignore: ['^(vite)*'],
       },
     ],
+    'unicorn/no-null': 0,
     'unicorn/prevent-abbreviations': 0,
     'unicorn/prefer-query-selector': 0,
     'import/no-unresolved': [

@@ -1,23 +1,19 @@
-import { BaseRecord, GetListResponse } from '@refinedev/core'
+import { GetListResponse } from '@refinedev/core'
 
-import { sentenceCase } from '../utils/helpers'
+import { IAction } from '../types'
+import { sentenceCase, splitActionId } from '../utils/helpers'
 
 export type FileType = 'folder' | 'app' | 'action'
 
-interface ExtendedTreeItemProps {
+export interface ExtendedTreeItemProps {
   id: string
   label?: string
+  title?: string
   description?: string
   fileType: FileType
   depth: number
   isActionsGroup?: boolean
   children?: ExtendedTreeItemProps[]
-}
-
-interface IAction {
-  id: string
-  title?: string
-  description?: string
 }
 
 const addAction = (to: ExtendedTreeItemProps, what: IAction, depth: number) => {
@@ -28,17 +24,13 @@ const addAction = (to: ExtendedTreeItemProps, what: IAction, depth: number) => {
   })
 }
 
-export const splitActionId = (actionId: string) => {
-  const [path, id] = actionId.split(':')
-  const levels = path.split('.')
-  return { levels, id }
-}
-
-export const treeBuilder = (actions: GetListResponse<IAction>) => {
+export const treeBuilder = (
+  actions: GetListResponse | undefined
+): ExtendedTreeItemProps[] => {
   const tree: ExtendedTreeItemProps[] | undefined = []
-  if (actions.data) {
+  if (actions?.data) {
     for (const action of actions.data) {
-      const { levels } = splitActionId(action.id)
+      const { levels } = splitActionId(action.id as string)
       let currentNode: ExtendedTreeItemProps[] | undefined = tree
       let idPath = ''
 
@@ -50,7 +42,7 @@ export const treeBuilder = (actions: GetListResponse<IAction>) => {
           currentNode?.find((a) => a.id === idPath)
         if (alreadyExist) {
           if (index === levels.length - 1) {
-            addAction(alreadyExist, action, index + 1)
+            addAction(alreadyExist, action as IAction, index + 1)
           }
           currentNode = alreadyExist.children
         } else {
@@ -64,10 +56,12 @@ export const treeBuilder = (actions: GetListResponse<IAction>) => {
           }
 
           if (index === levels.length - 1) {
-            obj.isActionsGroup = !actions.data.some((a) =>
-              a.id.includes(`${idPath}.`)
-            )
-            addAction(obj, action, index + 1)
+            obj.isActionsGroup = !actions.data.some((a) => {
+              return (
+                a.id && typeof a.id === 'string' && a.id.includes(`${idPath}.`)
+              )
+            })
+            addAction(obj, action as IAction, index + 1)
           }
 
           if (currentNode) {
