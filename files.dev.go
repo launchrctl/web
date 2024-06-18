@@ -1,12 +1,18 @@
-//go:build dev
+//go:build dev || embed
 
 package web
 
 import (
+	"embed"
 	"github.com/launchrctl/web/server"
 	"io/fs"
-	"os"
 )
+
+//go:embed swagger-ui/*
+var swaggerUIFS embed.FS
+
+//go:embed client/dist/*
+var clientFS embed.FS
 
 func prepareRunOption(_ *Plugin, opts *server.RunOptions) {
 	opts.SwaggerUIFS = defaultSwaggerUIFS()
@@ -14,9 +20,17 @@ func prepareRunOption(_ *Plugin, opts *server.RunOptions) {
 }
 
 func defaultSwaggerUIFS() fs.FS {
-	return os.DirFS("./cmd/launchr/assets/github.com/launchrctl/web/swagger-ui/swagger-ui")
+	sub, err := fs.Sub(swaggerUIFS, "swagger-ui")
+	if err != nil {
+		panic(err)
+	}
+	return sub
 }
 
 func defaultClientFS() fs.FS {
-	return os.DirFS("./client/dist")
+	sub, err := fs.Sub(clientFS, "client/dist")
+	if err != nil {
+		panic(err)
+	}
+	return sub
 }

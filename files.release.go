@@ -1,11 +1,10 @@
-//go:build !dev
+//go:build !dev && !embed
 
 package web
 
 import (
-	"io/fs"
-
 	"github.com/launchrctl/web/server"
+	"io/fs"
 )
 
 func prepareRunOption(p *Plugin, opts *server.RunOptions) {
