@@ -3,7 +3,6 @@ package web
 
 import (
 	"fmt"
-
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/web/server"
 	"github.com/spf13/cobra"
