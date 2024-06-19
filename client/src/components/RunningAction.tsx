@@ -3,6 +3,7 @@ import Accordion from '@mui/material/Accordion'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import { useApiUrl, useCustom } from '@refinedev/core'
+import Ansi from 'ansi-to-react'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 
@@ -68,7 +69,7 @@ export const RunningAction: FC<IRunningActiontProps> = ({
                 padding: '15px',
               }}
             >
-              {output}
+              <Ansi>{output}</Ansi>
             </div>
           ) : (
             'No output'
