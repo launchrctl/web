@@ -54,4 +54,5 @@ jobs:
         file: client/dist.*
         file_glob: true
         tag: ${{ github.ref_name }}
+        release_name: ${{ github.ref_name }}
         repo_token: ${{ secrets.GITHUB_TOKEN }}
