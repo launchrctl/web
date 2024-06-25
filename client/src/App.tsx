@@ -1,12 +1,11 @@
 import { Refine } from '@refinedev/core'
-import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar'
+import { KBarProvider, RefineKbar } from '@refinedev/kbar'
 import { ErrorComponent, useNotificationProvider } from '@refinedev/mui'
 import routerBindings, {
   DocumentTitleHandler,
   NavigateToResource,
   UnsavedChangesNotifier,
 } from '@refinedev/react-router-v6'
-import * as React from 'react'
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
 
 import { ThemedLayoutV2 } from './components/layout'
@@ -22,9 +21,26 @@ import { ThemeProvider } from './ThemeProvider'
 const apiUrl = import.meta.env.VITE_API_URL
 
 export function App() {
+  const actions = [
+    {
+      id: 'blog',
+      name: 'Do something good',
+      shortcut: ['d'],
+      keywords: 'writing words',
+      perform: () => (window.location.pathname = 'blog'),
+    },
+    {
+      id: 'contact',
+      name: 'Do something very good',
+      shortcut: ['c'],
+      keywords: 'email',
+      perform: () => (window.location.pathname = 'contact'),
+    },
+  ]
+
   return (
     <BrowserRouter>
-      <RefineKbarProvider>
+      <KBarProvider actions={actions}>
         <ThemeProvider>
           <Refine
             dataProvider={{
@@ -89,7 +105,7 @@ export function App() {
             <DocumentTitleHandler />
           </Refine>
         </ThemeProvider>
-      </RefineKbarProvider>
+      </KBarProvider>
     </BrowserRouter>
   )
 }
