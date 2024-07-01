@@ -3,8 +3,9 @@
 package web
 
 import (
-	"github.com/launchrctl/web/server"
 	"io/fs"
+
+	"github.com/launchrctl/web/server"
 )
 
 func prepareRunOption(p *Plugin, opts *server.RunOptions) {
