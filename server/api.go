@@ -269,18 +269,18 @@ func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
 
 	var uiSchema map[string]interface{}
 
-	yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", a.Dir()))
+	filePath, err := findUISchemaFile(a.Dir())
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return ActionFull{}, err
-		}
-
 		fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
 		uiSchema = map[string]interface{}{}
 	} else {
+		yamlData, err := os.ReadFile(filePath)
+		if err != nil {
+			fmt.Printf("Error reading ui-schema.yaml: %v\n", err)
+		}
 		err = yaml.Unmarshal(yamlData, &uiSchema)
 		if err != nil {
-			return ActionFull{}, err
+			fmt.Printf("Error unmarshalling ui-schema.yaml: %v\n", err)
 		}
 	}
 
@@ -310,4 +310,23 @@ func sendError(w http.ResponseWriter, code int, message string) {
 	}
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(petErr)
+}
+
+// Find UI schema file in parent directories.
+func findUISchemaFile(startDir string) (string, error) {
+	dir := startDir
+	for {
+		filePath := filepath.Join(dir, "ui-schema.yaml")
+		if _, err := os.Stat(filePath); err == nil {
+			return filePath, nil
+		} else if os.IsNotExist(err) {
+			parentDir := filepath.Dir(dir)
+			if parentDir == dir {
+				return "", fmt.Errorf("ui-schema.yaml not found")
+			}
+			dir = parentDir
+		} else {
+			return "", err
+		}
+	}
 }
