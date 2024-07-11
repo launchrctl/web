@@ -1,4 +1,5 @@
 import Grid from '@mui/material/Grid'
+import { Box } from '@mui/system'
 import { GetListResponse, useList } from '@refinedev/core'
 import { type FC, useEffect, useState } from 'react'
 
@@ -59,17 +60,20 @@ export const FlowShow: FC = () => {
                 <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
                   <SidebarFlow actions={dataReceived} />
                 </Grid>
-                <Grid
-                  item
-                  xs={renderEndSidebar ? 21 : 29}
-                  sx={{ height: 'calc(100vh - 68px)' }}
-                >
+                <Grid item xs={29} sx={{ height: 'calc(100vh - 68px)' }}>
                   <ActionsFlow actions={dataReceived} />
                 </Grid>
                 {renderEndSidebar && (
-                  <Grid item xs={8} sx={{ height: 'calc(100vh - 68px)' }}>
+                  <Box
+                    sx={{
+                      height: 'calc(100vh - 68px)',
+                      position: 'fixed',
+                      right: 0,
+                      top: 68,
+                    }}
+                  >
                     <SecondSidebarFlow actions={dataReceived} nodeId={nodeId} />
-                  </Grid>
+                  </Box>
                 )}
               </>
             )}

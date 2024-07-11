@@ -1,121 +1,113 @@
 import Button from '@mui/material/Button'
-import Divider from '@mui/material/Divider'
 import {
   useApiUrl,
   useCustomMutation,
   useNotification,
   useOne,
+  usePublish,
   useResource,
 } from '@refinedev/core'
 import { Show } from '@refinedev/mui'
-import type { IChangeEvent } from '@rjsf/core'
-import { withTheme } from '@rjsf/core'
+import { IChangeEvent, withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
 import validator from '@rjsf/validator-ajv8'
-import type { FC } from 'react'
-import { useState } from 'react'
+import merge from 'lodash/merge'
+import { FC, useContext, useEffect, useState } from 'react'
 
-import { RunningActionsList } from '../../components/RunningActionsList'
-import type { IActionData, IFormValues } from '../../types'
+import { AppContext } from '../../context/AppContext'
+import { IActionData, IFormValues } from '../../types'
 import { customizeUiSchema } from '../../utils/helpers'
 
-// Make modifications to the theme with your own fields and widgets
 const Form = withTheme(Theme)
 
 export const ActionShow: FC = () => {
-  // @todo const translate = useTranslate();
-  const {
-    // resource,
-    id: idFromRoute,
-    // action: actionFromRoute,
-    identifier,
-  } = useResource()
-
+  const { id: idFromRoute, identifier } = useResource()
+  const publish = usePublish()
+  const { addAction } = useContext(AppContext)
   const { open } = useNotification()
-
   const [actionRunning, setActionRunning] = useState(false)
 
   const queryResult = useOne<IActionData>({
     resource: identifier,
     id: idFromRoute,
   })
-
-  const { isFetching } = queryResult
-
-  const jsonschema = queryResult?.data?.data?.jsonschema
-  let uischema = {
-    ...queryResult?.data?.data?.uischema?.uiSchema,
-  }
-
-  if (jsonschema) {
-    // @todo I actually don't know for the moment how to overcome error
-    //  "no schema with key or ref" produced when schema is defined.
-    // Maybe it's because the server returns "2020-12" and default is "draft-07"
-    // @see https://ajv.js.org/json-schema.html
-    delete jsonschema.$schema
-
-    uischema = {
-      ...uischema,
-      ...customizeUiSchema(jsonschema),
-    }
-  }
-
+  const { isFetching, data } = queryResult
   const apiUrl = useApiUrl()
-
   const { mutateAsync } = useCustomMutation()
 
-  const onSubmit = async (
-    { formData }: IChangeEvent<IFormValues>
-    // e: FormEvent<IFormValues>,
-  ) => {
-    if (!formData) {
-      return
-    }
-
-    setActionRunning(true)
-
-    await mutateAsync({
-      url: `${apiUrl}/actions/${idFromRoute}`,
-      method: 'post',
-      values: formData,
-      // @todo more informative messages.
-      successNotification: () => ({
-        message: 'Action successfully started.',
-        description: 'Success with no errors',
-        type: 'success',
-      }),
-      errorNotification() {
-        return {
-          message: 'Error.',
-          description: 'Something goes wrong',
-          type: 'error',
-        }
-      },
-    })
-    // @todo redirect somewhere
+  // Fetch schema and customize uiSchema
+  const jsonschema = data?.data?.jsonschema
+  let uischema = { ...data?.data?.uischema?.uiSchema }
+  if (jsonschema) {
+    delete jsonschema.$schema
+    uischema = merge({}, uischema, customizeUiSchema(jsonschema))
   }
 
-  const onActionRunFinished = async () => {
-    setActionRunning(false)
-    open?.({
-      type: 'success',
-      message: 'All actions runs finished',
-      description: 'Success!',
+  useEffect(() => {
+    if (!jsonschema && !isFetching) {
+      open?.({
+        type: 'error',
+        message: 'Schema not found',
+        description: 'The action schema could not be retrieved.',
+      })
+    }
+  }, [jsonschema, open, isFetching])
+
+  // Handle form submission
+  const onSubmit = async ({ formData }: IChangeEvent<IFormValues>) => {
+    if (!formData) return
+
+    setActionRunning(true)
+    publish?.({
+      channel: 'processes',
+      type: 'get-processes',
+      payload: { action: idFromRoute },
+      date: new Date(),
     })
+
+    try {
+      const result = await mutateAsync({
+        url: `${apiUrl}/actions/${idFromRoute}`,
+        method: 'post',
+        values: formData,
+        successNotification: {
+          message: 'Action successfully created.',
+          description: 'Success with no errors',
+          type: 'success',
+        },
+        errorNotification: {
+          message: 'Error.',
+          description: 'Something went wrong',
+          type: 'error',
+        },
+      })
+
+      if (result && idFromRoute) {
+        addAction({
+          id: idFromRoute.toString(),
+          title: jsonschema?.title,
+          description: jsonschema?.description,
+        })
+        publish?.({
+          channel: 'process',
+          type: 'get-process',
+          payload: { action: result.data.id },
+          date: new Date(),
+        })
+      }
+    } catch (error) {
+      console.error('Error creating action:', error)
+      open?.({
+        type: 'error',
+        message: 'Action creation failed',
+      })
+    } finally {
+      setActionRunning(false)
+    }
   }
 
   return (
     <Show isLoading={isFetching} title="">
-      <RunningActionsList
-        actionId={idFromRoute ? idFromRoute.toString() : ''}
-        actionRunning={actionRunning}
-        onActionRunFinished={onActionRunFinished}
-      />
-      <Divider
-        sx={{
-          my: 4,
-        }}
-      />
       {jsonschema && (
         <Form
           schema={jsonschema}
@@ -123,11 +115,9 @@ export const ActionShow: FC = () => {
           validator={validator}
           onSubmit={onSubmit}
         >
-          <div>
-            <Button variant="contained" type="submit" disabled={actionRunning}>
-              Submit
-            </Button>
-          </div>
+          <Button variant="contained" type="submit" disabled={actionRunning}>
+            Submit
+          </Button>
         </Form>
       )}
     </Show>
