@@ -13,7 +13,9 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -48,6 +50,8 @@ const asyncTickerTime = 2
 const swaggerUIPath = "/swagger-ui"
 const swaggerJSONPath = "/swagger.json"
 
+const statusRunning string = "running"
+
 // Run starts http server.
 func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	// @todo consider locks on endpoints
@@ -57,6 +61,9 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		panic(fmt.Errorf("Error loading swagger spec\n: %w", err))
 	}
 	swagger.Servers = nil
+
+	ctx, cancel := context.WithCancel(ctx)
+
 	// Prepare router and openapi.
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
@@ -91,6 +98,11 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		)
 	})
 
+	r.Post("/api/shutdown", func(w http.ResponseWriter, r *http.Request) {
+		cancel()
+		w.Write([]byte("Server is shutting down..."))
+	})
+
 	// Register router in openapi and start the server.
 	HandlerFromMuxWithBaseURL(store, r, opts.APIPrefix)
 	s := &http.Server{
@@ -108,6 +120,23 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		fmt.Println("Swagger UI: " + baseURL + opts.APIPrefix + swaggerUIPath)
 		fmt.Println("swagger.json: " + baseURL + opts.APIPrefix + swaggerJSONPath)
 	}
+
+	// Open the browser after printing the start messages
+	go func() {
+		time.Sleep(2 * time.Second) // Small delay to ensure the server is fully started
+		if err := openBrowser(baseURL); err != nil {
+			fmt.Printf("Failed to open browser: %v\n", err)
+		}
+	}()
+
+	go func() {
+		<-ctx.Done()
+		fmt.Println("Shutting down the server...")
+		if err := s.Shutdown(context.Background()); err != nil {
+				fmt.Printf("Error shutting down the server: %v\n", err)
+		}
+	}()
+
 	return s.ListenAndServe()
 }
 
@@ -161,7 +190,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type Message struct {
+type messageType struct {
 	Message string `json:"message"`
 	Action  string `json:"action"`
 }
@@ -181,7 +210,7 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 				break
 			}
 
-			var msg Message
+			var msg messageType
 			if err := json.Unmarshal(message, &msg); err != nil {
 				log.Printf("Error unmarshaling message: %v", err)
 				continue
@@ -202,7 +231,7 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 	}
 }
 
-func getProcesses(msg Message, ws *websocket.Conn, l *launchrServer) {
+func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 	ticker := time.NewTicker(asyncTickerTime * time.Second)
 	defer ticker.Stop()
 
@@ -236,13 +265,13 @@ func getProcesses(msg Message, ws *websocket.Conn, l *launchrServer) {
 		}
 
 		l.wsMutex.Lock()
-		if err := ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
-			log.Println(err)
+		if writeErr := ws.WriteMessage(websocket.TextMessage, finalResponse); writeErr != nil {
+			log.Println(writeErr)
 		}
 		l.wsMutex.Unlock()
 
 		for _, ri := range runningActions {
-			if ri.Status == "running" {
+			if ri.Status == statusRunning {
 				anyProccessRunning = true
 			}
 		}
@@ -271,7 +300,7 @@ func getProcesses(msg Message, ws *websocket.Conn, l *launchrServer) {
 	}
 }
 
-func getStreams(msg Message, ws *websocket.Conn, l *launchrServer) {
+func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 	ticker := time.NewTicker(asyncTickerTime * time.Second)
 	defer ticker.Stop()
 
@@ -293,7 +322,7 @@ func getStreams(msg Message, ws *websocket.Conn, l *launchrServer) {
 
 		lastStreamData = sd
 
-		if ri.Status != "running" {
+		if ri.Status != statusRunning {
 			break
 		}
 
@@ -337,4 +366,17 @@ func getStreams(msg Message, ws *websocket.Conn, l *launchrServer) {
 		log.Println(err)
 	}
 	l.wsMutex.Unlock()
+}
+
+func openBrowser(url string) error {
+	switch runtime.GOOS {
+	case "linux":
+		return exec.Command("xdg-open", url).Start()
+	case "windows":
+		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		return exec.Command("open", url).Start()
+	default:
+		return fmt.Errorf("unsupported platform")
+	}
 }

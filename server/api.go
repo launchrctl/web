@@ -224,12 +224,12 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		return
 	}
 
-	// Generate custom runId.
-	runId := strconv.FormatInt(time.Now().Unix(), 10) + "-" + a.ID
+	// Generate custom runID.
+	runID := strconv.FormatInt(time.Now().Unix(), 10) + "-" + a.ID
 
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams, err := createFileStreams(runId)
+	streams, err := createFileStreams(runID)
 	if err != nil {
 		log.Debug(err.Error())
 		sendError(w, http.StatusInternalServerError, "Error preparing streams")
@@ -251,7 +251,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		return
 	}
 
-	ri, chErr := l.actionMngr.RunBackground(l.ctx, a, runId)
+	ri, chErr := l.actionMngr.RunBackground(l.ctx, a, runID)
 
 	go func() {
 		// @todo handle error somehow. We cant notify client, but must save the status
