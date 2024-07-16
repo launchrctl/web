@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -19,6 +18,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/launchrctl/launchr/pkg/log"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
@@ -100,7 +101,10 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 	r.Post("/api/shutdown", func(w http.ResponseWriter, r *http.Request) {
 		cancel()
-		w.Write([]byte("Server is shutting down..."))
+		_, err = w.Write([]byte("Server is shutting down..."))
+		if err != nil {
+			log.Debug(err.Error())
+		}
 	})
 
 	// Register router in openapi and start the server.
@@ -123,21 +127,44 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 	// Open the browser after printing the start messages
 	go func() {
-		time.Sleep(2 * time.Second) // Small delay to ensure the server is fully started
-		if err := openBrowser(baseURL); err != nil {
-			fmt.Printf("Failed to open browser: %v\n", err)
-		}
+		checkServerUp(baseURL)
 	}()
 
 	go func() {
 		<-ctx.Done()
 		fmt.Println("Shutting down the server...")
-		if err := s.Shutdown(context.Background()); err != nil {
-				fmt.Printf("Error shutting down the server: %v\n", err)
+		if err = s.Shutdown(context.Background()); err != nil {
+			fmt.Printf("Error shutting down the server: %v\n", err)
 		}
 	}()
 
 	return s.ListenAndServe()
+}
+
+func checkServerUp(url string) {
+	client := &http.Client{}
+	for {
+		req, err := http.NewRequest(http.MethodHead, url, nil)
+		if err != nil {
+			log.Debug(err.Error())
+			return
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Info("Server is not up yet, please wait...")
+			time.Sleep(time.Second)
+			continue
+		}
+		_ = resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			log.Info("Opening %s", url)
+			if err = openBrowser(url); err != nil {
+				log.Debug("Failed to open browser: %v\n", err)
+			}
+		}
+		break
+	}
 }
 
 func spaHandler(opts *RunOptions) http.HandlerFunc {
@@ -199,25 +226,26 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(err.Error())
 		}
 		defer ws.Close()
 
+		var message []byte
 		for {
-			_, message, err := ws.ReadMessage()
+			_, message, err = ws.ReadMessage()
 			if err != nil {
-				log.Println(err)
+				log.Info(err.Error())
 				break
 			}
 
 			var msg messageType
-			if err := json.Unmarshal(message, &msg); err != nil {
-				log.Printf("Error unmarshaling message: %v", err)
+			if err = json.Unmarshal(message, &msg); err != nil {
+				log.Debug("Error unmarshalling message: %v", err)
 				continue
 			}
 
-			log.Printf("Received command: %s", msg.Message)
-			log.Printf("Received params: %v", msg.Action)
+			log.Info("Received command: %s", msg.Message)
+			log.Info("Received params: %v", msg.Action)
 
 			switch msg.Message {
 			case "get-processes":
@@ -225,7 +253,7 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 			case "get-process":
 				go getStreams(msg, ws, l)
 			default:
-				log.Printf("Unknown command: %s", msg.Message)
+				log.Info("Unknown command: %s", msg.Message)
 			}
 		}
 	}
@@ -260,13 +288,13 @@ func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 		finalResponse, err := json.Marshal(responseMessage)
 		if err != nil {
-			log.Printf("Error marshaling final response: %v", err)
+			log.Debug("Error marshaling final response: %v", err)
 			return
 		}
 
 		l.wsMutex.Lock()
 		if writeErr := ws.WriteMessage(websocket.TextMessage, finalResponse); writeErr != nil {
-			log.Println(writeErr)
+			log.Debug(writeErr.Error())
 		}
 		l.wsMutex.Unlock()
 
@@ -285,14 +313,14 @@ func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 		finalCompleteResponse, err := json.Marshal(completeMessage)
 		if err != nil {
-			log.Printf("Error marshaling final response: %v", err)
+			log.Debug("Error marshaling final response: %v", err)
 			return
 		}
 
 		if !anyProccessRunning {
 			l.wsMutex.Lock()
-			if err := ws.WriteMessage(websocket.TextMessage, finalCompleteResponse); err != nil {
-				log.Println(err)
+			if err = ws.WriteMessage(websocket.TextMessage, finalCompleteResponse); err != nil {
+				log.Debug(err.Error())
 			}
 			l.wsMutex.Unlock()
 			break
@@ -336,13 +364,13 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 		finalResponse, err := json.Marshal(responseMessage)
 		if err != nil {
-			log.Printf("Error marshaling response: %v", err)
+			log.Debug("Error marshaling response: %v", err)
 			return
 		}
 
 		l.wsMutex.Lock()
-		if err := ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
-			log.Println(err)
+		if err = ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
+			log.Debug(err.Error())
 		}
 		l.wsMutex.Unlock()
 	}
@@ -357,13 +385,13 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 	finalResponse, err := json.Marshal(finalMessage)
 	if err != nil {
-		log.Printf("Error marshaling final message: %v", err)
+		log.Debug("Error marshaling final message: %v", err)
 		return
 	}
 
 	l.wsMutex.Lock()
-	if err := ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
-		log.Println(err)
+	if err = ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
+		log.Debug(err.Error())
 	}
 	l.wsMutex.Unlock()
 }
