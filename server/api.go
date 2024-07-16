@@ -55,7 +55,6 @@ func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Re
 	var launchrConfig *launchrWebConfig
 	err := l.cfg.Get("web", &launchrConfig)
 	if err != nil {
-		log.Debug(err.Error())
 		sendError(w, http.StatusInternalServerError, "error getting config")
 		return
 	}
@@ -72,7 +71,6 @@ func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Re
 
 			gvFile, err := parseVarsFile(launchrConfig.VarsFile)
 			if err != nil {
-				log.Debug(err.Error())
 				sendError(w, http.StatusInternalServerError, "error getting group vars file")
 				return
 			}
@@ -117,7 +115,6 @@ func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.R
 	}
 	sd, err := fStreams.GetStreamData(params)
 	if err != nil {
-		log.Debug(err.Error())
 		sendError(w, http.StatusInternalServerError, "Error reading streams")
 	}
 
@@ -231,7 +228,6 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	// Can we fetch directly json?
 	streams, err := createFileStreams(runID)
 	if err != nil {
-		log.Debug(err.Error())
 		sendError(w, http.StatusInternalServerError, "Error preparing streams")
 	}
 

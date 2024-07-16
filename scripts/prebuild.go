@@ -32,10 +32,10 @@ func main() {
 	}
 
 	release := os.Args[1]
-	folderPath := os.Args[2]
+	dirPath := os.Args[2]
 
-	archivePath := filepath.Clean(filepath.Join(folderPath, "dist.tar.gz"))
-	resultPath := filepath.Clean(filepath.Join(folderPath, "."))
+	archivePath := filepath.Clean(filepath.Join(dirPath, "dist.tar.gz"))
+	resultPath := filepath.Clean(filepath.Join(dirPath, "."))
 
 	fmt.Println("Trying to download dist archive...")
 
