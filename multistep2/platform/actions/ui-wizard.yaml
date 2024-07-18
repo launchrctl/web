@@ -1,0 +1,10 @@
+uiWizard:
+  title: "Another Platform Configuration"
+  description: "Please follow the steps below to configure your platform and prepare it for future control actions."
+  steps:
+    - multistep2.platform:configure-1
+    - multistep2.platform:configure-2
+    - multistep2.platform:configure-3
+  success: "Platform configuration finished"
+
+

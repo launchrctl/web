@@ -1,10 +1,7 @@
 import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import Stepper from '@mui/material/Stepper'
-import { BaseKey } from '@refinedev/core'
 import type { FC } from 'react'
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 interface Step {
   id: string
@@ -12,38 +9,27 @@ interface Step {
 }
 
 interface FormStepsProps {
+  actionRunning: string | null
   steps: Step[]
-  current?: BaseKey | undefined
+  currentStepIndex: number
+  setStep: (step: number) => void
 }
 
-const FormSteps: FC<FormStepsProps> = ({ steps = [], current }) => {
-  const navigate = useNavigate()
-  const [currentStepIndex, setCurrentStepIndex] = useState(
-    current ? steps.findIndex((step) => step.id === current) : 0
-  )
-
-  useEffect(() => {
-    if (current) {
-      const index = steps.findIndex((step) => step.id === current)
-      if (index !== -1) {
-        setCurrentStepIndex(index)
-      }
-    }
-  }, [current, steps])
-
+const FormSteps: FC<FormStepsProps> = ({
+  actionRunning,
+  steps = [],
+  currentStepIndex,
+  setStep,
+}) => {
   const handlePrevious = () => {
     if (currentStepIndex > 0) {
-      const previousStep = steps[currentStepIndex - 1]
-      navigate(`/wizard/${previousStep.id}/show`)
-      setCurrentStepIndex(currentStepIndex - 1)
+      setStep(currentStepIndex - 1)
     }
   }
 
   const handleNext = () => {
     if (currentStepIndex < steps.length - 1) {
-      const nextStep = steps[currentStepIndex + 1]
-      navigate(`/wizard/${nextStep.id}/show`)
-      setCurrentStepIndex(currentStepIndex + 1)
+      setStep(currentStepIndex + 1)
     }
   }
 
@@ -58,12 +44,17 @@ const FormSteps: FC<FormStepsProps> = ({ steps = [], current }) => {
       </Stepper>
       <div>
         <h3>debug</h3>
-        <button onClick={handlePrevious} disabled={currentStepIndex === 0}>
+        <button
+          onClick={handlePrevious}
+          disabled={currentStepIndex === 0 || actionRunning !== null}
+        >
           Previous
         </button>
         <button
           onClick={handleNext}
-          disabled={currentStepIndex === steps.length - 1}
+          disabled={
+            currentStepIndex === steps.length - 1 || actionRunning !== null
+          }
         >
           Next
         </button>
