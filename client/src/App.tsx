@@ -22,7 +22,7 @@ import AppProvider from './context/AppContext'
 import { liveProvider } from './live-provider'
 import { ActionList, ActionShow } from './pages/actions'
 import { FlowShow } from './pages/flow'
-import { WizardShow } from './pages/wizard'
+import { WizardList, WizardShow } from './pages/wizard'
 import { dataProvider as launchrDataProvider } from './rest-data-provider'
 import { ThemeProvider } from './ThemeProvider'
 import { getApiUrl } from './utils/app-urls-resolver'
@@ -78,6 +78,7 @@ export function App() {
                       {/*<Route path=":id/edit" element={<ActionEdit />} />*/}
                     </Route>
                     <Route path="/wizard">
+                      <Route index element={<WizardList />} />
                       <Route path=":id/show" element={<WizardShow />} />
                     </Route>
                     <Route path="/flow">

@@ -1,0 +1,17 @@
+uiSchema:
+  options:
+    applications:
+      'ui:options':
+        orderable: false
+        enum:
+          - 'foo'
+          - 'bar'
+          - 'fuzz'
+          - 'qux'
+        # default:
+        #   - 'ERP'
+        #   - 'CRM'
+        #   - 'Instant Messenger'
+        #   - 'Mails'
+        #   - 'Calls'
+        #   - 'Shared docs'

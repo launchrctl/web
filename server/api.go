@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -206,6 +207,133 @@ func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Req
 	_ = json.NewEncoder(w).Encode(result)
 }
 
+type uiWizard struct {
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
+	Success     string `yaml:"success"`
+}
+
+type uiWizardFull struct {
+	Title       string   `yaml:"title"`
+	Description string   `yaml:"description"`
+	Steps       []string `yaml:"steps"`
+	Success     string   `yaml:"success"`
+}
+
+func (l *launchrServer) GetWizards(w http.ResponseWriter, _ *http.Request) {
+	var result []WizardShort
+
+	runDir, fileErr := os.Getwd()
+	if fileErr != nil {
+		http.Error(w, fileErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: make file search optimisations.
+	err := filepath.Walk(runDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() && info.Name() == "ui-wizard.yaml" {
+			content, err := os.ReadFile(filepath.Clean(path))
+			if err != nil {
+				return err
+			}
+
+			var data struct {
+				UIWizard uiWizard `yaml:"uiWizard"`
+			}
+			err = yaml.Unmarshal(content, &data)
+			if err != nil {
+				return err
+			}
+
+			relativePath, err := filepath.Rel(runDir, path)
+			if err != nil {
+				return err
+			}
+			relativePath = strings.TrimSuffix(relativePath, "/ui-wizard.yaml")
+			relativePath = strings.ReplaceAll(relativePath, string(filepath.Separator), ".")
+
+			result = append(result, WizardShort{
+				Description: data.UIWizard.Description,
+				ID:          relativePath,
+				Title:       data.UIWizard.Title,
+				Success:     data.UIWizard.Success,
+			})
+		}
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(result)
+}
+
+func (l *launchrServer) GetWizardByID(w http.ResponseWriter, _ *http.Request, id WizardId) {
+	runDir, err := os.Getwd()
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "Error getting working directory")
+		return
+	}
+
+	targetPath := filepath.Join(runDir, strings.ReplaceAll(string(id), ".", string(filepath.Separator)), "ui-wizard.yaml")
+	fmt.Print()
+	content, err := os.ReadFile(filepath.Clean(targetPath))
+	if err != nil {
+		if os.IsNotExist(err) {
+			sendError(w, http.StatusNotFound, fmt.Sprintf("Wizard with ID %q not found", id))
+		} else {
+			sendError(w, http.StatusInternalServerError, "Error reading wizard file")
+		}
+		return
+	}
+
+	var data struct {
+		UIWizard uiWizardFull `yaml:"uiWizard"`
+	}
+	if err := yaml.Unmarshal(content, &data); err != nil {
+		sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	var steps []ActionFull
+	for _, stepID := range data.UIWizard.Steps {
+		a, ok := l.actionMngr.Get(string(stepID))
+		if !ok {
+			sendError(w, http.StatusInternalServerError, fmt.Sprintf("Step action with ID %q not found", stepID))
+			return
+		}
+		if err := a.EnsureLoaded(); err != nil {
+			sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error loading step action %q", stepID))
+			return
+		}
+
+		afull, err := apiActionFull(l.basePath(), a)
+		if err != nil {
+			sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error building ActionFull for %q", stepID))
+			return
+		}
+		steps = append(steps, afull)
+	}
+
+	wizard := WizardFull{
+		Description: data.UIWizard.Description,
+		ID:          string(id),
+		Steps:       steps,
+		Title:       data.UIWizard.Title,
+		Success:     data.UIWizard.Success,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(wizard)
+}
+
 func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id string) {
 	// @todo error if action is already running. We need some pool of running processes with its io.
 	var err error
@@ -269,18 +397,18 @@ func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
 
 	var uiSchema map[string]interface{}
 
-	filePath, err := findUISchemaFile(a.Dir())
+	yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", a.Dir()))
 	if err != nil {
+		if !os.IsNotExist(err) {
+			return ActionFull{}, err
+		}
+
 		fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
 		uiSchema = map[string]interface{}{}
 	} else {
-		yamlData, err := os.ReadFile(filePath)
-		if err != nil {
-			fmt.Printf("Error reading ui-schema.yaml: %v\n", err)
-		}
 		err = yaml.Unmarshal(yamlData, &uiSchema)
 		if err != nil {
-			fmt.Printf("Error unmarshalling ui-schema.yaml: %v\n", err)
+			return ActionFull{}, err
 		}
 	}
 
@@ -310,23 +438,4 @@ func sendError(w http.ResponseWriter, code int, message string) {
 	}
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(petErr)
-}
-
-// Find UI schema file in parent directories.
-func findUISchemaFile(startDir string) (string, error) {
-	dir := startDir
-	for {
-		filePath := filepath.Join(dir, "ui-schema.yaml")
-		if _, err := os.Stat(filePath); err == nil {
-			return filePath, nil
-		} else if os.IsNotExist(err) {
-			parentDir := filepath.Dir(dir)
-			if parentDir == dir {
-				return "", fmt.Errorf("ui-schema.yaml not found")
-			}
-			dir = parentDir
-		} else {
-			return "", err
-		}
-	}
 }

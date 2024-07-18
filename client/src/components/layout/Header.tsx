@@ -57,11 +57,7 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => {
         <Box sx={{ flexGrow: 1 }} />
         <Stack direction="row" spacing={1} alignItems="center">
           <Tooltip title="Wizard experiment">
-            <IconButton
-              href="/wizard/multistep.platform:configure-1/show"
-              size="small"
-              color="inherit"
-            >
+            <IconButton href="/wizard" size="small" color="inherit">
               <AssistantIcon />
             </IconButton>
           </Tooltip>

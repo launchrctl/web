@@ -1,0 +1,17 @@
+.wizard-form__control--root_arguments,
+.wizard-form__control--root_options {
+  > .MuiGrid-container {
+    > .MuiGrid-item {
+      > .field {
+        > .wizard-form__control {
+          padding: 1.5rem;
+          background-color: #fff;
+          border-radius: 0.25rem;
+          border: 1px solid #E4E7EC;
+          display: grid;
+          gap: 1rem;
+        }
+      }
+    }
+  }
+}
