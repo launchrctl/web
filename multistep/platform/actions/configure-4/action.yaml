@@ -1,21 +1,12 @@
 action:
-  title: Third step
-  description: Third step description
+  title: Labelize people
+  description: |
+    Labels help you build a comprehensive and intuitive ontology that mirrors your organization. They are categorized through collections: each collection represents a functional area, while each label represent the variations that can occur within such area.
+    For example, a typical ontology in a community-driven business would be: Roles as Label collection 1, Interests Groups as Label collection 2, Skills as Label collection 3
   image: alpine:latest
-  command: ["sh", "-c", "for i in $(seq 60); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
+  command: ["sh", "-c", "for i in $(seq 10); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
   arguments:
-    - name: simpleString
-      title: Simple inline string
+    - name: platformName
+      title: Define platform name
       type: string
-      default: With default value from schema
-    - name: stringConstrained
-      title: String with constraints
-      type: string
-      pattern: '^[A-Z \d\W]+$'
-      minLength: 2
-      maxLength: 10
-      description: Only UPPERCASE with 2 to 10 characters is allowed.
-    - name: textArea
-      title: Text area
-      description: Using UI schema options.
-      type: string
+      description: Naming your platform helps with appropriation within your organization.

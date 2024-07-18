@@ -90,6 +90,23 @@ type Error struct {
 // JSONSchema defines model for JSONSchema.
 type JSONSchema = map[string]interface{}
 
+// WizardFull defines model for WizardFull.
+type WizardFull struct {
+	Description string       `json:"description"`
+	ID          string       `json:"id"`
+	Steps       []ActionFull `json:"steps"`
+	Success     string       `json:"success"`
+	Title       string       `json:"title"`
+}
+
+// WizardShort defines model for WizardShort.
+type WizardShort struct {
+	Description string `json:"description"`
+	ID          string `json:"id"`
+	Success     string `json:"success"`
+	Title       string `json:"title"`
+}
+
 // ActionId defines model for ActionId.
 type ActionId = string
 
@@ -101,6 +118,9 @@ type Limit = int
 
 // Offset defines model for Offset.
 type Offset = int
+
+// WizardId defines model for WizardId.
+type WizardId = string
 
 // DefaultError defines model for DefaultError.
 type DefaultError = Error
@@ -143,6 +163,12 @@ type ServerInterface interface {
 	// Customisation config
 	// (GET /customisation)
 	GetCustomisationConfig(w http.ResponseWriter, r *http.Request)
+	// Lists all wizards
+	// (GET /wizard)
+	GetWizards(w http.ResponseWriter, r *http.Request)
+	// Returns wizard by id
+	// (GET /wizard/{id})
+	GetWizardByID(w http.ResponseWriter, r *http.Request, id WizardId)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -194,6 +220,18 @@ func (_ Unimplemented) GetActionJSONSchema(w http.ResponseWriter, r *http.Reques
 // Customisation config
 // (GET /customisation)
 func (_ Unimplemented) GetCustomisationConfig(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Lists all wizards
+// (GET /wizard)
+func (_ Unimplemented) GetWizards(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Returns wizard by id
+// (GET /wizard/{id})
+func (_ Unimplemented) GetWizardByID(w http.ResponseWriter, r *http.Request, id WizardId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -421,6 +459,45 @@ func (siw *ServerInterfaceWrapper) GetCustomisationConfig(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetWizards operation middleware
+func (siw *ServerInterfaceWrapper) GetWizards(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWizards(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWizardByID operation middleware
+func (siw *ServerInterfaceWrapper) GetWizardByID(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id WizardId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWizardByID(w, r, id)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -558,6 +635,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/customisation", wrapper.GetCustomisationConfig)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/wizard", wrapper.GetWizards)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/wizard/{id}", wrapper.GetWizardByID)
+	})
 
 	return r
 }
@@ -565,28 +648,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xYS2/jNhD+KwLbo2w52Ztu3k1auFisF3F7SnNgpJHEXfERPpoYhv97QVJPS45lxEl7",
-	"siWOON98M/NpqB1KOBWcAdMKxTsksMQUNEh3tUw04WyV2v8pqEQSYW+gGK1uAp4F2K0HmgcZ6KRAISJ2",
-	"UWBt/zNMAcWIpChEEp4MkZCiWEsDIVJJARTbffVWWCulJWE52u/DyuudYSuW8ePOdQGBNIwRlldAxv1L",
-	"YyM4D8JXQokeOmaGPoK0zqEEajmzsUvQRjbOnwzIbeu9dDt1vVH8QqihKL5aLEJECauuwhoHYRpykA7I",
-	"OssUTEaifhJxBAf3G42E3brbW5KU4EyBS/8NZNiU+lZKLu11wpkG5tBgIUqSYIsm+qEspF1n518lZChG",
-	"v0RtcUV+VUV+N+esH5Jh8CIg0ZAGUNnUaDvF+JspSwegLNcZiu9fd+af2RRcarQPd0hILkBq4uOzwAd0",
-	"8McfkFiiXmY5n1Xs/bFZf9t4y2qhsm63mA/XZ4QK69n1lS5QjHKiC/M4TziNSmxYUshEl/XfSPzMow4m",
-	"G78h0wD+tRqFR7G492X9YNMsM5zAbt/DaGtmxl0ScDkT3Nn5HvEFUXfNfZevh/AAzv7hsHP7WeozT9Jh",
-	"3/UDWt0gm36NtVGnSqpxu/Hmh7idAlVbnQD+3eqfeg06lrmhtVyOpqS66TVp/udWwFLm6q2FUUmcjS0p",
-	"MMvBUUg0UDWiYU2UWEq8tdc+xeegXgt9OdQHKWlZbJGdSM2mqQVgVjDvUSIBa3Da7t8DKEQZYUQV7qZX",
-	"kXbXlpvOnhIwvcEav5byju4Ntkq46a00ahrWkju65u+0oSidro2TZ52umP+9lWPoD4h0q2EDMWyF3iN7",
-	"jVSvi68E3hPokeCntrEmuoTxN+2gT71t/+UwHsQXozSnROEDfKMC2TP+wllG8stqZYia9+Rh9aQu9oxL",
-	"irUvg0/XKBypCgpK4XwCU27P1n7IT9h9ZQ2oce1IKo3uv4WXLFh+X9nB4qtv42q2so1akgSYcvAqVpcC",
-	"JwUE1/MFCpGRJYpRobVQcRQ9Pz/PsVuec5lH1bMq+rr6cvttczu7ni/mhaZlpz5Q5RKF6B+QygO6mi/m",
-	"Cy9gwLAgKEaf5lfOoVUhR3FUY4x3KB8bl+7ciKYCXJZB2Y/rb+YkCCSuZ130O+hlE3RvIrpeLM4ahBp5",
-	"nj6kHAj3cE6qcAc1MOQs3KR2zFMTQ9Qb6dyAZSjFcmvJJ0p7hmo27XpNbbQj6f4ov7Lm1x8IHreB6+Uj",
-	"tH7erm5c+tqzxpE5rjWJmrPI/uGNSTmdCzdkHqX+4szfjbG3D5HgaoRreIHEaFDtoadP851hy3rlTRQ/",
-	"GVD6M0+3F2a3HbNGKPYmQTMfBJilQT0hHB7i9oNKuLo8VjfLflwxSNNUwrABo3rQOdWI/YOxGuvFO29S",
-	"Kd1/3JNnCGWTkqlSackISPXIJfv1kOSj6Yp27iPEZP1sAI+kbc2gl7k3Ji6caNt+jvkA/Z3Qde+U0sH2",
-	"p1IaKXeEUGd2ZFA/dqoxN43dB2b49CPVd6kJlv5T2gcLROdcd75MNLl5V7lovQxKrPqgVJMwRTGsbaDq",
-	"T0BH5q7eV6z/4/TVAXg8Td1Q36f7ex5sdpLDk2aVkgHP46fM9y/8/lF4QsknDtvFh5cejsA7se73/wYA",
-	"AP//vuYFImgYAAA=",
+	"H4sIAAAAAAAC/8xZyXLjNhN+FRb+/0iLsuemm2bspJSaGk9ZSeXg+ACTLRIzBMDBEltR8d1TWLiJpEXF",
+	"kpKTTaKJ/vrrBd3QDsWcFpwBUxItdqjAAlNQIOzTMlaEs1Vi/k9AxoIU5gVaoNVtwDcBtuuB4sEGVJyh",
+	"EBGzWGBl/meYAlogkqAQCfihiYAELZTQECIZZ0Cx2VdtCyMllSAsRWUZeq0Pmq3Yho8rVxkEQjNGWOqB",
+	"DOsX2lhwHITPhBLVV8w0fQZhlEMO1HBmbBegtKiV/9Agto323O7U1kbxK6GaosX1fB4iSph/CischClI",
+	"QVgg95uNhMlI5HdSjODgbqMBs9vqfid/YZGMc/5i10/r8NIIy4IzCTbobmGDda7uhODCPMecKWCWA1wU",
+	"OYmxgRR9kwbXrrXx/wVs0AL9L2pCOnKrMnK7WWVduzSD1wJiBUkAXqYC20qBn3SeWwB5fr9Bi8e3lblv",
+	"1hkXCpXhDhWCFyAUcfYZ4D02+PM3iI17Xq9SfuWJ/GV9/2XtJP2Cl262mPXXrwgtjGabzSpDC5QSlenn",
+	"WcxplGPN4kzEKq/+jYrvadTCZOzXZBrA31aD8CguHp17n0xwiQ2OYVd2MJpIveLWCTi/KriVc7HiAqKK",
+	"nsc2X0/hHpzyab9edL3UZZ4k/fjrGrS6Rcb9CistD4VUrXbtxPdx2zTwWx0A/tVUXfkWdCxSTasiPegS",
+	"/9JVwtmv2wKWIpXvDQxfWI1tcYZZCpZCooDKgVyurcRC4K15di4+BvV9oU6Hes8lDYsNsgOuWdexAMyU",
+	"6UcUC8AKbI1zpw8K0YYwIjP70lWRZteGm9aeAjC9xQq/5fJW3ettFXPdWalreFgV+sE196YxRarkXttD",
+	"QSUr5v7eiSH0e0Ta1bCGGDbHi0P2FqmuLr5heKdADxg/NY0VUTkMn++9PHWy3cNh2IhPWipOicR7+AYL",
+	"ZEf4E2cbkp62VoaoPif3oyextm+4oFi5MPhwg8KBqKAgJU4nMGX3bOT7/ITtI6tHTd1fHHeaum/GTlOp",
+	"oJCdmnS4Zlv9vWI1fuyEXstwQLTxXSCqpY5jkCPV950R3+w+ZKrZhvgjtttELVmw/LoyDeJnV4V9Q27q",
+	"bE5iYNKi8nYsCxxnENzM5ihEWuRogTKlCrmIopeXlxm2yzMu0sh/K6PPq093X9Z3Vzez+SxTNG8Zi7xK",
+	"FKI/QUgH6Ho2n83d+QMMFwQt0IfZtVVoDhHLXlRhXOxQOtRjP9i+XgY4z4O8a9cfzJ4gIHA1IKGfQS1r",
+	"ozsN7c18flQfe0QkV1mxH8q9NtfjDipgyErYRntMU21D1OnIbX+sKcVia8gnUjmGKjbNekVttCNJOcqv",
+	"qPh1U+TzNrCBOULrx+3q1rqvGVBHCkcjEtUDbPn0TqdMrSpj1J+c+Ych9soQFVwOcA2vEGsFspmUuzQ/",
+	"aLasVt5F8Q8NUn3kyfbE7DZd8gDFTiSo27sAsySoGrz9WbTsRcL16bHaUeRywSB0HQn9BIyqPvVQInZv",
+	"U+RQLj44EV/p/uWcPKJQ1i6ZWioNGQHxn5wyX/dJHnVXtLM3V5PrZw14wG33DDqee6fjwomyzR3eBerv",
+	"hKw7k0t72x9yaSTtBCiPzMig+uxQYq5ruQt6+PAn/jJzgqS7f71wgWiN5ceXido3Zy0XjZZeiPn7wIqE",
+	"KRXDyAb1jDPSd3UuIf+L3VcL4Lib2qaeJ/s7Gox34v2LAu+SHs/DlwTnD/zuTcaEkI8ttpM3Lx0cgVPi",
+	"KHQ/N0wa0KjOFTFj+tsjmhvWLzOidS8uDrLrjD3niOY1tLmdNqH5n31GJzRn6T9qKupfnM5aI1r3TqPM",
+	"n21C67BXlmX5dwAAAP//iOiFGHUdAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

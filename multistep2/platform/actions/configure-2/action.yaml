@@ -2,18 +2,15 @@ action:
   title: Configure environments
   description: You can change this information later in your platform settings.
   image: alpine:latest
-  command: ["sh", "-c", "for i in $(seq 10); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
+  command: ["sh", "-c", "for i in $(seq 60); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
   options:
     - name: domainName
       title: Define domain name
       type: string
       description: Enter a name to personalize your platform interface. Usually platformname.tech
-
-    - name: mailServer
-      title: Define mail server
-      description: Enter a name to personalize your platform interface.
+    - name: platformDomains
+      title: Setup platform domains
       type: string
-      enum: [ Courier, Sendmail, Postfix ]
-
+      description: Enter a name to personalize your platform interface.
 
 
