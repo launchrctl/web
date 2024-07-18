@@ -1,109 +1,156 @@
-import { Box, Typography } from '@mui/material'
-import Button from '@mui/material/Button'
+import { Box, Typography, Button, LinearProgress } from '@mui/material'
 import {
   useApiUrl,
   useCustomMutation,
+  useNotification,
   useOne,
-  useResource,
+  usePublish,
+  useResourceParams,
+  useSubscription,
 } from '@refinedev/core'
-import type { IChangeEvent } from '@rjsf/core'
+import { IChangeEvent } from '@rjsf/core'
 import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
-import { DescriptionFieldProps, TitleFieldProps } from '@rjsf/utils'
+import {
+  DescriptionFieldProps,
+  TitleFieldProps,
+} from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
-import merge from 'lodash/merge'
-import type { FC } from 'react'
-import { useState } from 'react'
-
+import { FC, useContext, useEffect, useState, useRef } from 'react'
 import WizardBanner from '../../components/layout/WizardBanner'
 import { useThemeContext } from '../../ThemeProvider'
-import type { IActionData, IFormValues } from '../../types'
-import { customizeUiSchema } from '../../utils/helpers'
+import { IActionData, IFormValues } from '../../types'
 import FormSteps from './FormSteps'
+import { AppContext } from '../../context/AppContext'
+import CustomFieldTemplate from './CustomFieldTemplate'
+import './wizard-form.css'
 
-// Make modifications to the theme with your own fields and widgets
 const Form = withTheme(Theme)
 
 export const WizardShow: FC = () => {
-  // @todo const translate = useTranslate();
-  const {
-    // resource,
-    id: idFromRoute,
-    // action: actionFromRoute,
-  } = useResource()
-
+  const { id: idFromRoute } = useResourceParams()
+  const publish = usePublish()
+  const [steps, setSteps] = useState([])
+  const stepsRef = useRef(steps)
+  const [step, setStep] = useState(0)
+  const { addAction } = useContext(AppContext)
   const { isDarkMode } = useThemeContext()
-
   const apiUrl = useApiUrl()
-
-  const [actionRunning, setActionRunning] = useState(false)
+  const [actionRunning, setActionRunning] = useState<string | null>(null)
+  const actionRunningRef = useRef(actionRunning)
+  const { open } = useNotification()
 
   const queryResult = useOne<IActionData>({
-    resource: `actions`,
+    resource: `wizard`,
     id: idFromRoute,
   })
 
-  const { data } = queryResult
+  const { isLoading, data } = queryResult
 
-  const jsonschema = queryResult?.data?.data?.jsonschema
-  let uischema = {
-    ...queryResult?.data?.data?.uischema?.uiSchema,
-  }
-
+  const title = data?.data?.title
+  const description = data?.data?.description
   const actionTitle = data?.data?.title
 
-  if (jsonschema) {
-    // @todo I actually don't know for the moment how to overcome error
-    //  "no schema with key or ref" produced when schema is defined.
-    // Maybe it's because the server returns "2020-12" and default is "draft-07"
-    // @see https://ajv.js.org/json-schema.html
-    delete jsonschema.$schema
+  useEffect(() => {
+    if (data) {
+      data.data.steps.forEach((step: { jsonschema: { $schema: any } }) => {
+        delete step?.jsonschema.$schema
+      })
+      const newSteps = data?.data?.steps
+      setSteps(newSteps)
+      stepsRef.current = newSteps
+    }
+  }, [data])
 
-    uischema = merge({}, uischema, customizeUiSchema(jsonschema))
-  }
+  useEffect(() => {
+    actionRunningRef.current = actionRunning
+  }, [actionRunning])
 
   const { mutateAsync } = useCustomMutation()
 
-  const onSubmit = async (
-    { formData }: IChangeEvent<IFormValues>
-    // e: FormEvent<IFormValues>,
-  ) => {
-    if (!formData) {
-      return
-    }
+  const onSubmit = async ({ formData }: IChangeEvent<IFormValues>) => {
+    if (!formData) return
 
-    setActionRunning(true)
-
-    await mutateAsync({
-      url: `${apiUrl}/actions/${idFromRoute}`,
-      method: 'post',
-      values: formData,
-      // @todo more informative messages.
-      successNotification: () => ({
-        message: 'Action successfully started.',
-        description: 'Success with no errors',
-        type: 'success',
-      }),
-      errorNotification() {
-        return {
-          message: 'Error.',
-          description: 'Something goes wrong',
-          type: 'error',
-        }
-      },
+    publish?.({
+      channel: 'processes',
+      type: 'get-processes',
+      payload: { action: stepsRef.current[step].id },
+      date: new Date(),
     })
-    // @todo redirect somewhere
+
+    try {
+      const result = await mutateAsync({
+        url: `${apiUrl}/actions/${stepsRef.current[step].id}`,
+        method: 'post',
+        values: formData,
+        successNotification: {
+          message: 'Action successfully created.',
+          description: 'Success with no errors',
+          type: 'success',
+        },
+        errorNotification: {
+          message: 'Error.',
+          description: 'Something went wrong',
+          type: 'error',
+        },
+      })
+
+      if (result) {
+        addAction({
+          id: stepsRef.current[step].id,
+          title,
+          description,
+        })
+        publish?.({
+          channel: 'process',
+          type: 'get-process',
+          payload: { action: result.data.id },
+          date: new Date(),
+        })
+      }
+    } catch (error) {
+      console.error('Error creating action:', error)
+    } finally {
+      setActionRunning(stepsRef.current[step].id)
+    }
   }
 
-  function TitleFieldTemplate(props: TitleFieldProps) {
-    const { id, title } = props
+  const handleNext = () => {
+    setStep((prevStep) => {
+      if (prevStep + 1 < stepsRef.current.length) {
+        return prevStep + 1
+      } else {
+        return prevStep
+      }
+    })
+  }
+
+  useSubscription({
+    channel: 'processes',
+    types: ['send-processes-finished'],
+    onLiveEvent: ({ payload, type }) => {
+      if (payload?.data?.action === actionRunningRef.current) {
+        if (type === 'send-processes-finished') {
+          setActionRunning(null)
+
+          open?.({
+            message: `Step finished`,
+            description: 'Go to next step',
+            type: 'success',
+          })
+
+          handleNext()
+        }
+      }
+    },
+  })
+
+  const TitleFieldTemplate = ({ id, title }: TitleFieldProps) => {
     if (id === 'root__title') {
       return (
-        <>
-          <Typography id={id} variant="h4">
-            {actionTitle || title}
-          </Typography>
-        </>
+        <Typography id={id} variant="h4">
+          {actionTitle || title}
+        </Typography>
       )
     }
     return (
@@ -113,21 +160,18 @@ export const WizardShow: FC = () => {
     )
   }
 
-  function DescriptionFieldTemplate(props: DescriptionFieldProps) {
-    const { description, id } = props
-    return (
-      <Typography id={id} sx={{ display: 'block', mt: 1 }} variant="caption">
-        {description}
-      </Typography>
-    )
-  }
+  const DescriptionFieldTemplate = ({
+    description,
+    id,
+  }: DescriptionFieldProps) => (
+    <Typography id={id} sx={{ display: 'block' }} variant="caption">
+      {description}
+    </Typography>
+  )
 
   return (
     <>
-      <WizardBanner
-        title={uischema?.wizard?.title}
-        subtitle={uischema?.wizard?.description}
-      />
+      <WizardBanner title={title} subtitle={description} />
       <Box
         sx={{
           padding: 6,
@@ -145,21 +189,35 @@ export const WizardShow: FC = () => {
             gap: 4,
           }}
         >
-          <FormSteps steps={uischema?.wizard?.steps} current={idFromRoute} />
+          <FormSteps
+            steps={stepsRef.current}
+            currentStepIndex={step}
+            setStep={setStep}
+            actionRunning={actionRunning}
+          />
 
-          {jsonschema && (
+          {!isLoading && stepsRef.current[step]?.jsonschema && (
             <Form
-              schema={jsonschema}
-              uiSchema={uischema}
+              className="wizard-form"
+              schema={stepsRef.current[step]?.jsonschema}
+              uiSchema={stepsRef.current[step]?.uischema?.uiSchema}
               validator={validator}
               onSubmit={onSubmit}
-              templates={{ TitleFieldTemplate, DescriptionFieldTemplate }}
+              templates={{
+                TitleFieldTemplate,
+                DescriptionFieldTemplate,
+                FieldTemplate: CustomFieldTemplate,
+              }}
+              disabled={stepsRef.current[step].id === actionRunning}
             >
+              {stepsRef.current[step].id === actionRunning && (
+                <LinearProgress sx={{ mb: 2 }} />
+              )}
               <div>
                 <Button
                   variant="contained"
                   type="submit"
-                  disabled={actionRunning}
+                  disabled={stepsRef.current[step].id === actionRunning}
                 >
                   Submit
                 </Button>

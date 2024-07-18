@@ -28,6 +28,18 @@ interface IFormValues {
   id: string
 }
 
+interface IStatusBoxProcessProps {
+  ri: IActionProcess
+  actionId: string
+}
+
+interface IStreamData {
+  content: string
+  count: number
+  offset: number
+  type: 'stdOut' | 'stdErr'
+}
+
 export type {
   ActionState,
   IAction,
@@ -36,4 +48,6 @@ export type {
   IActionWithRunInfo,
   IFlowNodeType,
   IFormValues,
+  IStatusBoxProcessProps,
+  IStreamData
 }

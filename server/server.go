@@ -1,6 +1,6 @@
 // Package server provides Web API for launchr actions.
 //
-//go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest --config=cfg.yaml openapi.yaml
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --config=cfg.yaml openapi.yaml
 package server
 
 import (
@@ -100,7 +100,13 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 	r.Post("/api/shutdown", func(w http.ResponseWriter, r *http.Request) {
 		cancel()
-		w.Write([]byte("Server is shutting down..."))
+
+		_, err := w.Write([]byte("Server is shutting down..."))
+		if err != nil {
+			// Handle the error appropriately
+			log.Printf("Error writing response: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
 	})
 
 	// Register router in openapi and start the server.
@@ -133,7 +139,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		<-ctx.Done()
 		fmt.Println("Shutting down the server...")
 		if err := s.Shutdown(context.Background()); err != nil {
-				fmt.Printf("Error shutting down the server: %v\n", err)
+			fmt.Printf("Error shutting down the server: %v\n", err)
 		}
 	}()
 
