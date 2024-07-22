@@ -5,7 +5,9 @@ import {
   w3cwebsocket as W3CWebSocket,
 } from 'websocket'
 
-const websocketUrl = 'ws://localhost:8080/ws'
+import { getWebSocketUrl } from '../utils/app-urls-resolver'
+
+const websocketUrl = getWebSocketUrl()
 let actionsSocket = new W3CWebSocket(websocketUrl)
 
 const reconnectInterval = 5000

@@ -24,8 +24,9 @@ import { ActionList, ActionShow } from './pages/actions'
 import { FlowShow } from './pages/flow'
 import { dataProvider as launchrDataProvider } from './rest-data-provider'
 import { ThemeProvider } from './ThemeProvider'
+import { getApiUrl } from './utils/app-urls-resolver'
 
-const apiUrl = import.meta.env.VITE_API_URL
+const apiUrl = getApiUrl()
 
 export function App() {
   return (
