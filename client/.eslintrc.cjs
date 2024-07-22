@@ -35,6 +35,7 @@ module.exports = {
     },
   },
   rules: {
+    '@typescript-eslint/ban-ts-comment': 0,
     'react-refresh/only-export-components': 1,
     'simple-import-sort/imports': 2,
     'simple-import-sort/exports': 2,
