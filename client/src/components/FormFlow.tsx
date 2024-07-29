@@ -52,6 +52,17 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
   if (jsonschema) {
     delete jsonschema.$schema
     uischema = merge({}, uischema, customizeUiSchema(jsonschema))
+    ;['arguments', 'options'].forEach((type) => {
+      // @ts-ignore: Property 'properties' does not exist on type 'JSONSchema7Definition'.
+      const properties = jsonschema?.properties?.[type]?.properties
+      if (
+        properties &&
+        Object.keys(properties).length === 0 &&
+        jsonschema.properties
+      ) {
+        delete jsonschema.properties[type]
+      }
+    })
   }
 
   useEffect(() => {
