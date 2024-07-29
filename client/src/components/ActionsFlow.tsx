@@ -96,7 +96,7 @@ const WhiteBand = ({ data }: { data: INodeData }) => {
             : `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`,
         display: 'flex',
         alignItems: 'center',
-        cursor: data.type === 'node-action' ? 'pointer' : 'auto',
+        cursor: data.type === 'node-action' ? 'pointer' : 'grab',
         '&:hover': {
           backgroundImage:
             data.layerIndex === undefined
@@ -280,14 +280,9 @@ function NodeAction({ data }: { data: INodeData }) {
 }
 
 const ReactFlowStyled = styled(Flow)(() => ({
-  '.react-flow__node.nopan': {
-    cursor: 'auto',
-  },
-  '.react-flow__edge.nopan': {
-    cursor: 'auto',
-  },
   '.react-flow__handle.connectionindicator': {
-    cursor: 'auto',
+    cursor: 'inherit',
+    pointerEvents: 'none',
   },
 }))
 
@@ -595,8 +590,12 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       onNodeClick={nodeClickHandler}
       nodesConnectable={false}
       onInit={onInit}
+      nodesDraggable={false}
+      edgesFocusable={false}
+      zoomOnDoubleClick={false}
+      elementsSelectable={false}
     >
-      <Controls />
+      <Controls showInteractive={false} />
       <Background
         color={'none'}
         style={{
