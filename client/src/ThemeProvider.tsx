@@ -63,6 +63,7 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
       mode: isDarkMode ? 'dark' : 'light',
       primary: {
         main: isDarkMode ? '#fff' : '#000',
+        contrastText: isDarkMode ? '#000' : '#fff',
       },
       secondary: {
         main: isDarkMode ? '#000' : '#fff',
@@ -71,23 +72,7 @@ const ThemeProvider: FC<IThemeProviderProps> = ({ children }) => {
     typography: {
       ...typographyOptions,
     },
-    // TODO: Apply these styles to exact button and not globally.
-    // components: {
-    //   MuiButton: {
-    //     styleOverrides: {
-    //       root: {
-    //         fontSize: 18,
-    //         borderRadius: 28,
-    //         textTransform: 'none',
-    //         fontWeight: 600,
-    //         lineHeight: 1.55,
-    //         '& .MuiButton-startIcon > *:nth-of-type(1)': {
-    //           fontSize: 24,
-    //         },
-    //       },
-    //     },
-    //   },
-    // },
+    components: {},
   })
 
   return (
