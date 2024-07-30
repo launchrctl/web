@@ -50,7 +50,7 @@ func (p *Plugin) CobraAddCommands(rootCmd *cobra.Command) error {
 	var port string
 	var proxyClient string
 	var useSwaggerUI bool
-	var background bool
+	var foreground bool
 	var all bool
 	var cmd = &cobra.Command{
 		Use:       "web",
@@ -79,7 +79,7 @@ func (p *Plugin) CobraAddCommands(rootCmd *cobra.Command) error {
 				return fmt.Errorf("web server port %s you are trying to use is not available", port)
 			}
 
-			if !background {
+			if foreground {
 				return server.Run(cmd.Context(), p.app, runOpts)
 			}
 
@@ -92,7 +92,7 @@ func (p *Plugin) CobraAddCommands(rootCmd *cobra.Command) error {
 	}
 	cmd.Flags().StringVarP(&port, "port", "p", "8080", `Web server port`)
 	cmd.Flags().BoolVarP(&useSwaggerUI, "swagger-ui", "", false, `Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui`)
-	cmd.Flags().BoolVarP(&background, "background", "", false, `Create background process to run server`)
+	cmd.Flags().BoolVarP(&foreground, "foreground", "", false, `Run server as foreground process`)
 	cmd.Flags().BoolVarP(&all, "all", "", false, `Stop all background applications`)
 	cmd.Flags().StringVarP(&proxyClient, "proxy-client", "", "", `Proxies to client web server, useful in local development`)
 	// Command flags.
