@@ -32,7 +32,12 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
         ...wrapperStyles,
       }}
     >
-      <img src={Logo} width="24" height="24" alt={t('Logo')} />
+      <img
+        src={sessionStorage.getItem('plasmactl_web_ui_platform_logo') || Logo}
+        width="24"
+        height="24"
+        alt={t('Logo')}
+      />
       <Typography
         variant="h5"
         fontWeight={700}
@@ -40,8 +45,9 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
         fontSize="15px"
         textOverflow="ellipsis"
         overflow="hidden"
+        sx={{ textTransform: 'uppercase' }}
       >
-        {text}
+        {sessionStorage.getItem('plasmactl_web_ui_platform_name') || text}
       </Typography>
     </MuiLink>
   )
