@@ -471,7 +471,11 @@ export const getNodesAndEdges = (
 
   const nodes: IFolder = {
     id: 'start',
-    data: { label: 'Platform name' },
+    data: {
+      label:
+        sessionStorage.getItem('plasmactl_web_ui_platform_name') ||
+        'Platform name',
+    },
     type: 'node-start',
     folders: {},
     actions: {},

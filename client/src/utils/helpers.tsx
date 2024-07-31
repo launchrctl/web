@@ -62,3 +62,12 @@ export const extractDateTimeFromId = (id: string) => {
 
   return formattedDate
 }
+
+export const svgToBase64 = (svg: string) => {
+  const base64 = btoa(
+    encodeURIComponent(svg).replaceAll(/%([\dA-F]{2})/g, (_, p1) =>
+      String.fromCodePoint(Number.parseInt(p1, 16))
+    )
+  )
+  return `data:image/svg+xml;base64,${base64}`
+}
