@@ -6,18 +6,25 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/launchrctl/launchr/pkg/log"
 
@@ -42,16 +49,27 @@ type RunOptions struct {
 	SwaggerJSON bool
 	SwaggerUIFS fs.FS
 	// Client server.
-	ClientFS    fs.FS
-	ProxyClient string
+	ClientFS      fs.FS
+	ProxyClient   string
+	RunInfoFolder string
 }
 
-const asyncTickerTime = 2
+// RunInfo is structure that stores current running server metadata.
+type RunInfo struct {
+	// BaseURL stores server accessible URL.
+	BaseURL string `yaml:"BaseURL"`
+}
 
-const swaggerUIPath = "/swagger-ui"
-const swaggerJSONPath = "/swagger.json"
+const (
+	asyncTickerTime = 2
 
-const statusRunning string = "running"
+	swaggerUIPath   = "/swagger-ui"
+	swaggerJSONPath = "/swagger.json"
+
+	statusRunning string = "running"
+
+	runInfoName = "server-info.yaml"
+)
 
 // Run starts http server.
 func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
@@ -125,9 +143,21 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		fmt.Println("swagger.json: " + baseURL + opts.APIPrefix + swaggerJSONPath)
 	}
 
-	// Open the browser after printing the start messages
+	runInfo := RunInfo{BaseURL: baseURL}
+
+	defer onShutdown(opts.RunInfoFolder)
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
-		checkServerUp(baseURL)
+		popInBrowser(baseURL)
+	}()
+
+	go func() {
+		<-signals
+		log.Info("terminating...\n")
+		cancel()
 	}()
 
 	go func() {
@@ -138,16 +168,89 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		}
 	}()
 
-	return s.ListenAndServe()
+	err = storeRunInfo(runInfo, opts.RunInfoFolder)
+	if err != nil {
+		return err
+	}
+
+	if err = s.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	return nil
 }
 
-func checkServerUp(url string) {
+func onShutdown(folder string) {
+	err := os.RemoveAll(folder)
+	if err != nil {
+		log.Debug(err.Error())
+	}
+}
+
+// GetRunInfo lookups server run info metadata and tries to get it from storage.
+func GetRunInfo(storePath string) (*RunInfo, error) {
+	var ri RunInfo
+	riPath := fmt.Sprintf("%s/%s", storePath, runInfoName)
+
+	_, err := os.Stat(riPath)
+	if os.IsNotExist(err) {
+		return &ri, err
+	}
+
+	data, err := os.ReadFile(filepath.Clean(riPath))
+	if err != nil {
+		return &ri, fmt.Errorf("error reading plugin storage path: %v", err)
+	}
+
+	err = yaml.Unmarshal(data, &ri)
+	if err != nil {
+		return &ri, fmt.Errorf("error unmarshalling yaml: %v", err)
+	}
+
+	return &ri, nil
+}
+
+func storeRunInfo(runInfo RunInfo, storePath string) error {
+	ri, err := yaml.Marshal(&runInfo)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(storePath, 0750)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(fmt.Sprintf("%s/%s", storePath, runInfoName), ri, os.FileMode(0640))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// PingServer helper to check if server is available by request.
+func PingServer(url string) (bool, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodHead, url, nil)
+	if err != nil {
+		return false, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	_ = resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK, nil
+}
+
+func popInBrowser(url string) bool {
 	client := &http.Client{}
 	for {
 		req, err := http.NewRequest(http.MethodHead, url, nil)
 		if err != nil {
 			log.Debug(err.Error())
-			return
+			return false
 		}
 		resp, err := client.Do(req)
 		if err != nil {
@@ -165,6 +268,8 @@ func checkServerUp(url string) {
 		}
 		break
 	}
+
+	return true
 }
 
 func spaHandler(opts *RunOptions) http.HandlerFunc {
@@ -407,4 +512,25 @@ func openBrowser(url string) error {
 	default:
 		return fmt.Errorf("unsupported platform")
 	}
+}
+
+// GetFreePort searches for free port.
+func GetFreePort(port, limit int) int {
+	iteration := 0
+	for !IsPortFree(port) && iteration < limit {
+		port++
+		iteration++
+	}
+	return port
+}
+
+// IsPortFree checks if port available to use.
+func IsPortFree(port int) bool {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return false
+	}
+
+	_ = listener.Close()
+	return true
 }

@@ -30,16 +30,6 @@ func readPidFile(path string) (int, error) {
 	return pid, nil
 }
 
-func removePidFile(path string) error {
-	err := os.Remove(path)
-	if err != nil {
-		log.Debug(err.Error())
-		return errors.New("error removing PID file")
-	}
-
-	return err
-}
-
 func killProcess(pid int) error {
 	process, err := os.FindProcess(pid)
 	if err != nil {
@@ -48,6 +38,21 @@ func killProcess(pid int) error {
 	}
 
 	if err = process.Kill(); err != nil {
+		log.Debug(err.Error())
+		log.Info("error killing process")
+	}
+
+	return nil
+}
+
+func interruptProcess(pid int) error {
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		log.Debug(err.Error())
+		return errors.New("error finding process")
+	}
+
+	if err = process.Signal(os.Interrupt); err != nil {
 		log.Debug(err.Error())
 		log.Info("error killing process")
 	}
