@@ -39,8 +39,9 @@ func (p *Plugin) CobraAddCommands(rootCmd *cobra.Command) error {
 	var proxyClient string
 	var useSwaggerUI bool
 	var cmd = &cobra.Command{
-		Use:   "web",
-		Short: "Starts web server",
+		Use:     "web",
+		Short:   "Starts web server",
+		Aliases: []string{"ui"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Don't show usage help on a runtime error.
 			cmd.SilenceUsage = true
