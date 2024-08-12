@@ -10,7 +10,7 @@ export const SidebarActions: FC<{
   actions: GetListResponse | undefined
 }> = ({ actions }) => {
   return (
-    <List>
+    <List className={'list-of-actions'}>
       {actions?.data
         .sort((a, b) => (a.id as string).localeCompare(b.id as string))
         .map(({ id, title, description }) => (

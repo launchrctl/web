@@ -1,3 +1,4 @@
+import { GetListResponse } from '@refinedev/core'
 import type { GenericObjectType, UiSchema } from '@rjsf/utils'
 
 export const sentenceCase = (a: string) => {
@@ -9,6 +10,17 @@ export const splitActionId = (actionId: string) => {
   const [path, id] = actionId.split(':')
   const levels = path.split('.')
   return { levels, id }
+}
+
+// Returns array of ids of duplicated actions
+export const checkIfDuplicatedActions = (actions: GetListResponse) => {
+  const mapCountIds = new Map()
+
+  actions.data.forEach(({ id }) => {
+    mapCountIds.set(id, (mapCountIds.get(id) || 0) + 1)
+  })
+
+  return [...mapCountIds].filter(([, value]) => value > 1).map(([id]) => id)
 }
 
 // If field label contains word password or passphrase

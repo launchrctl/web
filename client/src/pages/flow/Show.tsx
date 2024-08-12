@@ -1,9 +1,11 @@
+import { AlertColor } from '@mui/material/Alert/Alert'
 import Grid from '@mui/material/Grid'
 import { Box } from '@mui/system'
 import { GetListResponse, useList } from '@refinedev/core'
 import { type FC, useEffect, useState } from 'react'
 
 import { ActionsFlow } from '../../components/ActionsFlow'
+import { AlertBanner } from '../../components/AlertBanner'
 import { SecondSidebarFlow } from '../../components/SecondSidebarFlow'
 import { SidebarFlow } from '../../components/SidebarFlow'
 import { FlowClickedActionIDProvider } from '../../context/ActionsFlowContext'
@@ -12,6 +14,7 @@ import {
   SidebarTreeItemMouseStatesProvider,
 } from '../../context/SidebarTreeItemStatesContext'
 import { useAction } from '../../hooks/ActionHooks'
+import { checkIfDuplicatedActions } from '../../utils/helpers'
 
 export const FlowShow: FC = () => {
   const { data: actions } = useList({
@@ -20,13 +23,21 @@ export const FlowShow: FC = () => {
   const [dataReceived, setData] = useState<GetListResponse>()
   const { id: nodeId } = useAction()
   const [renderEndSidebar, setRenderEndSidebar] = useState(false)
+  const [alert, setAlert] = useState<
+    | boolean
+    | {
+        title: string
+        content?: string
+        type?: AlertColor
+      }
+  >(false)
 
   useEffect(() => {
     setRenderEndSidebar(nodeId !== '')
   }, [nodeId])
 
   useEffect(() => {
-    if (actions) {
+    if (actions && !dataReceived) {
       // Sorting actions data to have alphabetical order and actions presented always above subfolders.
       actions.data.sort((a, b) => {
         if (typeof a.id !== 'string' || typeof b.id !== 'string') {
@@ -42,9 +53,27 @@ export const FlowShow: FC = () => {
           ? aParts[1].localeCompare(bParts[1])
           : aType.localeCompare(bType)
       })
-      setData(actions)
+      if (!actions.data || actions.data.length === 0) {
+        setAlert({
+          title: 'No data actions',
+          type: 'warning',
+        })
+      }
+      if (actions.data && actions.data.length > 0) {
+        const duplicatedIds: string[] = checkIfDuplicatedActions(actions)
+        if (duplicatedIds.length > 0) {
+          setAlert({
+            title: 'Duplicated IDs of actions detected',
+            content: duplicatedIds
+              .map((a, i) => `${i === 0 ? '' : '<br/>'}- ${a}`)
+              .join(''),
+          })
+        } else {
+          setData(actions)
+        }
+      }
     }
-  }, [actions])
+  }, [actions, dataReceived])
 
   return (
     <FlowClickedActionIDProvider>
@@ -55,6 +84,9 @@ export const FlowShow: FC = () => {
             sx={{ height: 'calc(100vh - 68px)' }}
             columns={{ xs: 36 }}
           >
+            {alert && typeof alert !== 'boolean' && (
+              <AlertBanner data={alert} />
+            )}
             {dataReceived && (
               <>
                 <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>

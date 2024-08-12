@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom'
+
 import { useList } from '@refinedev/core'
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
+
 import { FlowShow } from './Show'
 
-// Mocking useList from @refinedev/core
 jest.mock('@refinedev/core', () => ({
   useList: jest.fn(),
 }))
@@ -24,8 +25,36 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 }))
 
 describe('FlowShow', () => {
-  test('should render with mocked useList data', () => {
-    // Define your mock data
+  test('Alert banner shown in case of empty data actions', () => {
+    const mockData = {
+      data: {
+        data: [],
+      },
+    }
+    ;(useList as jest.Mock).mockReturnValue(mockData)
+    render(<FlowShow />)
+    expect(screen.getByText('No data actions')).toBeInTheDocument()
+  })
+
+  test('Alert banner shown if duplicated actions in the data', () => {
+    const mockData = {
+      data: {
+        data: [
+          { id: 'test:deploy', title: 'Deploy' },
+          { id: 'test:deploy', title: 'Deploy duplicated' },
+          { id: 'test.subtest:build', title: 'Build' },
+        ],
+      },
+    }
+    ;(useList as jest.Mock).mockReturnValue(mockData)
+    render(<FlowShow />)
+    expect(
+      screen.getByText('Duplicated IDs of actions detected')
+    ).toBeInTheDocument()
+  })
+
+  // Initially we have all actions available in second tab 'Actions' in the left sidebar.
+  test('All actions are rendered somehow in the component if good data', () => {
     const mockData = {
       data: {
         data: [
@@ -34,15 +63,16 @@ describe('FlowShow', () => {
         ],
       },
     }
-
-    // Mock the return value of useList
     ;(useList as jest.Mock).mockReturnValue(mockData)
-
-    // Render the component
-    render(<FlowShow />)
-
-    // Now you can write assertions based on your component's UI and the mock data
-    // expect(screen.getByText('Action 1')).toBeInTheDocument();
-    // expect(screen.getByText('Action 2')).toBeInTheDocument();
+    const { container } = render(<FlowShow />)
+    const sidebarTabs = container.querySelector('.sidebar-flow-tabs')
+    expect(sidebarTabs).toBeInTheDocument()
+    const buttons = sidebarTabs?.querySelectorAll('button')
+    expect(buttons?.length).toBeGreaterThanOrEqual(2)
+    if (buttons) fireEvent.click(buttons[1])
+    const resultElement = container.querySelector('.list-of-actions')
+    expect(resultElement).toBeInTheDocument()
+    expect(resultElement).toHaveTextContent('test:deploy')
+    expect(resultElement).toHaveTextContent('test.subtest:build')
   })
 })

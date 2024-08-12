@@ -34,6 +34,7 @@ export const SidebarFlow: FC<ISidebarFlowProps> = ({ actions }) => {
               onChange={handleChange}
               size="small"
               sx={{ display: 'flex' }}
+              className={'sidebar-flow-tabs'}
             >
               <ToggleButton
                 value="1"
