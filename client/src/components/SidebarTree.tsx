@@ -211,6 +211,8 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
     status,
     publicAPI,
   } = useTreeItem2({ id, itemId, children, label, disabled, rootRef: ref })
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const item = publicAPI.getItem(itemId)
   const expandable = isExpandable(children)
   const icon = getIconFromFileType(item.fileType)
@@ -351,10 +353,14 @@ export const SidebarTree: FC<{
       })()
       setExpandedItems(expandItems.reverse())
       if (selectedAction) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const prevSelectedAction = apiRef.current?.getItem(selectedAction)
         prevSelectedAction.selected = false
         setSelectedAction('')
       }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const curSelectedAction = apiRef.current?.getItem(flowClickedActionId.id)
       curSelectedAction.selected = flowClickedActionId.isActive
       setSelectedAction(
@@ -373,10 +379,14 @@ export const SidebarTree: FC<{
     }
     if (itemIds.includes(':')) {
       if (selectedAction) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const prevSelectedActionData = apiRef.current?.getItem(selectedAction)
         prevSelectedActionData.selected = false
         handleUnselect(selectedAction)
       }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const item = apiRef.current?.getItem(itemIds)
       item.selected = selectedAction !== itemIds
       if (item.selected) {
@@ -395,6 +405,8 @@ export const SidebarTree: FC<{
       })
     } else {
       if (Object.keys(selectedActionsGroup).length > 0) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const prevSelectedActionData = apiRef.current?.getItem(
           selectedActionsGroup.id
         )
@@ -406,11 +418,15 @@ export const SidebarTree: FC<{
           selectedActionsGroup.isActionsGroup
         )
       }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const item = apiRef.current?.getItem(itemIds)
       if (selectedActionsGroup.id === itemIds) {
         item.selected = false
         handleUnselect(itemIds, item.isActionsGroup)
         if (selectedAction) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           const prevSelectedActionData = apiRef.current?.getItem(selectedAction)
           prevSelectedActionData.selected = false
           handleUnselect(selectedAction)
@@ -431,6 +447,8 @@ export const SidebarTree: FC<{
       } else {
         handleUnselect(itemIds, item.isActionsGroup)
         if (selectedAction) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           const prevSelectedActionData = apiRef.current?.getItem(selectedAction)
           prevSelectedActionData.selected = false
           handleUnselect(selectedAction)
@@ -449,6 +467,8 @@ export const SidebarTree: FC<{
   }
 
   const deselectAction = (id: string) => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const selectedActionData = apiRef.current?.getItem(id)
     selectedActionData.selected = false
     setSelectedAction('')
