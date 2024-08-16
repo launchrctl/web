@@ -6207,6 +6207,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dotenv-expand@npm:5.1.0":
+  version: 5.1.0
+  resolution: "dotenv-expand@npm:5.1.0"
+  checksum: 10c0/24ac633de853ef474d0421cc639328b7134109c8dc2baaa5e3afb7495af5e9237136d7e6971e55668e4dce915487eb140967cdd2b3e99aa439e0f6bf8b56faeb
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:8.2.0":
+  version: 8.2.0
+  resolution: "dotenv@npm:8.2.0"
+  checksum: 10c0/b6a07a2c400b13ad4e59c34e4682256e6bb846469781a3963b36861ee608ed312e6125c4a7635a9edcf957bb294a6966e218f0e26b82ff0bda9184211d4bc141
+  languageName: node
+  linkType: hard
+
 "dotenv@npm:^16.0.3":
   version: 16.4.5
   resolution: "dotenv@npm:16.4.5"
@@ -9431,6 +9445,7 @@ __metadata:
     ts-node: "npm:^10.9.2"
     typescript: "npm:^4.9.5"
     vite: "npm:^5.2.12"
+    vite-plugin-env-compatible: "npm:^2.0.1"
     websocket: "npm:^1.0.35"
   languageName: unknown
   linkType: soft
@@ -13102,6 +13117,16 @@ __metadata:
     unist-util-stringify-position: "npm:^2.0.0"
     vfile-message: "npm:^2.0.0"
   checksum: 10c0/4816aecfedc794ba4d3131abff2032ef0e825632cfa8cd20dd9d83819ef260589924f4f3e8fa30e06da2d8e60d7ec8ef7d0af93e0483df62890738258daf098a
+  languageName: node
+  linkType: hard
+
+"vite-plugin-env-compatible@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "vite-plugin-env-compatible@npm:2.0.1"
+  dependencies:
+    dotenv: "npm:8.2.0"
+    dotenv-expand: "npm:5.1.0"
+  checksum: 10c0/356ddda4d9d8d3e26053392cba374f9bdc0804c74816eb88d2384df817c921d697519bad272feffcfb4fa8dda38a5ea7f8a6802eaf4fd65caa74171c9df6ff12
   languageName: node
   linkType: hard
 
