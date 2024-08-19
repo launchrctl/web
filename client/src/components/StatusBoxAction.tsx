@@ -32,11 +32,27 @@ const transformPayload = (payload: {
   }))
 }
 
+const getNewActiveTabId = (event: SyntheticEvent) => {
+  let target = event.target as HTMLElement
+  while (target && !target.dataset.processId) {
+    target = target.parentElement as HTMLElement
+  }
+
+  return target.dataset.processId || undefined
+}
+
+type IActiveTab =
+  | false
+  | {
+      index: number
+      id: string
+    }
+
 const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
   const apiUrl = useApiUrl()
   const [running, setRunning] = useState<IActionProcess[]>([])
-  const [value, setValue] = useState(0)
-
+  const [activeRunningTab, setRunningTab] = useState<IActiveTab>(false)
+  const [activeArchiveTab, setArchiveTab] = useState<IActiveTab>(false)
   const { refetch: queryRunning } = useCustom<IActionProcess[]>({
     url: `${apiUrl}/actions/${action.id}/running`,
     method: 'get',
@@ -45,10 +61,52 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
   useEffect(() => {
     queryRunning().then((response) => {
       if (response?.data?.data) {
-        setRunning(response.data.data)
+        const data = [...response.data.data]
+        let related
+        setRunning(data.reverse())
+        if (data.filter((a) => a.status === 'running').length === 0) {
+          setRunningTab(false)
+          related = data.find((a) => ['error', 'finished'].includes(a.status))
+          if (related && related.id) {
+            setArchiveTab({
+              index: 0,
+              id: related.id,
+            })
+          }
+        } else {
+          setArchiveTab(false)
+          related = data.find((a) => a.status === 'running')
+          if (related && related.id) {
+            setRunningTab({
+              index: 0,
+              id: related.id,
+            })
+          }
+        }
       }
     })
   }, [action.id, queryRunning])
+
+  useEffect(() => {
+    if (typeof activeRunningTab === 'object') {
+      const prevProcessData = running.find((a) => a.id === activeRunningTab.id)
+
+      if (prevProcessData && prevProcessData.status !== 'running') {
+        setRunningTab(false)
+
+        const filterOfArchivedProcess = running.filter((a) =>
+          ['error', 'finished'].includes(a.status)
+        )
+
+        setArchiveTab({
+          index: filterOfArchivedProcess.findIndex(
+            (a) => a.id === prevProcessData.id
+          ),
+          id: prevProcessData.id,
+        })
+      }
+    }
+  }, [running, activeRunningTab])
 
   useSubscription({
     channel: 'processes',
@@ -70,21 +128,198 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
       if (type === 'send-processes-finished') {
         queryRunning().then((response) => {
           if (response?.data) {
-            setRunning(response?.data?.data)
+            setRunning(response.data.data.reverse())
           }
         })
       }
     },
   })
 
-  const handleChange = useCallback(
+  const handleRunningTabChange = useCallback(
     (event: SyntheticEvent, newValue: number) => {
-      if (running && Array.isArray(running) && newValue < running.length) {
-        setValue(newValue)
+      const id = getNewActiveTabId(event)
+
+      if (
+        id &&
+        running &&
+        Array.isArray(running) &&
+        newValue < running.length
+      ) {
+        setArchiveTab(false)
+        setRunningTab({
+          index: newValue,
+          id: id,
+        })
       }
     },
     [running]
   )
+
+  const handleArchiveTabChange = useCallback(
+    (event: SyntheticEvent, newValue: number) => {
+      const id = getNewActiveTabId(event)
+
+      if (
+        id &&
+        running &&
+        Array.isArray(running) &&
+        newValue < running.length
+      ) {
+        setRunningTab(false)
+        setArchiveTab({
+          index: newValue,
+          id: id,
+        })
+      }
+    },
+    [running]
+  )
+
+  const TabPanelContent = (array: IActionProcess[], index: number) => {
+    return array.map((info, idx) => {
+      return (
+        <TabPanel value={index} index={idx} key={info.id}>
+          {info.id}
+          <StatusBoxProcess ri={info} actionId={action.id} />
+        </TabPanel>
+      )
+    })
+  }
+
+  const TabPanels = () => {
+    if (Array.isArray(running)) {
+      if (
+        running.some((a) => a.status === 'running') &&
+        typeof activeRunningTab === 'object' &&
+        activeRunningTab.index >= 0
+      ) {
+        return TabPanelContent(
+          running.filter((a) => a.status === 'running'),
+          activeRunningTab.index
+        )
+      } else if (
+        running.some((a) => ['error', 'finished'].includes(a.status)) &&
+        typeof activeArchiveTab === 'object' &&
+        activeArchiveTab.index >= 0
+      ) {
+        return TabPanelContent(
+          running.filter((a) => ['error', 'finished'].includes(a.status)),
+          activeArchiveTab.index
+        )
+      }
+    } else {
+      return 'No processes running'
+    }
+  }
+
+  const ProcessesSection = ({
+    title,
+    noMessage,
+    list,
+    activeTab,
+    onChangeHandler,
+  }: {
+    title: string
+    noMessage: string
+    list: IActionProcess[]
+    activeTab: IActiveTab
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onChangeHandler: (event: React.SyntheticEvent, value: any) => void
+  }) => {
+    return (
+      <Box>
+        <Typography
+          sx={{
+            color: (theme) =>
+              theme.palette.mode === 'dark' ? '#fff' : '#667085',
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.45,
+            letterSpacing: '0.22px',
+          }}
+        >
+          {title}
+        </Typography>
+        {list.length === 0 ? (
+          <Typography
+            sx={{
+              color: (theme) =>
+                theme.palette.mode === 'dark' ? '#fff' : '#667085',
+              fontSize: 11,
+              fontWeight: 600,
+              lineHeight: 1.45,
+              letterSpacing: '0.22px',
+            }}
+          >
+            - {noMessage}
+          </Typography>
+        ) : (
+          <Tabs
+            orientation="vertical"
+            variant="scrollable"
+            value={activeTab === false ? activeTab : activeTab.index}
+            onChange={onChangeHandler}
+            sx={{
+              borderLeft: 1,
+              borderColor: 'divider',
+              '& .MuiTabs-indicator': { left: 0 },
+            }}
+          >
+            {list.map((info) => (
+              <Tab
+                key={running.findIndex((a) => a.id === info.id)}
+                data-process-id={info.id}
+                label={
+                  <>
+                    <Typography
+                      sx={{
+                        fontSize: '12px',
+                        fontFamily: 'monospace',
+                        textTransform: 'lowercase',
+                      }}
+                      color={ACTION_STATE_COLORS[info.status]}
+                    >
+                      {info.id}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: '10px',
+                        fontFamily: 'monospace',
+                        textTransform: 'lowercase',
+                      }}
+                    >
+                      started: {extractDateTimeFromId(info.id)}
+                    </Typography>
+                  </>
+                }
+                sx={{ alignItems: 'start', minHeight: 10 }}
+              />
+            ))}
+          </Tabs>
+        )}
+      </Box>
+    )
+  }
+
+  const RunningProcesses = () => {
+    return ProcessesSection({
+      title: 'Running processes',
+      noMessage: 'No running processes',
+      list: running.filter((a) => a.status === 'running'),
+      activeTab: activeRunningTab,
+      onChangeHandler: handleRunningTabChange,
+    })
+  }
+
+  const ArchiveProcesses = () => {
+    return ProcessesSection({
+      title: 'Archive processes',
+      noMessage: 'No archive processes',
+      list: running.filter((a) => ['error', 'finished'].includes(a.status)),
+      activeTab: activeArchiveTab,
+      onChangeHandler: handleArchiveTabChange,
+    })
+  }
 
   return (
     <Box
@@ -109,65 +344,19 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
           padding: '15px',
         }}
       >
-        {Array.isArray(running) && running.length > 0
-          ? running
-              .sort((a, b) => a.status.localeCompare(b.status))
-              .map((info, idx) => (
-                <TabPanel value={value} index={idx} key={info.id}>
-                  <StatusBoxProcess ri={info} actionId={action.id} />
-                </TabPanel>
-              ))
-          : 'No processes running'}
+        {TabPanels()}
       </Box>
       <Stack
         spacing={2}
-        sx={{ flexGrow: 0, height: 'calc(62.5vh - 48px)', flexBasis: '20vw' }}
+        sx={{
+          flexGrow: 0,
+          height: 'calc(62.5vh - 48px)',
+          flexBasis: '20vw',
+          overflow: 'auto',
+        }}
       >
-        <Tabs
-          orientation="vertical"
-          variant="scrollable"
-          value={value}
-          onChange={handleChange}
-          sx={{
-            borderLeft: 1,
-            borderColor: 'divider',
-            '& .MuiTabs-indicator': { left: 0 },
-          }}
-        >
-          {Array.isArray(running) && running.length > 0
-            ? running
-                .sort((a, b) => a.status.localeCompare(b.status))
-                .map((info) => (
-                  <Tab
-                    key={info.id}
-                    label={
-                      <>
-                        <Typography
-                          sx={{
-                            fontSize: '12px',
-                            fontFamily: 'monospace',
-                            textTransform: 'lowercase',
-                          }}
-                          color={ACTION_STATE_COLORS[info.status]}
-                        >
-                          {info.id}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            fontSize: '10px',
-                            fontFamily: 'monospace',
-                            textTransform: 'lowercase',
-                          }}
-                        >
-                          started: {extractDateTimeFromId(info.id)}
-                        </Typography>
-                      </>
-                    }
-                    sx={{ alignItems: 'start', minHeight: 10 }}
-                  />
-                ))
-            : null}
-        </Tabs>
+        {RunningProcesses()}
+        {ArchiveProcesses()}
       </Stack>
     </Box>
   )
