@@ -4,8 +4,9 @@ package web
 
 import (
 	"embed"
-	"github.com/launchrctl/web/server"
 	"io/fs"
+
+	"github.com/launchrctl/web/server"
 )
 
 //go:embed swagger-ui/*

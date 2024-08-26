@@ -1,6 +1,6 @@
 const isProductionMode = import.meta.env.MODE === 'production'
 const addDefaultPort = (protocol: string) =>
-  protocol === 'https:' ? ':433' : ':80'
+  protocol === 'https:' ? ':443' : ':80'
 
 export function getApiUrl() {
   let url = import.meta.env.VITE_API_URL
