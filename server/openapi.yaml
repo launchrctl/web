@@ -253,7 +253,14 @@ components:
               type: string
               x-go-name: "ID"
             status:
-              type: string
+              $ref: '#/components/schemas/ActionRunStatus'
+    ActionRunStatus:
+      type: string
+      enum:
+        - created
+        - running
+        - finished
+        - error
     ActionRunStreamData:
       allOf:
         - type: object

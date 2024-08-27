@@ -7,16 +7,16 @@ import { useTheme } from '@mui/system'
 import { GetListResponse } from '@refinedev/core'
 import { type FC, useEffect, useState } from 'react'
 
+import { components } from '../../openapi'
 import { useActionDispatch } from '../hooks/ActionHooks'
 import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
 import { useSidebarTreeItemClickStates } from '../hooks/SidebarTreeItemStatesHooks'
-import { IAction } from '../types'
 import { ActionsListFlow } from './ActionsListFlow'
 import { FormFlow } from './FormFlow'
 
 export type IActionsGroup = {
   id: string
-  list: IAction[]
+  list: components['schemas']['ActionShort'][]
 }
 
 const isAction = (id: string) => id.split(':')[1]?.length

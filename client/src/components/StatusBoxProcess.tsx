@@ -6,11 +6,11 @@ import {
 } from '@refinedev/core'
 import { FC, useEffect, useState } from 'react'
 
-import { IActionProcess } from '../types'
+import { components } from '../../openapi'
 import TerminalBox from './TerminalBox'
 
 interface IStatusBoxProcessProps {
-  ri: IActionProcess
+  ri: components['schemas']['ActionRunInfo']
   actionId: string
 }
 

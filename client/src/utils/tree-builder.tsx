@@ -1,6 +1,6 @@
 import { GetListResponse } from '@refinedev/core'
 
-import { IAction } from '../types'
+import { components } from '../../openapi'
 import { sentenceCase, splitActionId } from '../utils/helpers'
 
 export type FileType = 'folder' | 'app' | 'action'
@@ -16,7 +16,11 @@ export interface ExtendedTreeItemProps {
   children?: ExtendedTreeItemProps[]
 }
 
-const addAction = (to: ExtendedTreeItemProps, what: IAction, depth: number) => {
+const addAction = (
+  to: ExtendedTreeItemProps,
+  what: components['schemas']['ActionShort'],
+  depth: number
+) => {
   to.children?.push({
     ...what,
     fileType: 'action',
@@ -33,41 +37,52 @@ export const treeBuilder = (
       const { levels } = splitActionId(action.id as string)
       let currentNode: ExtendedTreeItemProps[] | undefined = tree
       let idPath = ''
+      if (levels && levels.length > 0) {
+        for (let index = 0; index < levels.length; index++) {
+          const level = levels[index] ?? ''
+          idPath = idPath ? `${idPath}.${level}` : level
 
-      for (let index = 0; index < levels.length; index++) {
-        const level = levels[index]
-        idPath = idPath ? `${idPath}.${level}` : level
-
-        const alreadyExist: ExtendedTreeItemProps | undefined =
-          currentNode?.find((a) => a.id === idPath)
-        if (alreadyExist) {
-          if (index === levels.length - 1) {
-            addAction(alreadyExist, action as IAction, index + 1)
-          }
-          currentNode = alreadyExist.children
-        } else {
-          const obj: ExtendedTreeItemProps = {
-            id: idPath,
-            label: sentenceCase(level),
-            fileType: levels[index - 1] === 'roles' ? 'app' : 'folder',
-            depth: index,
-            children: [],
-            isActionsGroup: false,
-          }
-
-          if (index === levels.length - 1) {
-            obj.isActionsGroup = !actions.data.some((a) => {
-              return (
-                a.id && typeof a.id === 'string' && a.id.includes(`${idPath}.`)
+          const alreadyExist: ExtendedTreeItemProps | undefined =
+            currentNode?.find((a) => a.id === idPath)
+          if (alreadyExist) {
+            if (index === levels.length - 1) {
+              addAction(
+                alreadyExist,
+                action as components['schemas']['ActionShort'],
+                index + 1
               )
-            })
-            addAction(obj, action as IAction, index + 1)
-          }
+            }
+            currentNode = alreadyExist.children
+          } else {
+            const obj: ExtendedTreeItemProps = {
+              id: idPath,
+              label: sentenceCase(level),
+              fileType: levels[index - 1] === 'roles' ? 'app' : 'folder',
+              depth: index,
+              children: [],
+              isActionsGroup: false,
+            }
 
-          if (currentNode) {
-            currentNode.push(obj)
+            if (index === levels.length - 1) {
+              obj.isActionsGroup = !actions.data.some((a) => {
+                return (
+                  a.id &&
+                  typeof a.id === 'string' &&
+                  a.id.includes(`${idPath}.`)
+                )
+              })
+              addAction(
+                obj,
+                action as components['schemas']['ActionShort'],
+                index + 1
+              )
+            }
+
+            if (currentNode) {
+              currentNode.push(obj)
+            }
+            currentNode = obj.children
           }
-          currentNode = obj.children
         }
       }
     }

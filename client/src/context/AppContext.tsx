@@ -1,19 +1,19 @@
 import { createContext, FC, ReactNode, useEffect, useState } from 'react'
 
-import { IAction } from '../types'
+import { components } from '../../openapi'
 
 interface AppState {
-  runningActions: IAction[]
+  runningActions: components['schemas']['ActionShort'][]
 }
 
 interface AppContextValue {
   appState: AppState
-  addAction: (action: IAction) => void
+  addAction: (action: components['schemas']['ActionShort']) => void
 }
 
 export const AppContext = createContext<AppContextValue>({
   appState: { runningActions: [] },
-  addAction: (action: IAction) => {
+  addAction: (action: components['schemas']['ActionShort']) => {
     console.warn('addAction function not yet implemented. Action:', action)
   },
 })
@@ -33,7 +33,7 @@ const AppProvider: FC<AppProviderProps> = ({ children }) => {
     }
   }, [])
 
-  const addAction = (action: IAction) => {
+  const addAction = (action: components['schemas']['ActionShort']) => {
     setAppState((prevState) => {
       const existingActionIndex = prevState.runningActions.findIndex(
         (a) => a.id === action.id
@@ -52,8 +52,10 @@ const AppProvider: FC<AppProviderProps> = ({ children }) => {
         existingActionIndex,
         1
       )
-      prevState.runningActions.unshift(matchingItem)
-      console.log(prevState)
+      if (matchingItem) {
+        prevState.runningActions.unshift(matchingItem)
+      }
+
       return prevState
     })
   }

@@ -2,13 +2,13 @@ import { Box, Stack, Tab, Tabs, Typography } from '@mui/material'
 import { useApiUrl, useCustom, useSubscription } from '@refinedev/core'
 import { FC, SyntheticEvent, useCallback, useEffect, useState } from 'react'
 
+import { components } from '../../openapi'
 import { ACTION_STATE_COLORS } from '../constants'
-import { ActionState, IAction, IActionProcess } from '../types'
 import { extractDateTimeFromId } from '../utils/helpers'
 import StatusBoxProcess from './StatusBoxProcess'
 
 interface IStatusBoxActionProps {
-  action: IAction
+  action: components['schemas']['ActionShort']
 }
 
 interface TabPanelProps {
@@ -25,10 +25,10 @@ const TabPanel: FC<TabPanelProps> = ({ children, value, index, ...other }) => (
 
 const transformPayload = (payload: {
   processes: [{ ID: string; Status: string }]
-}): IActionProcess[] => {
+}): components['schemas']['ActionRunInfo'][] => {
   return payload.processes.map((process) => ({
     id: process.ID,
-    status: process.Status as ActionState,
+    status: process.Status as components['schemas']['ActionRunStatus'],
   }))
 }
 
@@ -50,10 +50,14 @@ type IActiveTab =
 
 const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
   const apiUrl = useApiUrl()
-  const [running, setRunning] = useState<IActionProcess[]>([])
+  const [running, setRunning] = useState<
+    components['schemas']['ActionRunInfo'][]
+  >([])
   const [activeRunningTab, setRunningTab] = useState<IActiveTab>(false)
   const [activeArchiveTab, setArchiveTab] = useState<IActiveTab>(false)
-  const { refetch: queryRunning } = useCustom<IActionProcess[]>({
+  const { refetch: queryRunning } = useCustom<
+    components['schemas']['ActionRunInfo'][]
+  >({
     url: `${apiUrl}/actions/${action.id}/running`,
     method: 'get',
   })
@@ -175,7 +179,10 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
     [running]
   )
 
-  const TabPanelContent = (array: IActionProcess[], index: number) => {
+  const TabPanelContent = (
+    array: components['schemas']['ActionRunInfo'][],
+    index: number
+  ) => {
     return array.map((info, idx) => {
       return (
         <TabPanel value={index} index={idx} key={info.id}>
@@ -221,7 +228,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
   }: {
     title: string
     noMessage: string
-    list: IActionProcess[]
+    list: components['schemas']['ActionRunInfo'][]
     activeTab: IActiveTab
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onChangeHandler: (event: React.SyntheticEvent, value: any) => void

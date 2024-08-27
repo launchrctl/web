@@ -5,3 +5,4 @@ node_modules/
 *.min.js
 **/**/coverage
 jest.config.ts
+openapi.d.ts

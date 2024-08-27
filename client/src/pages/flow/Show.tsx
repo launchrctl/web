@@ -46,11 +46,12 @@ export const FlowShow: FC = () => {
 
         const aParts = a.id.split(':')
         const bParts = b.id.split(':')
-        const aType = aParts[0]
-        const bType = bParts[0]
+
+        const aType = aParts[0] || ''
+        const bType = bParts[0] || ''
 
         return aType === bType
-          ? aParts[1].localeCompare(bParts[1])
+          ? (aParts[1] || '').localeCompare(bParts[1] || '')
           : aType.localeCompare(bType)
       })
       if (!actions.data || actions.data.length === 0) {
