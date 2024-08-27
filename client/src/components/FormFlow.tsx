@@ -177,6 +177,10 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
       sx={{
         px: 2,
         pb: 2,
+        '.MuiGrid-item:has(#root_options__title + div:empty), .MuiGrid-item:has(#root_arguments__title + div:empty)':
+          {
+            display: 'none',
+          },
       }}
     >
       {!isFetching && (
