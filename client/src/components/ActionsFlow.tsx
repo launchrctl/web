@@ -51,6 +51,7 @@ type INodeData = {
   filled?: boolean
   topLayer?: boolean
   description?: string
+  isExecuting: boolean
   isActive: boolean
   isHovered: boolean
   label?: string
@@ -65,10 +66,17 @@ const nodeTypes: NodeTypes = {
 }
 const WhiteBand = ({ data }: { data: INodeData }) => {
   const [active, setActive] = useState(false)
+  // TODO: for now always false, since `data.isExecuting` is never processed.
+  // Add progress indicator into each card on flow while action is executing.
+  const [executing, setExecuting] = useState(false)
 
   useEffect(() => {
     setActive(data.isActive)
   }, [data.isActive])
+
+  useEffect(() => {
+    setExecuting(data.isExecuting)
+  }, [data.isExecuting])
 
   return (
     <Box
@@ -144,12 +152,27 @@ const WhiteBand = ({ data }: { data: INodeData }) => {
             },
           }}
         >
-          <img src={active ? CheckIcon : ActionIcon} />
+          {executing ? (
+            <CircularProgress
+              variant="indeterminate"
+              disableShrink
+              thickness={7}
+              value={70}
+              size={16}
+              sx={{
+                display: 'block',
+                'animation-duration': '0.5s',
+              }}
+            />
+          ) : (
+            <img src={active ? CheckIcon : ActionIcon} />
+          )}
         </Box>
       )}
     </Box>
   )
 }
+
 function NodeStart({ data }: { data: INodeData }) {
   const { palette } = useTheme()
   return (

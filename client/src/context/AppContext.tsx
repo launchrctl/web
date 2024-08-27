@@ -39,7 +39,7 @@ const AppProvider: FC<AppProviderProps> = ({ children }) => {
         (a) => a.id === action.id
       )
       if (existingActionIndex === -1) {
-        const updatedRunningActions = [...prevState.runningActions, action]
+        const updatedRunningActions = [action, ...prevState.runningActions]
         const updatedState = {
           ...prevState,
           runningActions: updatedRunningActions,
@@ -47,6 +47,13 @@ const AppProvider: FC<AppProviderProps> = ({ children }) => {
         sessionStorage.setItem('appState', JSON.stringify(updatedState))
         return updatedState
       }
+
+      const [matchingItem] = prevState.runningActions.splice(
+        existingActionIndex,
+        1
+      )
+      prevState.runningActions.unshift(matchingItem)
+      console.log(prevState)
       return prevState
     })
   }
