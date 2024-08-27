@@ -230,6 +230,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
       <Box>
         <Typography
           sx={{
+            px: 3,
             color: (theme) =>
               theme.palette.mode === 'dark' ? '#fff' : '#667085',
             fontSize: 11,
@@ -243,6 +244,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
         {list.length === 0 ? (
           <Typography
             sx={{
+              p: 2,
               color: (theme) =>
                 theme.palette.mode === 'dark' ? '#fff' : '#667085',
               fontSize: 11,
