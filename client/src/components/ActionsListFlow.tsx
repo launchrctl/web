@@ -7,18 +7,17 @@ import ListItem from '@mui/material/ListItem'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import Typography from '@mui/material/Typography'
 import { type FC, Fragment, useState } from 'react'
-import * as React from 'react'
 
 import ArrowRightIcon from '/images/arrow-right.svg'
 
+import { components } from '../../openapi'
 import { useActionDispatch } from '../hooks/ActionHooks'
 import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
 import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
 } from '../hooks/SidebarTreeItemStatesHooks'
-import { IAction } from '../types'
-import { sentenceCase } from '../utils/helpers'
+import { sentenceCase, splitActionId } from '../utils/helpers'
 import { type IActionsGroup } from './SecondSidebarFlow'
 interface ActionsListFlowProps {
   actionsGroup: IActionsGroup
@@ -34,7 +33,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
   const groups: {
     folderId: string
     label: string
-    items: IAction[]
+    items: components['schemas']['ActionShort'][]
   }[] = []
 
   const breadcrumbs = actionsGroup.id.includes('.')
@@ -65,15 +64,15 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
     }
 
     for (const item of actionsGroup.list) {
-      const parts = item.id.split(':')
-      const actionId = parts[1]
-      const group = parts[0].split('.').pop()
+      const { levels, id } = splitActionId(item.id)
+      const actionId = id
+      const group = levels.pop()
 
-      if (group !== actionsGroup.id) {
-        if (groups.some((a) => a.folderId === parts[0])) {
+      if (group !== actionsGroup.id && actionId) {
+        if (groups.some((a) => a.folderId === group)) {
           groups.map((a) => {
             if (
-              a.folderId === parts[0] &&
+              a.folderId === group &&
               !Object.values(a.items).some((a) => a.id.includes(actionId))
             )
               a.items.push({
@@ -84,7 +83,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
             return a
           })
         } else {
-          const label = parts[0]
+          const label = group
 
           if (!label) {
             continue
@@ -97,7 +96,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
           }
 
           groups.push({
-            folderId: parts[0],
+            folderId: group,
             label: suffix
               .split('.')
               .map((a) => sentenceCase(a))

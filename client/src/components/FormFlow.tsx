@@ -18,8 +18,9 @@ import validator from '@rjsf/validator-ajv8'
 import merge from 'lodash/merge'
 import { type FC, useContext, useEffect, useState } from 'react'
 
+import { components } from '../../openapi'
 import { AppContext } from '../context/AppContext'
-import type { IActionData, IFormValues } from '../types'
+import type { IFormValues } from '../types'
 import {
   customizeUiSchema,
   sentenceCase,
@@ -37,7 +38,7 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
   const { open } = useNotification()
   const { levels } = splitActionId(actionId)
 
-  const queryResult = useOne<IActionData>({
+  const queryResult = useOne<components['schemas']['ActionFull']>({
     resource: 'actions',
     id: actionId,
   })
@@ -47,7 +48,7 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
 
   // Fetch schema and customize uiSchema
   const jsonschema = data?.data?.jsonschema
-  let uischema = { ...data?.data?.uischema?.uiSchema }
+  let uischema = data?.data?.uischema?.uiSchema
 
   if (jsonschema) {
     delete jsonschema.$schema
@@ -95,8 +96,8 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
       if (result && actionId) {
         addAction({
           id: actionId.toString(),
-          title: jsonschema?.title,
-          description: jsonschema?.description,
+          title: jsonschema?.title || '',
+          description: jsonschema?.description || '',
         })
         publish?.({
           channel: 'process',

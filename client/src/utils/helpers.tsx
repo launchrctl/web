@@ -8,7 +8,7 @@ export const sentenceCase = (a: string) => {
 
 export const splitActionId = (actionId: string) => {
   const [path, id] = actionId.split(':')
-  const levels = path.split('.')
+  const levels = path?.split('.') || []
   return { levels, id }
 }
 
@@ -51,7 +51,11 @@ export const customizeUiSchema = (
 }
 
 export const extractDateTimeFromId = (id: string) => {
-  const [timestampStr] = id.split('-')
+  const timestampStr = id.split('-')[0]?.toString()
+  if (!timestampStr) {
+    return null
+  }
+
   const timestamp = Number.parseInt(timestampStr, 10)
   const date = new Date(timestamp * 1000)
   const formattedDate = date.toLocaleString()

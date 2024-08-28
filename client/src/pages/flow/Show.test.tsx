@@ -69,7 +69,7 @@ describe('FlowShow', () => {
     expect(sidebarTabs).toBeInTheDocument()
     const buttons = sidebarTabs?.querySelectorAll('button')
     expect(buttons?.length).toBeGreaterThanOrEqual(2)
-    if (buttons) fireEvent.click(buttons[1])
+    if (buttons && buttons[1]) fireEvent.click(buttons[1])
     const resultElement = container.querySelector('.list-of-actions')
     expect(resultElement).toBeInTheDocument()
     expect(resultElement).toHaveTextContent('test:deploy')

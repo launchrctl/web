@@ -98,7 +98,7 @@ func (l *launchrServer) GetOneRunningActionByID(w http.ResponseWriter, _ *http.R
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(ActionRunInfo{
 		ID:     ri.ID,
-		Status: ri.Status,
+		Status: ActionRunStatus(ri.Status),
 	})
 }
 
@@ -199,7 +199,7 @@ func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Req
 	for _, ri := range runningActions {
 		result = append(result, ActionRunInfo{
 			ID:     ri.ID,
-			Status: ri.Status,
+			Status: ActionRunStatus(ri.Status),
 		})
 	}
 	w.WriteHeader(http.StatusOK)
@@ -258,7 +258,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(ActionRunInfo{
 		ID:     ri.ID,
-		Status: ri.Status,
+		Status: ActionRunStatus(ri.Status),
 	})
 }
 

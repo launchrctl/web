@@ -14,8 +14,9 @@ import validator from '@rjsf/validator-ajv8'
 import merge from 'lodash/merge'
 import { FC, useContext, useEffect, useState } from 'react'
 
+import { components } from '../../../openapi'
 import { AppContext } from '../../context/AppContext'
-import { IActionData, IFormValues } from '../../types'
+import { IFormValues } from '../../types'
 import { customizeUiSchema } from '../../utils/helpers'
 
 const Form = withTheme(Theme)
@@ -27,7 +28,7 @@ export const ActionShow: FC = () => {
   const { open } = useNotification()
   const [actionRunning, setActionRunning] = useState(false)
 
-  const queryResult = useOne<IActionData>({
+  const queryResult = useOne<components['schemas']['ActionFull']>({
     resource: identifier,
     id: idFromRoute,
   })
@@ -37,7 +38,7 @@ export const ActionShow: FC = () => {
 
   // Fetch schema and customize uiSchema
   const jsonschema = data?.data?.jsonschema
-  let uischema = { ...data?.data?.uischema?.uiSchema }
+  let uischema = data?.data?.uischema?.uiSchema
   if (jsonschema) {
     delete jsonschema.$schema
     uischema = merge({}, uischema, customizeUiSchema(jsonschema))
@@ -85,8 +86,8 @@ export const ActionShow: FC = () => {
       if (result && idFromRoute) {
         addAction({
           id: idFromRoute.toString(),
-          title: jsonschema?.title,
-          description: jsonschema?.description,
+          title: jsonschema?.title || '',
+          description: jsonschema?.description || '',
         })
         publish?.({
           channel: 'process',

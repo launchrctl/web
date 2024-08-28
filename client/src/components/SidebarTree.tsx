@@ -39,6 +39,7 @@ import {
   useSidebarTreeItemClickStates,
   useSidebarTreeItemMouseStates,
 } from '../hooks/SidebarTreeItemStatesHooks'
+import { splitActionId } from '../utils/helpers'
 import {
   ExtendedTreeItemProps,
   type FileType,
@@ -337,10 +338,10 @@ export const SidebarTree: FC<{
   useEffect(() => {
     if (flowClickedActionId?.id) {
       const expandItems = (() => {
-        const parts = flowClickedActionId.id.split(':')[0].split('.')
+        const { levels } = splitActionId(flowClickedActionId.id)
         const result: string[] = []
 
-        for (const part of parts) {
+        for (const part of levels) {
           const lastSubstring = result.length > 0 ? result.at(-1) : ''
           const newSubstring =
             lastSubstring && lastSubstring.length > 0
