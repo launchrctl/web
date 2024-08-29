@@ -5,6 +5,7 @@ import { GetListResponse } from '@refinedev/core'
 
 import { IFlowNodeType } from '../types'
 import { sentenceCase } from '../utils/helpers'
+import { getCustomisation } from '../utils/page-customisation'
 
 // Coefficient less than 0.51 behaves unpredictably.
 // Use coefficient between 0.51 till endless
@@ -469,12 +470,13 @@ export const getNodesAndEdges = (
     return []
   }
 
+  const nameText =
+    getCustomisation()?.plasmactl_web_ui_platform_name ?? 'Platform'
+
   const nodes: IFolder = {
     id: 'start',
     data: {
-      label:
-        sessionStorage.getItem('plasmactl_web_ui_platform_name') ||
-        'Platform name',
+      label: nameText,
     },
     type: 'node-start',
     folders: {},

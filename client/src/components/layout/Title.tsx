@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next'
 
 import Logo from '/images/logo.svg'
 
+import { getCustomisation } from '../../utils/page-customisation'
+
 const defaultText = import.meta.env.VITE_APP_NAME
 
 export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
@@ -20,6 +22,9 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
 
   const ActiveLink = routerType === 'legacy' ? LegacyLink : Link
 
+  const logoUrl = getCustomisation()?.plasmactl_web_ui_platform_logo ?? Logo
+  const logoText = getCustomisation()?.plasmactl_web_ui_platform_name ?? text
+
   return (
     <MuiLink
       to="/"
@@ -32,12 +37,7 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
         ...wrapperStyles,
       }}
     >
-      <img
-        src={sessionStorage.getItem('plasmactl_web_ui_platform_logo') || Logo}
-        width="24"
-        height="24"
-        alt={t('Logo')}
-      />
+      <img src={logoUrl} width="24" height="24" alt={t('Logo')} />
       <Typography
         variant="h5"
         fontWeight={700}
@@ -47,7 +47,7 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
         overflow="hidden"
         sx={{ textTransform: 'uppercase' }}
       >
-        {sessionStorage.getItem('plasmactl_web_ui_platform_name') || text}
+        {logoText}
       </Typography>
     </MuiLink>
   )

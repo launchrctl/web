@@ -26,56 +26,17 @@ import { FlowShow } from './pages/flow'
 import { dataProvider as launchrDataProvider } from './rest-data-provider'
 import { ThemeProvider } from './ThemeProvider'
 import { getApiUrl } from './utils/app-urls-resolver'
-import { svgToBase64 } from './utils/helpers'
+import { getCustomisation, setCustomisation } from './utils/page-customisation'
 
 const apiUrl = getApiUrl()
 
-const fetchData = async () => {
-  const response = await fetch(`${apiUrl}/customisation`, {
-    method: 'GET',
-  })
-  const data = await response.json()
-  if (data?.plasmactl_web_ui_platform_favicon) {
-    const base64Favicon = svgToBase64(data.plasmactl_web_ui_platform_favicon)
-    sessionStorage.setItem('plasmactl_web_ui_platform_favicon', base64Favicon)
-    setFavicon(base64Favicon)
-
-    sessionStorage.setItem(
-      'plasmactl_web_ui_platform_logo',
-      data?.plasmactl_web_ui_platform_logo
-    )
-  }
-  if (data?.plasmactl_web_ui_platform_logo) {
-    const base64Logo = svgToBase64(data.plasmactl_web_ui_platform_logo)
-    sessionStorage.setItem('plasmactl_web_ui_platform_logo', base64Logo)
-  }
-
-  if (data?.plasmactl_web_ui_platform_name) {
-    sessionStorage.setItem(
-      'plasmactl_web_ui_platform_name',
-      data?.plasmactl_web_ui_platform_name
-    )
-  }
-}
-
-const setFavicon = (faviconUrl: string) => {
-  const link: HTMLLinkElement =
-    (document.querySelector("link[rel*='icon']") as HTMLLinkElement) ||
-    (document.createElement('link') as HTMLLinkElement)
-  link.type = 'image/svg+xml'
-  link.rel = 'icon'
-  link.href = faviconUrl
-  document.getElementsByTagName('head')[0].append(link)
+const customTitleHandler = () => {
+  return getCustomisation()?.plasmactl_web_ui_platform_page_name ?? 'Platform'
 }
 
 export function App() {
   useEffect(() => {
-    const favicon = sessionStorage.getItem('plasmactl_web_ui_platform_favicon')
-    if (favicon) {
-      setFavicon(favicon)
-    } else {
-      fetchData()
-    }
+    setCustomisation()
   }, [])
 
   return (
@@ -131,10 +92,9 @@ export function App() {
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                 </Routes>
-
                 <RefineKbar />
                 <UnsavedChangesNotifier />
-                <DocumentTitleHandler />
+                <DocumentTitleHandler handler={customTitleHandler} />
               </Refine>
             </ThemeProvider>
           </RefineKbarProvider>
