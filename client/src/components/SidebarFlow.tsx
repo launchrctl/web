@@ -1,5 +1,6 @@
 import TabContext from '@mui/lab/TabContext'
 import TabPanel from '@mui/lab/TabPanel'
+import { Typography } from '@mui/material'
 import Stack from '@mui/material/Stack'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
@@ -14,6 +15,9 @@ import { SidebarTree } from './SidebarTree'
 interface ISidebarFlowProps {
   actions: GetListResponse | undefined
 }
+
+const getKeyboardShortcut = () =>
+  navigator.userAgent.toLowerCase().includes('mac') ? '⌘ + K' : 'Ctrl + K'
 
 export const SidebarFlow: FC<ISidebarFlowProps> = ({ actions }) => {
   const [value, setValue] = useState('1')
@@ -58,17 +62,6 @@ export const SidebarFlow: FC<ISidebarFlowProps> = ({ actions }) => {
               >
                 Actions
               </ToggleButton>
-              <ToggleButton
-                value="3"
-                sx={{
-                  textTransform: 'capitalize',
-                  flex: 1,
-                  fontSize: 11,
-                  fontWeight: 600,
-                }}
-              >
-                Flows
-              </ToggleButton>
             </ToggleButtonGroup>
           </Box>
           <TabPanel value="1" sx={{ p: 2, overflowY: 'auto' }}>
@@ -77,9 +70,11 @@ export const SidebarFlow: FC<ISidebarFlowProps> = ({ actions }) => {
           <TabPanel value="2" sx={{ p: 2, overflowY: 'auto' }}>
             <SidebarActions actions={actions} />
           </TabPanel>
-          <TabPanel value="3" sx={{ p: 2, overflowY: 'auto' }}>
-            TBD
-          </TabPanel>
+          <Box sx={{ marginBlockStart: 'auto', padding: 3 }}>
+            <Typography variant="body2">
+              Press {getKeyboardShortcut()} to open Search
+            </Typography>
+          </Box>
         </Stack>
       </TabContext>
     </>

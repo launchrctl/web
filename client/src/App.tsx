@@ -1,5 +1,4 @@
 import { Refine } from '@refinedev/core'
-import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar'
 import { ErrorComponent, useNotificationProvider } from '@refinedev/mui'
 import routerBindings, {
   DocumentTitleHandler,
@@ -43,61 +42,59 @@ export function App() {
     <AppProvider>
       <ActionProvider>
         <BrowserRouter>
-          <RefineKbarProvider>
-            <ThemeProvider>
-              <Refine
-                dataProvider={{
-                  default: launchrDataProvider(apiUrl),
-                }}
-                liveProvider={liveProvider}
-                notificationProvider={useNotificationProvider}
-                routerProvider={routerBindings}
-                resources={[
-                  {
-                    name: 'actions',
-                    list: '/actions',
-                    show: '/actions/:id/show',
-                    // edit: "/actions/:id/edit",
-                    meta: {
-                      canDelete: false,
-                    },
+          <ThemeProvider>
+            <Refine
+              dataProvider={{
+                default: launchrDataProvider(apiUrl),
+              }}
+              liveProvider={liveProvider}
+              notificationProvider={useNotificationProvider}
+              routerProvider={routerBindings}
+              resources={[
+                {
+                  name: 'actions',
+                  list: '/actions',
+                  show: '/actions/:id/show',
+                  // edit: "/actions/:id/edit",
+                  meta: {
+                    canDelete: false,
                   },
-                ]}
-                options={{
-                  liveMode: 'manual',
-                }}
-              >
-                <Routes>
-                  <Route
-                    element={
-                      <ThemedLayoutV2
-                        Header={ThemedHeaderV2}
-                        Sider={ThemedSiderV2}
-                        Title={ThemedTitleV2}
-                      >
-                        <Outlet />
-                      </ThemedLayoutV2>
-                    }
-                  >
-                    <Route index element={<Navigate to="/flow" replace />} />
-                    <Route path="/actions">
-                      <Route index element={<ActionList />} />
-                      <Route path=":id/show" element={<ActionShow />} />
-                      {/*<Route path=":id/running/:runId" element={<ActionAttach />} />*/}
-                      {/*<Route path=":id/edit" element={<ActionEdit />} />*/}
-                    </Route>
-                    <Route path="/flow">
-                      <Route index element={<FlowShow />} />
-                    </Route>
-                    <Route path="*" element={<ErrorComponent />} />
+                },
+              ]}
+              options={{
+                liveMode: 'manual',
+              }}
+            >
+              <Routes>
+                <Route
+                  element={
+                    <ThemedLayoutV2
+                      Header={ThemedHeaderV2}
+                      Sider={ThemedSiderV2}
+                      Title={ThemedTitleV2}
+                    >
+                      <Outlet />
+                    </ThemedLayoutV2>
+                  }
+                >
+                  <Route index element={<Navigate to="/flow" replace />} />
+                  <Route path="/actions">
+                    <Route index element={<ActionList />} />
+                    <Route path=":id/show" element={<ActionShow />} />
+                    {/*<Route path=":id/running/:runId" element={<ActionAttach />} />*/}
+                    {/*<Route path=":id/edit" element={<ActionEdit />} />*/}
                   </Route>
-                </Routes>
-                <RefineKbar />
-                <UnsavedChangesNotifier />
-                <DocumentTitleHandler handler={customTitleHandler} />
-              </Refine>
-            </ThemeProvider>
-          </RefineKbarProvider>
+                  <Route path="/flow">
+                    <Route index element={<FlowShow />} />
+                  </Route>
+                  <Route path="*" element={<ErrorComponent />} />
+                </Route>
+              </Routes>
+
+              <UnsavedChangesNotifier />
+              <DocumentTitleHandler />
+            </Refine>
+          </ThemeProvider>
         </BrowserRouter>
       </ActionProvider>
     </AppProvider>

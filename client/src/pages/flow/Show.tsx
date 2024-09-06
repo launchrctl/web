@@ -2,8 +2,10 @@ import { AlertColor } from '@mui/material/Alert/Alert'
 import Grid from '@mui/material/Grid'
 import { Box } from '@mui/system'
 import { GetListResponse, useList } from '@refinedev/core'
+import { KBarProvider, KBarProviderProps, RefineKbar } from '@refinedev/kbar'
 import { type FC, useEffect, useState } from 'react'
 
+import { components } from '../../../openapi'
 import { ActionsFlow } from '../../components/ActionsFlow'
 import { AlertBanner } from '../../components/AlertBanner'
 import { SecondSidebarFlow } from '../../components/SecondSidebarFlow'
@@ -13,11 +15,11 @@ import {
   SidebarTreeItemClickStatesProvider,
   SidebarTreeItemMouseStatesProvider,
 } from '../../context/SidebarTreeItemStatesContext'
-import { useAction } from '../../hooks/ActionHooks'
+import { useAction, useActionDispatch } from '../../hooks/ActionHooks'
 import { checkIfDuplicatedActions } from '../../utils/helpers'
 
 export const FlowShow: FC = () => {
-  const { data: actions } = useList({
+  const { data: actions } = useList<components['schemas']['ActionShort']>({
     resource: 'actions',
   })
   const [dataReceived, setData] = useState<GetListResponse>()
@@ -31,6 +33,12 @@ export const FlowShow: FC = () => {
         type?: AlertColor
       }
   >(false)
+
+  const dispatch = useActionDispatch()
+
+  const [kBarActions, setKbarActions] = useState<KBarProviderProps['actions']>(
+    []
+  )
 
   useEffect(() => {
     setRenderEndSidebar(nodeId !== '')
@@ -73,8 +81,23 @@ export const FlowShow: FC = () => {
           setData(actions)
         }
       }
+
+      const kbar: KBarProviderProps['actions'] = []
+
+      actions?.data.forEach((action) => {
+        kbar.push({
+          id: action.id,
+          name: `${action.title} (${action.id})`,
+          perform: () =>
+            dispatch?.({
+              type: 'set-actions-sidebar',
+              id: action.id,
+            }),
+        })
+      })
+      setKbarActions(kbar)
     }
-  }, [actions, dataReceived])
+  }, [actions, dataReceived, dispatch])
 
   return (
     <FlowClickedActionIDProvider>
@@ -90,24 +113,30 @@ export const FlowShow: FC = () => {
             )}
             {dataReceived && (
               <>
-                <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
-                  <SidebarFlow actions={dataReceived} />
-                </Grid>
-                <Grid item xs={29} sx={{ height: 'calc(100vh - 68px)' }}>
-                  <ActionsFlow actions={dataReceived} />
-                </Grid>
-                {renderEndSidebar && (
-                  <Box
-                    sx={{
-                      height: 'calc(100vh - 68px)',
-                      position: 'fixed',
-                      right: 0,
-                      top: 68,
-                    }}
-                  >
-                    <SecondSidebarFlow actions={dataReceived} nodeId={nodeId} />
-                  </Box>
-                )}
+                <KBarProvider actions={kBarActions}>
+                  <RefineKbar />
+                  <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
+                    <SidebarFlow actions={dataReceived} />
+                  </Grid>
+                  <Grid item xs={29} sx={{ height: 'calc(100vh - 68px)' }}>
+                    <ActionsFlow actions={dataReceived} />
+                  </Grid>
+                  {renderEndSidebar && (
+                    <Box
+                      sx={{
+                        height: 'calc(100vh - 68px)',
+                        position: 'fixed',
+                        right: 0,
+                        top: 68,
+                      }}
+                    >
+                      <SecondSidebarFlow
+                        actions={dataReceived}
+                        nodeId={nodeId}
+                      />
+                    </Box>
+                  )}
+                </KBarProvider>
               </>
             )}
           </Grid>
