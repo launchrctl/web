@@ -12,7 +12,6 @@ import {
   useEffect,
   useState,
 } from 'react'
-import * as React from 'react'
 import Flow, {
   Background,
   Controls,
@@ -30,12 +29,8 @@ import CheckIcon from '/images/check.svg'
 import FlowBg from '/images/flow-bg.svg'
 import FlowBgDark from '/images/flow-bg-dark.svg'
 
-import { useActionDispatch } from '../hooks/ActionHooks'
-import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
-import {
-  useSidebarTreeItemClickStates,
-  useSidebarTreeItemMouseStates,
-} from '../hooks/SidebarTreeItemStatesHooks'
+import { useAction, useActionDispatch } from '../hooks/ActionHooks'
+import { useSidebarTreeItemMouseStates } from '../hooks/SidebarTreeItemStatesHooks'
 import { IFlowNodeType } from '../types'
 import {
   actionHeight,
@@ -319,10 +314,9 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   const [nodes, setNodes] = useNodesState([])
   const [edges, setEdges] = useEdgesState([])
   const dispatch = useActionDispatch()
-  const { state: nodeClickState } = useSidebarTreeItemClickStates()
+  const { id: nodeId } = useAction()
   const { state: nodeMouseState } = useSidebarTreeItemMouseStates()
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>()
-  const { setFlowClickedActionId } = useFlowClickedActionID()
 
   useEffect(() => {
     const [receivedNodes, receivedEdges] = getNodesAndEdges(
@@ -338,45 +332,41 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   }, [actions])
 
   useEffect(() => {
-    if (
-      nodeClickState &&
-      nodeClickState.id &&
-      nodes &&
-      nodes.some((a) => a.id === nodeClickState.id)
-    ) {
+    if (nodeId && nodes && nodes.some((a) => a.id === nodeId)) {
       setNodes((prev) => {
-        if (nodeClickState.isActive) {
+        if (nodeId) {
           for (const prevMatched of prev.filter(
-            (a) => a.id !== nodeClickState.id && a.data.isActive === true
+            (a) => a.id !== nodeId && a.data.isActive === true
           )) {
             prevMatched.data.isActive = false
           }
         }
-        const matched = prev.find((a) => a.id === nodeClickState.id)
+        const matched = prev.find((a) => a.id === nodeId)
         if (matched) {
-          matched.data.isActive = nodeClickState.isActive
+          matched.data.isActive = true
         }
         return [...prev]
       })
-      if (nodeClickState.isActive) {
-        let maxZoom = 0.6
-        if (nodeClickState.id.includes(':')) {
-          maxZoom = 0.8
-        }
-        if (nodeClickState.isActionsGroup) {
-          maxZoom = 0.7
-        }
+      if (nodeId) {
+        const maxZoom = 0.6
+        // TODO: Check this feature.
+        // if (nodeClickState.id.includes(':')) {
+        //   maxZoom = 0.8
+        // }
+        // if (nodeClickState.isActionsGroup) {
+        //   maxZoom = 0.7
+        // }
         if (flowInstance) {
           flowInstance.fitView({
             duration: 400,
             maxZoom,
-            nodes: [{ id: nodeClickState.id }],
+            nodes: [{ id: nodeId }],
           })
         }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeClickState])
+  }, [nodeId])
 
   useEffect(() => {
     const componentUpdate = (initial = false) => {
@@ -445,44 +435,33 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
         return [...prev]
       })
-      setFlowClickedActionId({
-        id: node.id,
-        isActive: false,
-      })
-      if (nodeClickState) {
-        nodeClickState.isActive = false
-      }
+
       setNodeData(undefined)
       dispatch?.({
-        type: 'set-actions-sidebar',
+        type: 'set-active-action',
         id: node.id,
       })
 
       return
     }
     if (node.type !== 'node-action') return
-    if (nodeClickState?.isActive) {
-      if (nodeClickState.id === node.id) {
+    if (nodeId) {
+      if (nodeId === node.id) {
         setNodes((prev) => {
-          const matched = prev.find((a) => a.id === nodeClickState.id)
+          const matched = prev.find((a) => a.id === nodeId)
           if (matched) {
             matched.data.isActive = false
           }
 
           return [...prev]
         })
-        setFlowClickedActionId({
-          id: node.id,
-          isActive: false,
-        })
         setNodeData(undefined)
         dispatch?.({
           id: '',
         })
-        nodeClickState.isActive = false
       } else {
         setNodes((prev) => {
-          const oldMatched = prev.find((a) => a.id === nodeClickState.id)
+          const oldMatched = prev.find((a) => a.id === nodeId)
           if (oldMatched) {
             oldMatched.data.isActive = false
           }
@@ -494,16 +473,11 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
           return [...prev]
         })
-        setFlowClickedActionId({
-          id: node.id,
-          isActive: true,
-        })
         setNodeData(node)
         dispatch?.({
-          type: 'set-actions-sidebar',
+          type: 'set-active-action',
           id: node.id,
         })
-        nodeClickState.isActive = false
       }
     } else {
       if (nodeData) {
@@ -516,14 +490,10 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
             return [...prev]
           })
-          setFlowClickedActionId({
-            id: node.id,
-            isActive: true,
-          })
           node.data.isActive = true
           setNodeData(node)
           dispatch?.({
-            type: 'set-actions-sidebar',
+            type: 'set-active-action',
             id: node.id,
           })
         } else if (node.id === nodeData.id && nodeData.data.isActive) {
@@ -534,10 +504,6 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
             }
 
             return [...prev]
-          })
-          setFlowClickedActionId({
-            id: node.id,
-            isActive: false,
           })
           setNodeData(undefined)
           dispatch?.({
@@ -557,13 +523,9 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
             return [...prev]
           })
-          setFlowClickedActionId({
-            id: node.id,
-            isActive: true,
-          })
           setNodeData(node)
           dispatch?.({
-            type: 'set-actions-sidebar',
+            type: 'set-active-action',
             id: node.id,
           })
         }
@@ -576,14 +538,10 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
 
           return [...prev]
         })
-        setFlowClickedActionId({
-          id: node.id,
-          isActive: true,
-        })
         node.data.isActive = true
         setNodeData(node)
         dispatch?.({
-          type: 'set-actions-sidebar',
+          type: 'set-active-action',
           id: node.id,
         })
       }

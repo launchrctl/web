@@ -26,19 +26,14 @@ import {
   useEffect,
   useState,
 } from 'react'
-import * as React from 'react'
 
 import ActionIcon from '/images/action.svg'
 import AppIcon from '/images/app.svg'
 import CheckIcon from '/images/check.svg'
 import FolderIcon from '/images/folder.svg'
 
-import { useActionDispatch } from '../hooks/ActionHooks'
-import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
-import {
-  useSidebarTreeItemClickStates,
-  useSidebarTreeItemMouseStates,
-} from '../hooks/SidebarTreeItemStatesHooks'
+import { useAction, useActionDispatch } from '../hooks/ActionHooks'
+import { useSidebarTreeItemMouseStates } from '../hooks/SidebarTreeItemStatesHooks'
 import { splitActionId } from '../utils/helpers'
 import {
   ExtendedTreeItemProps,
@@ -297,10 +292,8 @@ export const SidebarTree: FC<{
     isActionsGroup: false,
   })
   const [expandedItems, setExpandedItems] = useState<string[]>([])
+  const { id: nodeId } = useAction()
   const dispatch = useActionDispatch()
-  const { handleSelect, handleUnselect } = useSidebarTreeItemClickStates()
-  const { flowClickedActionId, setFlowClickedActionId } =
-    useFlowClickedActionID()
   const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemMouseStates()
   const [hoveredId, setHoveredId] = useState('')
 
@@ -336,9 +329,9 @@ export const SidebarTree: FC<{
   }, [actions])
 
   useEffect(() => {
-    if (flowClickedActionId?.id) {
+    if (nodeId) {
       const expandItems = (() => {
-        const { levels } = splitActionId(flowClickedActionId.id)
+        const { levels } = splitActionId(nodeId)
         const result: string[] = []
 
         for (const part of levels) {
@@ -362,14 +355,12 @@ export const SidebarTree: FC<{
       }
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      const curSelectedAction = apiRef.current?.getItem(flowClickedActionId.id)
-      curSelectedAction.selected = flowClickedActionId.isActive
-      setSelectedAction(
-        flowClickedActionId.isActive ? flowClickedActionId.id : ''
-      )
+      const curSelectedAction = apiRef.current?.getItem(nodeId)
+      curSelectedAction.selected = nodeId
+      setSelectedAction(nodeId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flowClickedActionId])
+  }, [nodeId])
 
   const onSelectedItemsChange = (
     event: SyntheticEvent,
@@ -384,26 +375,16 @@ export const SidebarTree: FC<{
         // @ts-ignore
         const prevSelectedActionData = apiRef.current?.getItem(selectedAction)
         prevSelectedActionData.selected = false
-        handleUnselect(selectedAction)
       }
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const item = apiRef.current?.getItem(itemIds)
       item.selected = selectedAction !== itemIds
-      if (item.selected) {
-        handleSelect(itemIds)
-      } else {
-        handleUnselect(itemIds)
-      }
       dispatch?.({
-        type: item.selected ? 'set-actions-sidebar' : '',
+        type: item.selected ? 'set-active-action' : '',
         id: item.selected ? itemIds : '',
       })
       setSelectedAction(selectedAction === itemIds ? '' : itemIds)
-      setFlowClickedActionId({
-        id: itemIds,
-        isActive: selectedAction !== itemIds,
-      })
     } else {
       if (Object.keys(selectedActionsGroup).length > 0) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -414,25 +395,12 @@ export const SidebarTree: FC<{
         if (prevSelectedActionData) {
           prevSelectedActionData.selected = false
         }
-        handleUnselect(
-          selectedActionsGroup.id,
-          selectedActionsGroup.isActionsGroup
-        )
       }
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const item = apiRef.current?.getItem(itemIds)
       if (selectedActionsGroup.id === itemIds) {
         item.selected = false
-        handleUnselect(itemIds, item.isActionsGroup)
-        if (selectedAction) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          const prevSelectedActionData = apiRef.current?.getItem(selectedAction)
-          prevSelectedActionData.selected = false
-          handleUnselect(selectedAction)
-          setSelectedAction('')
-        }
         dispatch?.({
           id: '',
         })
@@ -443,21 +411,8 @@ export const SidebarTree: FC<{
         return
       }
       item.selected = selectedActionsGroup.id !== itemIds
-      if (item.selected) {
-        handleSelect(itemIds, item.isActionsGroup)
-      } else {
-        handleUnselect(itemIds, item.isActionsGroup)
-        if (selectedAction) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          const prevSelectedActionData = apiRef.current?.getItem(selectedAction)
-          prevSelectedActionData.selected = false
-          handleUnselect(selectedAction)
-          setSelectedAction('')
-        }
-      }
       dispatch?.({
-        type: item.selected && item.isActionsGroup ? 'set-actions-sidebar' : '',
+        type: item.selected && item.isActionsGroup ? 'set-active-action' : '',
         id: item.selected && item.isActionsGroup ? itemIds : '',
       })
       setSelectedActionsGroup({

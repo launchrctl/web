@@ -9,8 +9,6 @@ import { type FC, useEffect, useState } from 'react'
 
 import { components } from '../../openapi'
 import { useActionDispatch } from '../hooks/ActionHooks'
-import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
-import { useSidebarTreeItemClickStates } from '../hooks/SidebarTreeItemStatesHooks'
 import { ActionsListFlow } from './ActionsListFlow'
 import { FormFlow } from './FormFlow'
 
@@ -30,9 +28,6 @@ export const SecondSidebarFlow: FC<{
     list: [],
   })
   const dispatch = useActionDispatch()
-  const { flowClickedActionId, setFlowClickedActionId } =
-    useFlowClickedActionID()
-  const { handleUnselect } = useSidebarTreeItemClickStates()
   const theme = useTheme()
   const [expand, setExpand] = useState('25vw')
 
@@ -61,13 +56,6 @@ export const SecondSidebarFlow: FC<{
     dispatch?.({
       id: '',
     })
-    if (flowClickedActionId) {
-      setFlowClickedActionId({
-        ...flowClickedActionId,
-        isActive: false,
-      })
-      handleUnselect(flowClickedActionId.id)
-    }
   }
 
   const onToggle = () =>
