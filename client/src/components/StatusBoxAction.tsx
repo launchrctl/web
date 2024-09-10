@@ -8,7 +8,7 @@ import { extractDateTimeFromId } from '../utils/helpers'
 import StatusBoxProcess from './StatusBoxProcess'
 
 interface IStatusBoxActionProps {
-  action: components['schemas']['ActionShort']
+  action: string
 }
 
 interface TabPanelProps {
@@ -58,7 +58,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
   const { refetch: queryRunning } = useCustom<
     components['schemas']['ActionRunInfo'][]
   >({
-    url: `${apiUrl}/actions/${action.id}/running`,
+    url: `${apiUrl}/actions/${action}/running`,
     method: 'get',
   })
 
@@ -89,7 +89,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
         }
       }
     })
-  }, [action.id, queryRunning])
+  }, [action, queryRunning])
 
   useEffect(() => {
     if (typeof activeRunningTab === 'object') {
@@ -117,7 +117,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
     types: ['send-processes', 'send-processes-finished'],
     onLiveEvent: ({ payload, type }) => {
       if (
-        action.id === payload?.data?.action &&
+        action === payload?.data?.action &&
         type === 'send-processes' &&
         payload?.data?.processes?.length > 0
       ) {
@@ -186,8 +186,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
     return array.map((info, idx) => {
       return (
         <TabPanel value={index} index={idx} key={info.id}>
-          {info.id}
-          <StatusBoxProcess ri={info} actionId={action.id} />
+          <StatusBoxProcess ri={info} actionId={action} />
         </TabPanel>
       )
     })
@@ -288,7 +287,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
                       }}
                       color={ACTION_STATE_COLORS[info.status]}
                     >
-                      {info.id}
+                      {info.id.split('-')[0]}
                     </Typography>
                     <Typography
                       sx={{

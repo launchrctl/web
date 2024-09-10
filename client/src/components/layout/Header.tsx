@@ -50,6 +50,7 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => {
       sx={{
         boxShadow: 'none',
         borderBottom: (theme) => `1px solid ${theme.palette.action.focus}`,
+        height: '68px',
       }}
     >
       <Toolbar>

@@ -20,7 +20,6 @@ import { ThemedHeaderV2 } from './components/layout/Header'
 import { ThemedSiderV2 } from './components/layout/Sider'
 import { ThemedTitleV2 } from './components/layout/Title'
 import { ActionProvider } from './context/ActionContext'
-import AppProvider from './context/AppContext'
 import { liveProvider } from './live-provider'
 import { ActionList, ActionShow } from './pages/actions'
 import { FlowShow } from './pages/flow'
@@ -42,68 +41,66 @@ export function App() {
   }, [])
 
   return (
-    <AppProvider>
-      <ActionProvider>
-        <BrowserRouter>
-          <ThemeProvider>
-            <Refine
-              dataProvider={{
-                default: launchrDataProvider(apiUrl),
-              }}
-              liveProvider={liveProvider}
-              notificationProvider={useNotificationProvider}
-              routerProvider={routerBindings}
-              resources={[
-                {
-                  name: 'actions',
-                  list: '/actions',
-                  show: '/actions/:id/show',
-                  meta: {
-                    canDelete: false,
-                  },
+    <ActionProvider>
+      <BrowserRouter>
+        <ThemeProvider>
+          <Refine
+            dataProvider={{
+              default: launchrDataProvider(apiUrl),
+            }}
+            liveProvider={liveProvider}
+            notificationProvider={useNotificationProvider}
+            routerProvider={routerBindings}
+            resources={[
+              {
+                name: 'actions',
+                list: '/actions',
+                show: '/actions/:id/show',
+                meta: {
+                  canDelete: false,
                 },
-              ]}
-              options={{
-                liveMode: 'manual',
-              }}
-            >
-              <GlobalKBarProvider>
-                <Routes>
-                  <Route
-                    element={
-                      <ThemedLayoutV2
-                        Header={ThemedHeaderV2}
-                        Sider={ThemedSiderV2}
-                        Title={ThemedTitleV2}
-                      >
-                        <Outlet />
-                      </ThemedLayoutV2>
-                    }
-                  >
-                    <Route index element={<Navigate to="/flow" replace />} />
-                    <Route path="/actions">
-                      <Route index element={<ActionList />} />
-                      <Route path=":id/show" element={<ActionShow />} />
-                    </Route>
-                    <Route path="/wizard">
-                      <Route index element={<WizardList />} />
-                      <Route path=":id/show" element={<WizardShow />} />
-                    </Route>
-                    <Route path="/flow">
-                      <Route index element={<FlowShow />} />
-                    </Route>
-                    <Route path="*" element={<ErrorComponent />} />
+              },
+            ]}
+            options={{
+              liveMode: 'manual',
+            }}
+          >
+            <GlobalKBarProvider>
+              <Routes>
+                <Route
+                  element={
+                    <ThemedLayoutV2
+                      Header={ThemedHeaderV2}
+                      Sider={ThemedSiderV2}
+                      Title={ThemedTitleV2}
+                    >
+                      <Outlet />
+                    </ThemedLayoutV2>
+                  }
+                >
+                  <Route index element={<Navigate to="/flow" replace />} />
+                  <Route path="/actions">
+                    <Route index element={<ActionList />} />
+                    <Route path=":id/show" element={<ActionShow />} />
                   </Route>
-                </Routes>
+                  <Route path="/wizard">
+                    <Route index element={<WizardList />} />
+                    <Route path=":id/show" element={<WizardShow />} />
+                  </Route>
+                  <Route path="/flow">
+                    <Route index element={<FlowShow />} />
+                  </Route>
+                  <Route path="*" element={<ErrorComponent />} />
+                </Route>
+              </Routes>
 
-                <UnsavedChangesNotifier />
-                <DocumentTitleHandler handler={customTitleHandler} />
-                <RefineKbar />
-              </GlobalKBarProvider>
-            </Refine>
-          </ThemeProvider>
-        </BrowserRouter>
-      </ActionProvider>
-    </AppProvider>
+              <UnsavedChangesNotifier />
+              <DocumentTitleHandler handler={customTitleHandler} />
+              <RefineKbar />
+            </GlobalKBarProvider>
+          </Refine>
+        </ThemeProvider>
+      </BrowserRouter>
+    </ActionProvider>
   )
 }

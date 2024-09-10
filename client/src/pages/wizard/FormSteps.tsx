@@ -3,9 +3,11 @@ import StepLabel from '@mui/material/StepLabel'
 import Stepper from '@mui/material/Stepper'
 import type { FC } from 'react'
 
+import { components } from '../../../openapi'
+
 interface Step {
-  id: string
-  title: string
+  title?: string
+  actions?: components['schemas']['ActionFull'][]
 }
 
 interface FormStepsProps {
@@ -36,8 +38,8 @@ const FormSteps: FC<FormStepsProps> = ({
   return (
     <div>
       <Stepper activeStep={currentStepIndex} orientation="vertical">
-        {steps.map((step) => (
-          <Step key={step.id}>
+        {steps.map((step, idx) => (
+          <Step key={idx}>
             <StepLabel>{step.title}</StepLabel>
           </Step>
         ))}
