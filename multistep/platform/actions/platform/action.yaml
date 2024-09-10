@@ -1,10 +1,9 @@
 action:
-  title: Name your platform
-  description: You can change this information later in your platform settings.
+  title: Define platform name
+  description: Naming your platform helps with appropriation within your organization.
   image: alpine:latest
   command: ["sh", "-c", "for i in $(seq 10); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
   arguments:
     - name: platformName
       title: Define platform name
       type: string
-      description: Naming your platform helps with appropriation within your organization.

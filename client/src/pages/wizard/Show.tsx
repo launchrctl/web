@@ -1,6 +1,13 @@
 import './wizard-form.css'
 
-import { Box, Button, LinearProgress, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+} from '@mui/material'
 import {
   useApiUrl,
   useCustomMutation,
@@ -12,7 +19,20 @@ import {
 } from '@refinedev/core'
 import { IChangeEvent, withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
-import { DescriptionFieldProps, RJSFSchema, TitleFieldProps } from '@rjsf/utils'
+import {
+  DescriptionFieldProps,
+  RJSFSchema,
+  TitleFieldProps,
+  ObjectFieldTemplateProps,
+  getUiOptions,
+  getTemplate,
+  ObjectFieldTemplatePropertyType,
+  StrictRJSFSchema,
+  FormContextType,
+  titleId,
+  WidgetProps,
+  RegistryWidgetsType,
+} from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
 import { FC, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
@@ -21,15 +41,16 @@ import WizardBanner from '../../components/layout/WizardBanner'
 import { AppContext } from '../../context/AppContext'
 import { useThemeContext } from '../../ThemeProvider'
 import { IFormValues } from '../../types'
-import CustomFieldTemplate from './CustomFieldTemplate'
 import FormSteps from './FormSteps'
+import CustomObjectFieldTemplate from './ObjectFieldTemplate'
+import SwitchPackage from './widgets/SwitchPackage'
 
 const Form = withTheme(Theme)
 
 export const WizardShow: FC = () => {
   const { id: idFromRoute } = useResourceParams()
   const publish = usePublish()
-  const [steps, setSteps] = useState<components['schemas']['ActionFull'][]>([])
+  const [steps, setSteps] = useState<components['schemas']['WizardStep'][]>([])
   const stepsRef = useRef(steps)
   const [step, setStep] = useState(0)
   const { addAction } = useContext(AppContext)
@@ -46,20 +67,22 @@ export const WizardShow: FC = () => {
 
   const title = data?.data?.title || ''
   const description = data?.data?.description || ''
-  const successText = data?.data?.success
+  const successText = data?.data?.success || ''
 
   useEffect(() => {
     if (data) {
       const newSteps = data.data?.steps?.map((step) => {
-        if (step?.jsonschema) {
-          delete step.jsonschema.$schema
-        }
+        step?.actions?.map((action) => {
+          if (action?.jsonschema) {
+            delete action.jsonschema.$schema
+          }
+        })
+
         return step
       })
 
       if (newSteps) {
         setSteps(newSteps)
-        stepsRef.current = newSteps
       }
     }
   }, [data])
@@ -157,26 +180,21 @@ export const WizardShow: FC = () => {
   const TitleFieldTemplate = ({ id, title }: TitleFieldProps) => {
     if (id === 'root__title') {
       return (
-        <Typography id={id} variant="h4">
+        <Typography id={id} sx={{ fontSize: '1.125rem' }}>
           {title}
         </Typography>
       )
     }
     return (
-      <Box id={id}>
-        <Typography className="visually-hidden">{title}</Typography>
-      </Box>
+      <Typography id={id} className="visually-hidden">
+        {title}
+      </Typography>
     )
   }
 
-  const DescriptionFieldTemplate = ({
-    description,
-    id,
-  }: DescriptionFieldProps) => (
-    <Typography id={id} sx={{ display: 'block' }} variant="caption">
-      {description}
-    </Typography>
-  )
+  const widgets: RegistryWidgetsType = {
+    SwitchPackage,
+  }
 
   return (
     <>
@@ -199,45 +217,83 @@ export const WizardShow: FC = () => {
           }}
         >
           <FormSteps
-            steps={stepsRef.current}
+            steps={steps}
             currentStepIndex={step}
             setStep={setStep}
             actionRunning={actionRunning}
           />
 
-          {stepsRef.current.length <= step + 1 && (
+          {steps.length < step + 1 && (
             <Typography variant="h4">{successText}</Typography>
           )}
 
-          {stepsRef.current[step]?.jsonschema && (
-            <Form
-              className="wizard-form"
-              schema={stepsRef.current[step]?.jsonschema as RJSFSchema}
-              uiSchema={stepsRef.current[step]?.uischema?.uiSchema}
-              validator={validator}
-              onSubmit={onSubmit}
-              templates={{
-                TitleFieldTemplate,
-                DescriptionFieldTemplate,
-                FieldTemplate: CustomFieldTemplate,
-              }}
-              disabled={(stepsRef.current?.[step]?.id ?? '') === actionRunning}
-            >
-              {(stepsRef.current?.[step]?.id ?? '') === actionRunning && (
-                <LinearProgress sx={{ mb: 2 }} />
-              )}
-              <div>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  disabled={
-                    (stepsRef.current?.[step]?.id ?? '') === actionRunning
-                  }
-                >
-                  Submit
-                </Button>
-              </div>
-            </Form>
+          {steps[step]?.actions?.length && (
+            <Stack spacing={3}>
+              <Stack spacing={2}>
+                <Typography variant="h5">{steps[step]?.title}</Typography>
+                <Typography variant="body2">
+                  {steps[step]?.description}
+                </Typography>
+              </Stack>
+              <Stack spacing={3}>
+                {steps[step]?.actions.map((action) => (
+                  <Paper key={action.id} variant="elevation">
+                    <Form
+                      widgets={widgets}
+                      className="wizard-form"
+                      schema={action.jsonschema}
+                      validator={validator}
+                      uiSchema={action?.uischema?.uiSchema || {}}
+                      templates={{
+                        TitleFieldTemplate,
+                        ObjectFieldTemplate: CustomObjectFieldTemplate,
+                      }}
+                    >
+                      <Paper
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'end',
+                          padding: '0.75rem 1.5rem',
+                          backgroundColor: '#fcfcfd',
+                          borderTop: '1px solid #e4e7ec',
+                        }}
+                      >
+                        <Button type="submit" variant="contained">
+                          Save
+                        </Button>
+                      </Paper>
+                    </Form>
+                  </Paper>
+                ))}
+              </Stack>
+            </Stack>
+            // <Form
+            //   className="wizard-form"
+            //   schema={stepsRef.current[step]?.jsonschema as RJSFSchema}
+            //   uiSchema={stepsRef.current[step]?.uischema?.uiSchema}
+            //   validator={validator}
+            //   onSubmit={onSubmit}
+            //   templates={{
+            //     TitleFieldTemplate,
+            //     DescriptionFieldTemplate,
+            //   }}
+            //   disabled={(stepsRef.current?.[step]?.id ?? '') === actionRunning}
+            // >
+            //   {(stepsRef.current?.[step]?.id ?? '') === actionRunning && (
+            //     <LinearProgress sx={{ mb: 2 }} />
+            //   )}
+            //   <div>
+            //     <Button
+            //       variant="contained"
+            //       type="submit"
+            //       disabled={
+            //         (stepsRef.current?.[step]?.id ?? '') === actionRunning
+            //       }
+            //     >
+            //       Submit
+            //     </Button>
+            //   </div>
+            // </Form>
           )}
         </Box>
       </Box>

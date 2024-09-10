@@ -364,5 +364,14 @@ components:
             steps:
               type: array
               items:
-                $ref: '#/components/schemas/ActionFull'
-
+                $ref: '#/components/schemas/WizardStep'
+    WizardStep:
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionFull'

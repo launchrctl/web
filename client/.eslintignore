@@ -7,5 +7,9 @@ node_modules/
 jest.config.ts
 openapi.d.ts
 
-# This is copied file from lib
-src/pages/wizard/CustomFieldTemplate.tsx
+# This is copied files from lib
+src/pages/wizard/widgets/SwitchPackage.tsx
+src/pages/wizard/ObjectFieldTemplate.tsx
+
+# Temp ignore
+src/pages/wizard/Show.tsx

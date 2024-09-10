@@ -1,0 +1,24 @@
+action:
+  title: Setup platform domains
+  description: Enter a name to personalize your platform interface.
+  image: alpine:latest
+  command: ["sh", "-c", "for i in $(seq 10); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
+  options:
+    - name: proddomain
+      title: Domain Name
+      type: string
+    - name: prodext
+      title: Domain Externsion
+      type: string
+    - name: devdomain
+      title: Domain Name
+      type: string
+    - name: devext
+      title: Domain Externsion
+      type: string
+    - name: sandboxdomain
+      title: Domain Name
+      type: string
+    - name: sandboxext
+      title: Domain Externsion
+      type: string
