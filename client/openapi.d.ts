@@ -232,7 +232,12 @@ export interface components {
             success: string;
         };
         WizardFull: components["schemas"]["WizardShort"] & {
-            steps: components["schemas"]["ActionFull"][];
+            steps: components["schemas"]["WizardStep"][];
+        };
+        WizardStep: {
+            title?: string;
+            description?: string;
+            actions?: components["schemas"]["ActionFull"][];
         };
     };
     responses: {

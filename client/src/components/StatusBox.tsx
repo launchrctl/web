@@ -20,9 +20,9 @@ const StatusBox: FC = () => {
     setSelectedActionIndex(newValue)
   }
 
-  const renderAnimatedFab = appState.runningActions.length > 0
+  const renderAnimatedFab = appState.runnedActions.length > 0
 
-  if (appState.runningActions.length === 0) {
+  if (appState.runnedActions.length === 0) {
     return null
   }
 
@@ -31,7 +31,7 @@ const StatusBox: FC = () => {
       {renderAnimatedFab && (
         <AnimatedFab
           handleOpen={handleOpen}
-          badgeLength={appState.runningActions.length}
+          badgeLength={appState.runnedActions.length}
         />
       )}
       <Modal
@@ -65,7 +65,7 @@ const StatusBox: FC = () => {
                 scrollButtons="auto"
                 sx={{ width: 'calc(100% - 40px)' }}
               >
-                {appState.runningActions.map((action, index) => (
+                {appState.runnedActions.map((action, index) => (
                   <Tab
                     key={action.id}
                     label={action.id || 'No Id'}
@@ -82,7 +82,7 @@ const StatusBox: FC = () => {
                 <CloseIcon />
               </IconButton>
             </Box>
-            {appState.runningActions.map((action, index) => (
+            {appState.runnedActions.map((action, index) => (
               <TabPanel
                 value={(index + 1).toString()}
                 key={action.id}

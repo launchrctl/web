@@ -3,7 +3,7 @@ import { createContext, FC, ReactNode, useEffect, useState } from 'react'
 import { components } from '../../openapi'
 
 interface AppState {
-  runningActions: components['schemas']['ActionShort'][]
+  runnedActions: components['schemas']['ActionShort'][]
 }
 
 interface AppContextValue {
@@ -12,7 +12,7 @@ interface AppContextValue {
 }
 
 export const AppContext = createContext<AppContextValue>({
-  appState: { runningActions: [] },
+  appState: { runnedActions: [] },
   addAction: (action: components['schemas']['ActionShort']) => {
     console.warn('addAction function not yet implemented. Action:', action)
   },
@@ -23,7 +23,7 @@ interface AppProviderProps {
 
 const AppProvider: FC<AppProviderProps> = ({ children }) => {
   const [appState, setAppState] = useState<AppState>({
-    runningActions: [],
+    runnedActions: [],
   })
 
   useEffect(() => {
@@ -35,25 +35,25 @@ const AppProvider: FC<AppProviderProps> = ({ children }) => {
 
   const addAction = (action: components['schemas']['ActionShort']) => {
     setAppState((prevState) => {
-      const existingActionIndex = prevState.runningActions.findIndex(
+      const existingActionIndex = prevState.runnedActions.findIndex(
         (a) => a.id === action.id
       )
       if (existingActionIndex === -1) {
-        const updatedRunningActions = [action, ...prevState.runningActions]
+        const updatedrunnedActions = [action, ...prevState.runnedActions]
         const updatedState = {
           ...prevState,
-          runningActions: updatedRunningActions,
+          runnedActions: updatedrunnedActions,
         }
         sessionStorage.setItem('appState', JSON.stringify(updatedState))
         return updatedState
       }
 
-      const [matchingItem] = prevState.runningActions.splice(
+      const [matchingItem] = prevState.runnedActions.splice(
         existingActionIndex,
         1
       )
       if (matchingItem) {
-        prevState.runningActions.unshift(matchingItem)
+        prevState.runnedActions.unshift(matchingItem)
       }
 
       return prevState

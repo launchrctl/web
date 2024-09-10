@@ -207,19 +207,6 @@ func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Req
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-type uiWizard struct {
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-	Success     string `yaml:"success"`
-}
-
-type uiWizardFull struct {
-	Title       string   `yaml:"title"`
-	Description string   `yaml:"description"`
-	Steps       []string `yaml:"steps"`
-	Success     string   `yaml:"success"`
-}
-
 func (l *launchrServer) GetWizards(w http.ResponseWriter, _ *http.Request) {
 	var result []WizardShort
 
@@ -242,7 +229,7 @@ func (l *launchrServer) GetWizards(w http.ResponseWriter, _ *http.Request) {
 			}
 
 			var data struct {
-				UIWizard uiWizard `yaml:"uiWizard"`
+				UIWizard WizardShort `yaml:"uiWizard"`
 			}
 			err = yaml.Unmarshal(content, &data)
 			if err != nil {
@@ -283,7 +270,6 @@ func (l *launchrServer) GetWizardByID(w http.ResponseWriter, _ *http.Request, id
 	}
 
 	targetPath := filepath.Join(runDir, strings.ReplaceAll(string(id), ".", string(filepath.Separator)), "ui-wizard.yaml")
-	fmt.Print()
 	content, err := os.ReadFile(filepath.Clean(targetPath))
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -294,32 +280,61 @@ func (l *launchrServer) GetWizardByID(w http.ResponseWriter, _ *http.Request, id
 		return
 	}
 
-	var data struct {
-		UIWizard uiWizardFull `yaml:"uiWizard"`
+	type wizardStep struct {
+		Actions     []string `yaml:"actions"`
+		Description string   `yaml:"description"`
+		Title       string   `yaml:"title"`
 	}
+
+	type wizardShortWithSteps struct {
+		Description string       `yaml:"description"`
+		Success     string       `yaml:"success"`
+		Title       string       `yaml:"title"`
+		Steps       []wizardStep `yaml:"steps"`
+	}
+
+	var data struct {
+		UIWizard wizardShortWithSteps `yaml:"uiWizard"`
+	}
+
 	if err := yaml.Unmarshal(content, &data); err != nil {
 		sendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	var steps []ActionFull
-	for _, stepID := range data.UIWizard.Steps {
-		a, ok := l.actionMngr.Get(string(stepID))
-		if !ok {
-			sendError(w, http.StatusInternalServerError, fmt.Sprintf("Step action with ID %q not found", stepID))
-			return
-		}
-		if err := a.EnsureLoaded(); err != nil {
-			sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error loading step action %q", stepID))
-			return
+	var steps []WizardStep
+
+	for _, step := range data.UIWizard.Steps {
+		var actions []ActionFull
+		for _, actionID := range step.Actions {
+			a, ok := l.actionMngr.Get(actionID)
+			if !ok {
+				sendError(w, http.StatusInternalServerError, fmt.Sprintf("Step action with ID %q not found", actionID))
+				return
+			}
+
+			if err := a.EnsureLoaded(); err != nil {
+				sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error loading step action %q", actionID))
+				return
+			}
+
+			afull, err := apiActionFull(l.basePath(), a)
+			if err != nil {
+				sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error building ActionFull for %q", actionID))
+				return
+			}
+			actions = append(actions, afull)
 		}
 
-		afull, err := apiActionFull(l.basePath(), a)
-		if err != nil {
-			sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error building ActionFull for %q", stepID))
-			return
-		}
-		steps = append(steps, afull)
+		stepActions := actions
+		stepTitle := step.Title
+		stepDescription := step.Description
+
+		steps = append(steps, WizardStep{
+			Title:       &stepTitle,
+			Description: &stepDescription,
+			Actions:     &stepActions,
+		})
 	}
 
 	wizard := WizardFull{
