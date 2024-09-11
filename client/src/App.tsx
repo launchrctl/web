@@ -5,6 +5,7 @@ import routerBindings, {
   DocumentTitleHandler,
   UnsavedChangesNotifier,
 } from '@refinedev/react-router-v6'
+import { useEffect } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -25,10 +26,19 @@ import { FlowShow } from './pages/flow'
 import { dataProvider as launchrDataProvider } from './rest-data-provider'
 import { ThemeProvider } from './ThemeProvider'
 import { getApiUrl } from './utils/app-urls-resolver'
+import { getCustomisation, setCustomisation } from './utils/page-customisation'
 
 const apiUrl = getApiUrl()
 
+const customTitleHandler = () => {
+  return getCustomisation()?.plasmactl_web_ui_platform_page_name ?? 'Platform'
+}
+
 export function App() {
+  useEffect(() => {
+    setCustomisation()
+  }, [])
+
   return (
     <AppProvider>
       <ActionProvider>
@@ -82,10 +92,9 @@ export function App() {
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                 </Routes>
-
                 <RefineKbar />
                 <UnsavedChangesNotifier />
-                <DocumentTitleHandler />
+                <DocumentTitleHandler handler={customTitleHandler} />
               </Refine>
             </ThemeProvider>
           </RefineKbarProvider>
