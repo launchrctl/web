@@ -1,4 +1,5 @@
 import { Refine } from '@refinedev/core'
+import { RefineKbar } from '@refinedev/kbar'
 import { ErrorComponent, useNotificationProvider } from '@refinedev/mui'
 import routerBindings, {
   DocumentTitleHandler,
@@ -13,6 +14,7 @@ import {
   Routes,
 } from 'react-router-dom'
 
+import { GlobalKBarProvider } from './components/GlobalKBarProvider'
 import { ThemedLayoutV2 } from './components/layout'
 import { ThemedHeaderV2 } from './components/layout/Header'
 import { ThemedSiderV2 } from './components/layout/Sider'
@@ -55,7 +57,6 @@ export function App() {
                   name: 'actions',
                   list: '/actions',
                   show: '/actions/:id/show',
-                  // edit: "/actions/:id/edit",
                   meta: {
                     canDelete: false,
                   },
@@ -65,34 +66,35 @@ export function App() {
                 liveMode: 'manual',
               }}
             >
-              <Routes>
-                <Route
-                  element={
-                    <ThemedLayoutV2
-                      Header={ThemedHeaderV2}
-                      Sider={ThemedSiderV2}
-                      Title={ThemedTitleV2}
-                    >
-                      <Outlet />
-                    </ThemedLayoutV2>
-                  }
-                >
-                  <Route index element={<Navigate to="/flow" replace />} />
-                  <Route path="/actions">
-                    <Route index element={<ActionList />} />
-                    <Route path=":id/show" element={<ActionShow />} />
-                    {/*<Route path=":id/running/:runId" element={<ActionAttach />} />*/}
-                    {/*<Route path=":id/edit" element={<ActionEdit />} />*/}
+              <GlobalKBarProvider>
+                <Routes>
+                  <Route
+                    element={
+                      <ThemedLayoutV2
+                        Header={ThemedHeaderV2}
+                        Sider={ThemedSiderV2}
+                        Title={ThemedTitleV2}
+                      >
+                        <Outlet />
+                      </ThemedLayoutV2>
+                    }
+                  >
+                    <Route index element={<Navigate to="/flow" replace />} />
+                    <Route path="/actions">
+                      <Route index element={<ActionList />} />
+                      <Route path=":id/show" element={<ActionShow />} />
+                    </Route>
+                    <Route path="/flow">
+                      <Route index element={<FlowShow />} />
+                    </Route>
+                    <Route path="*" element={<ErrorComponent />} />
                   </Route>
-                  <Route path="/flow">
-                    <Route index element={<FlowShow />} />
-                  </Route>
-                  <Route path="*" element={<ErrorComponent />} />
-                </Route>
-              </Routes>
+                </Routes>
 
-              <UnsavedChangesNotifier />
-              <DocumentTitleHandler />
+                <UnsavedChangesNotifier />
+                <DocumentTitleHandler handler={customTitleHandler} />
+                <RefineKbar />
+              </GlobalKBarProvider>
             </Refine>
           </ThemeProvider>
         </BrowserRouter>

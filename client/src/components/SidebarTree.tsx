@@ -347,16 +347,14 @@ export const SidebarTree: FC<{
       })()
       setExpandedItems(expandItems.reverse())
       if (selectedAction) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
         const prevSelectedAction = apiRef.current?.getItem(selectedAction)
         prevSelectedAction.selected = false
         setSelectedAction('')
       }
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       const curSelectedAction = apiRef.current?.getItem(nodeId)
-      curSelectedAction.selected = nodeId
+      if (curSelectedAction?.selected) {
+        curSelectedAction.selected = nodeId
+      }
       setSelectedAction(nodeId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

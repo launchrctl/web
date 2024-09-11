@@ -23,7 +23,8 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
   const ActiveLink = routerType === 'legacy' ? LegacyLink : Link
 
   const logoUrl = getCustomisation()?.plasmactl_web_ui_platform_logo ?? Logo
-  const logoText = getCustomisation()?.plasmactl_web_ui_platform_header_name ?? text
+  const logoText =
+    getCustomisation()?.plasmactl_web_ui_platform_header_name ?? text
 
   return (
     <MuiLink
