@@ -347,11 +347,15 @@ export const SidebarTree: FC<{
       })()
       setExpandedItems(expandItems.reverse())
       if (selectedAction) {
-        const prevSelectedAction = apiRef.current?.getItem(selectedAction)
+        const prevSelectedAction = (
+          apiRef.current as { getItem: (id: string) => any }
+        )?.getItem(selectedAction)
         prevSelectedAction.selected = false
         setSelectedAction('')
       }
-      const curSelectedAction = apiRef.current?.getItem(nodeId)
+      const curSelectedAction = (
+        apiRef.current as { getItem: (id: string) => any }
+      )?.getItem(nodeId)
       if (curSelectedAction?.selected) {
         curSelectedAction.selected = nodeId
       }
