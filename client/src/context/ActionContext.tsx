@@ -1,13 +1,14 @@
 import { createContext, Dispatch, FC, ReactNode, useReducer } from 'react'
 export interface State {
   id: string
-  type?: 'set-actions-sidebar' | ''
+  hoverId?: string
+  type?: 'set-active-action' | 'set-hover-action' | 'clear-actions' | ''
 }
 
 export interface Action {
   id?: string
+  hoverId?: string
   type?: string
-  output?: string
 }
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 
 const initialState: State = {
   id: '',
+  hoverId: '',
   type: '',
 }
 
@@ -26,9 +28,15 @@ export const ActionDispatchContext = createContext<Dispatch<Action> | null>(
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case 'set-actions-sidebar': {
+    case 'set-active-action': {
       return {
         id: action.id || '',
+      }
+    }
+    case 'set-hover-action': {
+      return {
+        ...state,
+        hoverId: action.id || '',
       }
     }
     case 'clear-actions': {
@@ -40,6 +48,7 @@ const reducer = (state: State, action: Action): State => {
       return {
         ...state,
         id: '',
+        hoverId: '',
       }
     }
   }

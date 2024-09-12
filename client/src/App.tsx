@@ -1,5 +1,5 @@
 import { Refine } from '@refinedev/core'
-import { RefineKbar, RefineKbarProvider } from '@refinedev/kbar'
+import { RefineKbar } from '@refinedev/kbar'
 import { ErrorComponent, useNotificationProvider } from '@refinedev/mui'
 import routerBindings, {
   DocumentTitleHandler,
@@ -14,6 +14,7 @@ import {
   Routes,
 } from 'react-router-dom'
 
+import { GlobalKBarProvider } from './components/GlobalKBarProvider'
 import { ThemedLayoutV2 } from './components/layout'
 import { ThemedHeaderV2 } from './components/layout/Header'
 import { ThemedSiderV2 } from './components/layout/Sider'
@@ -43,30 +44,29 @@ export function App() {
     <AppProvider>
       <ActionProvider>
         <BrowserRouter>
-          <RefineKbarProvider>
-            <ThemeProvider>
-              <Refine
-                dataProvider={{
-                  default: launchrDataProvider(apiUrl),
-                }}
-                liveProvider={liveProvider}
-                notificationProvider={useNotificationProvider}
-                routerProvider={routerBindings}
-                resources={[
-                  {
-                    name: 'actions',
-                    list: '/actions',
-                    show: '/actions/:id/show',
-                    // edit: "/actions/:id/edit",
-                    meta: {
-                      canDelete: false,
-                    },
+          <ThemeProvider>
+            <Refine
+              dataProvider={{
+                default: launchrDataProvider(apiUrl),
+              }}
+              liveProvider={liveProvider}
+              notificationProvider={useNotificationProvider}
+              routerProvider={routerBindings}
+              resources={[
+                {
+                  name: 'actions',
+                  list: '/actions',
+                  show: '/actions/:id/show',
+                  meta: {
+                    canDelete: false,
                   },
-                ]}
-                options={{
-                  liveMode: 'manual',
-                }}
-              >
+                },
+              ]}
+              options={{
+                liveMode: 'manual',
+              }}
+            >
+              <GlobalKBarProvider>
                 <Routes>
                   <Route
                     element={
@@ -83,8 +83,6 @@ export function App() {
                     <Route path="/actions">
                       <Route index element={<ActionList />} />
                       <Route path=":id/show" element={<ActionShow />} />
-                      {/*<Route path=":id/running/:runId" element={<ActionAttach />} />*/}
-                      {/*<Route path=":id/edit" element={<ActionEdit />} />*/}
                     </Route>
                     <Route path="/flow">
                       <Route index element={<FlowShow />} />
@@ -92,12 +90,13 @@ export function App() {
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>
                 </Routes>
-                <RefineKbar />
+
                 <UnsavedChangesNotifier />
                 <DocumentTitleHandler handler={customTitleHandler} />
-              </Refine>
-            </ThemeProvider>
-          </RefineKbarProvider>
+                <RefineKbar />
+              </GlobalKBarProvider>
+            </Refine>
+          </ThemeProvider>
         </BrowserRouter>
       </ActionProvider>
     </AppProvider>

@@ -4,11 +4,11 @@ import { Box } from '@mui/system'
 import { GetListResponse, useList } from '@refinedev/core'
 import { type FC, useEffect, useState } from 'react'
 
+import { components } from '../../../openapi'
 import { ActionsFlow } from '../../components/ActionsFlow'
 import { AlertBanner } from '../../components/AlertBanner'
 import { SecondSidebarFlow } from '../../components/SecondSidebarFlow'
 import { SidebarFlow } from '../../components/SidebarFlow'
-import { FlowClickedActionIDProvider } from '../../context/ActionsFlowContext'
 import {
   SidebarTreeItemClickStatesProvider,
   SidebarTreeItemMouseStatesProvider,
@@ -17,7 +17,7 @@ import { useAction } from '../../hooks/ActionHooks'
 import { checkIfDuplicatedActions } from '../../utils/helpers'
 
 export const FlowShow: FC = () => {
-  const { data: actions } = useList({
+  const { data: actions } = useList<components['schemas']['ActionShort']>({
     resource: 'actions',
   })
   const [dataReceived, setData] = useState<GetListResponse>()
@@ -77,42 +77,38 @@ export const FlowShow: FC = () => {
   }, [actions, dataReceived])
 
   return (
-    <FlowClickedActionIDProvider>
-      <SidebarTreeItemMouseStatesProvider>
-        <SidebarTreeItemClickStatesProvider>
-          <Grid
-            container
-            sx={{ height: 'calc(100vh - 68px)' }}
-            columns={{ xs: 36 }}
-          >
-            {alert && typeof alert !== 'boolean' && (
-              <AlertBanner data={alert} />
-            )}
-            {dataReceived && (
-              <>
-                <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
-                  <SidebarFlow actions={dataReceived} />
-                </Grid>
-                <Grid item xs={29} sx={{ height: 'calc(100vh - 68px)' }}>
-                  <ActionsFlow actions={dataReceived} />
-                </Grid>
-                {renderEndSidebar && (
-                  <Box
-                    sx={{
-                      height: 'calc(100vh - 68px)',
-                      position: 'fixed',
-                      right: 0,
-                      top: 68,
-                    }}
-                  >
-                    <SecondSidebarFlow actions={dataReceived} nodeId={nodeId} />
-                  </Box>
-                )}
-              </>
-            )}
-          </Grid>
-        </SidebarTreeItemClickStatesProvider>
-      </SidebarTreeItemMouseStatesProvider>
-    </FlowClickedActionIDProvider>
+    <SidebarTreeItemMouseStatesProvider>
+      <SidebarTreeItemClickStatesProvider>
+        <Grid
+          container
+          sx={{ height: 'calc(100vh - 68px)' }}
+          columns={{ xs: 36 }}
+        >
+          {alert && typeof alert !== 'boolean' && <AlertBanner data={alert} />}
+          {dataReceived && (
+            <>
+              <Grid item xs={7} sx={{ height: 'calc(100vh - 68px)' }}>
+                <SidebarFlow actions={dataReceived} />
+              </Grid>
+              <Grid item xs={29} sx={{ height: 'calc(100vh - 68px)' }}>
+                <ActionsFlow actions={dataReceived} />
+              </Grid>
+              {renderEndSidebar && (
+                <Box
+                  sx={{
+                    height: 'calc(100vh - 68px)',
+                    position: 'fixed',
+                    right: 0,
+                    top: 68,
+                  }}
+                >
+                  <SecondSidebarFlow actions={dataReceived} nodeId={nodeId} />
+                </Box>
+              )}
+            </>
+          )}
+        </Grid>
+      </SidebarTreeItemClickStatesProvider>
+    </SidebarTreeItemMouseStatesProvider>
   )
 }

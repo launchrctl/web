@@ -12,11 +12,7 @@ import ArrowRightIcon from '/images/arrow-right.svg'
 
 import { components } from '../../openapi'
 import { useActionDispatch } from '../hooks/ActionHooks'
-import { useFlowClickedActionID } from '../hooks/ActionsFlowHooks'
-import {
-  useSidebarTreeItemClickStates,
-  useSidebarTreeItemMouseStates,
-} from '../hooks/SidebarTreeItemStatesHooks'
+import { useSidebarTreeItemMouseStates } from '../hooks/SidebarTreeItemStatesHooks'
 import { sentenceCase, splitActionId } from '../utils/helpers'
 import { type IActionsGroup } from './SecondSidebarFlow'
 interface ActionsListFlowProps {
@@ -24,8 +20,6 @@ interface ActionsListFlowProps {
 }
 
 export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
-  const { setFlowClickedActionId } = useFlowClickedActionID()
-  const { handleSelect } = useSidebarTreeItemClickStates()
   const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemMouseStates()
   const [hoveredId, setHoveredId] = useState('')
 
@@ -134,18 +128,13 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
 
   const actionClickHandler = (id: string) => {
     dispatch?.({
-      type: 'set-actions-sidebar',
+      type: 'set-active-action',
       id,
-    })
-    setFlowClickedActionId({
-      id,
-      isActive: true,
     })
     if (hoveredId) {
       handleMouseLeave(hoveredId, true)
       setHoveredId('')
     }
-    handleSelect(id)
   }
 
   return (
