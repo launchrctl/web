@@ -242,6 +242,10 @@ components:
               x-go-type: "action.TypeOpts"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/action"
+            changed:
+              type: array
+              items:
+                type: string
     ActionRunInfo:
       allOf:
         - type: object
