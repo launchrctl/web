@@ -29,7 +29,9 @@ import {
 
 const Form = withTheme(Theme)
 
-export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
+export const FormFlow: FC<{ actionId: string; isFullpage?: boolean }> = (
+  { actionId, isFullpage = false },
+) => {
   const [actionRunning, setActionRunning] = useState(false)
   const apiUrl = useApiUrl()
   const publish = usePublish()
@@ -195,8 +197,15 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
           <Button variant="contained" type="submit" disabled={actionRunning}>
             Submit
           </Button>
-          <Divider sx={{ my: 2 }} />
-          <Button href={`/actions/${actionId}/show`}>Or Go to form page</Button>
+
+          {!isFullpage && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Button href={`/actions/${actionId}/show`}>
+                Or Go to form page
+              </Button>
+            </>
+          )}
         </Form>
       )}
     </Box>
