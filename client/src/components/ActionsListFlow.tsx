@@ -6,13 +6,13 @@ import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import Typography from '@mui/material/Typography'
-import { type FC, Fragment, useState } from 'react'
+import { type FC, Fragment } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 
 import ArrowRightIcon from '/images/arrow-right.svg'
 
 import { components } from '../../openapi'
 import { useActionDispatch } from '../hooks/ActionHooks'
-import { useSidebarTreeItemMouseStates } from '../hooks/SidebarTreeItemStatesHooks'
 import { sentenceCase, splitActionId } from '../utils/helpers'
 import { type IActionsGroup } from './SecondSidebarFlow'
 interface ActionsListFlowProps {
@@ -20,9 +20,6 @@ interface ActionsListFlowProps {
 }
 
 export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
-  const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemMouseStates()
-  const [hoveredId, setHoveredId] = useState('')
-
   const dispatch = useActionDispatch()
   const groups: {
     folderId: string
@@ -50,7 +47,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
         folderId: actionsGroup.id,
         label: '',
         items: attachedActions.map((action) => ({
-          id: action.id.split(':').pop() || '',
+          id: action.id,
           title: action.title,
           description: action.description,
         })),
@@ -70,7 +67,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
               !Object.values(a.items).some((a) => a.id.includes(actionId))
             )
               a.items.push({
-                id: actionId,
+                id: item.id,
                 title: item.title,
                 description: item.description,
               })
@@ -97,7 +94,7 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
               .join(' / '),
             items: [
               {
-                id: actionId,
+                id: item.id,
                 title: item.title,
                 description: item.description,
               },
@@ -108,22 +105,25 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
     }
   }
 
-  const wrappedHandleMouseMove = (id: string) => {
-    if (!hoveredId) {
-      setHoveredId(id)
-      handleMouseEnter(id)
-    } else if (id !== hoveredId) {
-      handleMouseLeave(hoveredId)
-      setHoveredId(id)
-      handleMouseEnter(id)
+  const debounced = useDebouncedCallback((id = false) => {
+    if (id) {
+      dispatch?.({
+        type: 'set-hover-action',
+        id,
+      })
+    } else {
+      dispatch?.({
+        type: 'set-hover-action',
+      })
     }
+  }, 25)
+
+  const wrappedHandleMouseEnter = (id: string) => {
+    debounced(id)
   }
 
   const wrappedHandleMouseLeave = () => {
-    if (hoveredId) {
-      handleMouseLeave(hoveredId, false)
-      setHoveredId('')
-    }
+    debounced()
   }
 
   const actionClickHandler = (id: string) => {
@@ -131,10 +131,6 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
       type: 'set-active-action',
       id,
     })
-    if (hoveredId) {
-      handleMouseLeave(hoveredId, true)
-      setHoveredId('')
-    }
   }
 
   return (
@@ -226,13 +222,9 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
                     >
                       <Box
                         className={'action-button'}
-                        onMouseMove={() =>
-                          wrappedHandleMouseMove(`${group.folderId}:${item.id}`)
-                        }
+                        onMouseEnter={() => wrappedHandleMouseEnter(item.id)}
                         onMouseLeave={() => wrappedHandleMouseLeave()}
-                        onClick={() =>
-                          actionClickHandler(`${group.folderId}:${item.id}`)
-                        }
+                        onClick={() => actionClickHandler(item.id)}
                         sx={{
                           display: 'flex',
                           justifyContent: 'space-between',

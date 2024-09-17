@@ -19,21 +19,21 @@ import { clsx } from 'clsx'
 import {
   FC,
   forwardRef,
-  type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type Ref,
   SyntheticEvent,
   useEffect,
   useState,
 } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 
 import ActionIcon from '/images/action.svg'
 import AppIcon from '/images/app.svg'
 import CheckIcon from '/images/check.svg'
 import FolderIcon from '/images/folder.svg'
 
+import { components } from '../../openapi'
 import { useAction, useActionDispatch } from '../hooks/ActionHooks'
-import { useSidebarTreeItemMouseStates } from '../hooks/SidebarTreeItemStatesHooks'
 import { splitActionId } from '../utils/helpers'
 import {
   ExtendedTreeItemProps,
@@ -207,18 +207,41 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
     status,
     publicAPI,
   } = useTreeItem2({ id, itemId, children, label, disabled, rootRef: ref })
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const item = publicAPI.getItem(itemId)
+
+  const api = publicAPI as {
+    getItem: (id: string) => {
+      fileType: FileType | 'action-selected'
+      selected: boolean
+      isActionsGroup?: boolean
+      depth: number
+    }
+  }
+  const item = api.getItem(itemId)
+
   const expandable = isExpandable(children)
   const icon = getIconFromFileType(item.fileType)
-  const [selectedAction, setSelectedAction] = useState(false)
+  const dispatch = useActionDispatch()
 
-  useEffect(() => {
-    if (!['app', 'folder'].includes(item.fileType)) {
-      setSelectedAction(item.selected)
+  const debounced = useDebouncedCallback((id = false) => {
+    if (id) {
+      dispatch?.({
+        type: 'set-hover-action',
+        id,
+      })
+    } else {
+      dispatch?.({
+        type: 'set-hover-action',
+      })
     }
-  }, [item.selected, item.fileType])
+  }, 25)
+
+  const wrappedHandleMouseEnter = (id: string) => {
+    debounced(id)
+  }
+
+  const wrappedHandleMouseLeave = () => {
+    debounced()
+  }
 
   return (
     <CustomTreeItem2Root
@@ -230,6 +253,8 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
       })}
     >
       <CustomTreeItemContent
+        onMouseEnter={() => wrappedHandleMouseEnter(itemId)}
+        onMouseLeave={() => wrappedHandleMouseLeave()}
         {...getContentProps({
           depth: item.depth,
           className: clsx('content', {
@@ -239,7 +264,6 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
             'Mui-disabled': status.disabled,
             'is-actions-group': item.isActionsGroup,
             'is-action': item.fileType === 'action',
-            'action-selected': selectedAction,
           }),
         })}
       >
@@ -255,10 +279,10 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
         )}
         <CustomLabel
           {...getLabelProps({
-            icon: selectedAction
+            icon: status.selected
               ? getIconFromFileType('action-selected')
               : icon,
-            iconClassnames: selectedAction ? 'check-mark' : '',
+            iconClassnames: status.selected ? 'check-mark' : '',
           })}
         />
       </CustomTreeItemContent>
@@ -278,91 +302,21 @@ function getItemLabel(item: ExtendedTreeItemProps): string {
   return item.title || (item.label as string)
 }
 
-export const SidebarTree: FC<{
-  actions: GetListResponse | undefined
-}> = ({ actions }) => {
+export const SidebarTree: FC<{ actions: GetListResponse | undefined }> = ({
+  actions,
+}) => {
   const apiRef = useTreeViewApiRef()
   const [items, setItems] = useState<ExtendedTreeItemProps[]>([])
-  const [selectedAction, setSelectedAction] = useState('')
-  const [selectedActionsGroup, setSelectedActionsGroup] = useState<{
-    id: string
-    isActionsGroup: boolean
-  }>({
-    id: '',
-    isActionsGroup: false,
-  })
-  const [expandedItems, setExpandedItems] = useState<string[]>([])
   const { id: nodeId } = useAction()
+  const { levels } = splitActionId(nodeId)
   const dispatch = useActionDispatch()
-  const { handleMouseEnter, handleMouseLeave } = useSidebarTreeItemMouseStates()
-  const [hoveredId, setHoveredId] = useState('')
-
-  const wrappedHandleMouseMove = (e: ReactMouseEvent): void => {
-    const target = e.target as HTMLElement
-    const targetEl = target.closest('[data-element-id]') as HTMLElement
-
-    if (targetEl && targetEl.dataset.elementId !== hoveredId) {
-      const id = targetEl.dataset.elementId
-
-      if (!hoveredId) {
-        setHoveredId(id as string)
-        handleMouseEnter(id as string)
-      } else if (id !== hoveredId) {
-        handleMouseLeave(hoveredId)
-        setHoveredId(id as string)
-        handleMouseEnter(id as string)
-      }
-    }
-  }
-
-  const wrappedHandleMouseLeave = () => {
-    if (hoveredId) {
-      handleMouseLeave(hoveredId, false)
-      setHoveredId('')
-    }
-  }
-
   useEffect(() => {
     if (actions?.data) {
-      setItems(treeBuilder(actions))
+      setItems(
+        treeBuilder(actions.data as components['schemas']['ActionShort'][])
+      )
     }
   }, [actions])
-
-  useEffect(() => {
-    if (nodeId) {
-      const expandItems = (() => {
-        const { levels } = splitActionId(nodeId)
-        const result: string[] = []
-
-        for (const part of levels) {
-          const lastSubstring = result.length > 0 ? result.at(-1) : ''
-          const newSubstring =
-            lastSubstring && lastSubstring.length > 0
-              ? `${lastSubstring}.${part}`
-              : part
-          result.push(newSubstring)
-        }
-
-        return result
-      })()
-      setExpandedItems(expandItems.reverse())
-      if (selectedAction) {
-        const prevSelectedAction = (
-          apiRef.current as { getItem: (id: string) => any }
-        )?.getItem(selectedAction)
-        prevSelectedAction.selected = false
-        setSelectedAction('')
-      }
-      const curSelectedAction = (
-        apiRef.current as { getItem: (id: string) => any }
-      )?.getItem(nodeId)
-      if (curSelectedAction?.selected) {
-        curSelectedAction.selected = nodeId
-      }
-      setSelectedAction(nodeId)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId])
 
   const onSelectedItemsChange = (
     event: SyntheticEvent,
@@ -371,119 +325,21 @@ export const SidebarTree: FC<{
     if (!itemIds) {
       return
     }
-    if (itemIds.includes(':')) {
-      if (selectedAction) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const prevSelectedActionData = apiRef.current?.getItem(selectedAction)
-        prevSelectedActionData.selected = false
-      }
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const item = apiRef.current?.getItem(itemIds)
-      item.selected = selectedAction !== itemIds
-      dispatch?.({
-        type: item.selected ? 'set-active-action' : '',
-        id: item.selected ? itemIds : '',
-      })
-      setSelectedAction(selectedAction === itemIds ? '' : itemIds)
-    } else {
-      if (Object.keys(selectedActionsGroup).length > 0) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        const prevSelectedActionData = apiRef.current?.getItem(
-          selectedActionsGroup.id
-        )
-        if (prevSelectedActionData) {
-          prevSelectedActionData.selected = false
-        }
-      }
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const item = apiRef.current?.getItem(itemIds)
-      if (selectedActionsGroup.id === itemIds) {
-        item.selected = false
-        dispatch?.({
-          id: '',
-        })
-        setSelectedActionsGroup({
-          id: '',
-          isActionsGroup: item.isActionsGroup,
-        })
-        return
-      }
-      item.selected = selectedActionsGroup.id !== itemIds
-      dispatch?.({
-        type: item.selected && item.isActionsGroup ? 'set-active-action' : '',
-        id: item.selected && item.isActionsGroup ? itemIds : '',
-      })
-      setSelectedActionsGroup({
-        id: selectedActionsGroup.id === itemIds ? '' : itemIds,
-        isActionsGroup: item.isActionsGroup,
-      })
-    }
-  }
 
-  const deselectAction = (id: string) => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const selectedActionData = apiRef.current?.getItem(id)
-    selectedActionData.selected = false
-    setSelectedAction('')
     dispatch?.({
-      id: '',
+      type: 'set-active-action',
+      id: itemIds,
     })
-  }
-
-  const onExpandedItemsChange = (event: SyntheticEvent, itemIds: string[]) => {
-    let filteredItemIds = itemIds
-    const cur = itemIds[0]
-    if (cur) {
-      const parts = cur.split('.')
-      parts.pop()
-      if (parts.length > 0) {
-        const siblingsExpanded = itemIds.find(
-          (a) => a.startsWith(`${parts.join('.')}.`) && a !== cur
-        )
-        if (siblingsExpanded) {
-          filteredItemIds = itemIds.filter((a) => {
-            if (
-              siblingsExpanded !== a &&
-              selectedAction &&
-              selectedAction.includes(`${siblingsExpanded}:`)
-            ) {
-              deselectAction(selectedAction)
-            }
-            return siblingsExpanded !== a
-          })
-        } else {
-          if (selectedAction) {
-            deselectAction(selectedAction)
-          }
-        }
-      } else {
-        filteredItemIds = [cur]
-
-        if (selectedAction) {
-          deselectAction(selectedAction)
-        }
-      }
-    }
-
-    if (itemIds.length === 0 && selectedAction) {
-      deselectAction(selectedAction)
-    }
-    setExpandedItems(filteredItemIds)
   }
 
   return (
     <RichTreeView
-      onMouseMove={wrappedHandleMouseMove}
-      onMouseLeave={wrappedHandleMouseLeave}
+      selectedItems={nodeId}
       apiRef={apiRef}
       onSelectedItemsChange={onSelectedItemsChange}
-      expandedItems={expandedItems}
-      onExpandedItemsChange={onExpandedItemsChange}
+      expandedItems={levels.map((_, index) =>
+        levels.slice(0, index + 1).join('.')
+      )}
       getItemLabel={getItemLabel}
       items={items}
       slots={{ item: CustomTreeItem }}

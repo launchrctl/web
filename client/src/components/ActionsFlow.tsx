@@ -5,7 +5,6 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Paper from '@mui/material/Paper'
 import { styled, useTheme } from '@mui/material/styles'
 import { GetListResponse } from '@refinedev/core'
-import _debounce from 'lodash/debounce'
 import {
   FC,
   type MouseEvent as ReactMouseEvent,
@@ -23,6 +22,7 @@ import Flow, {
   useEdgesState,
   useNodesState,
 } from 'reactflow'
+import { useDebouncedCallback } from 'use-debounce'
 
 import ActionIcon from '/images/action.svg'
 import CheckIcon from '/images/check.svg'
@@ -30,7 +30,6 @@ import FlowBg from '/images/flow-bg.svg'
 import FlowBgDark from '/images/flow-bg-dark.svg'
 
 import { useAction, useActionDispatch } from '../hooks/ActionHooks'
-import { useSidebarTreeItemMouseStates } from '../hooks/SidebarTreeItemStatesHooks'
 import { IFlowNodeType } from '../types'
 import {
   actionHeight,
@@ -314,8 +313,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
   const [nodes, setNodes] = useNodesState([])
   const [edges, setEdges] = useEdgesState([])
   const dispatch = useActionDispatch()
-  const { id: nodeId } = useAction()
-  const { state: nodeMouseState } = useSidebarTreeItemMouseStates()
+  const { id: nodeId, hoverId } = useAction()
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>()
 
   useEffect(() => {
@@ -368,56 +366,26 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId])
 
-  useEffect(() => {
-    const componentUpdate = (initial = false) => {
-      if (
-        nodeMouseState &&
-        nodeMouseState.id &&
-        nodes &&
-        nodes.some((a) => a.id === nodeMouseState.id)
-      ) {
-        setNodes((prev) => {
-          if (nodeMouseState.isHovered) {
-            for (const prevMatched of prev.filter(
-              (a) => a.id !== nodeMouseState.id && a.data.isHovered === true
-            )) {
-              prevMatched.data.isHovered = false
-            }
-          }
-          prev.map((a) => {
-            if (!initial && a.id === nodeMouseState.id) {
-              a.data.isHovered = nodeMouseState.isHovered
-            }
-            if (initial && a.data.isHovered) {
-              a.data.isHovered = false
-            }
-            return a
-          })
-          return [...prev]
-        })
-      }
-    }
-
-    const debouncedUpdate = _debounce(() => {
-      componentUpdate()
-    }, 25)
-
-    if (nodeMouseState && nodeMouseState.useDebounce) {
-      debouncedUpdate()
-    } else {
-      componentUpdate(true)
-    }
-    return () => {
-      debouncedUpdate.cancel()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeMouseState])
+  const debouncedSet = useDebouncedCallback((id) => {
+    setNodes((prev) => {
+      prev.map((a) => {
+        a.data.isHovered = a.id === id
+        return a
+      })
+      return [...prev]
+    })
+  }, 100)
 
   useEffect(() => {
-    const [, receivedEdges] = getNodesAndEdges(actions, palette?.mode)
-    setEdges(receivedEdges)
+    return debouncedSet(hoverId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [palette.mode])
+  }, [hoverId])
+
+  // TODO: Check this feature.
+  // useEffect(() => {
+  //   const [, receivedEdges] = getNodesAndEdges(actions, palette?.mode)
+  //   setEdges(receivedEdges)
+  // }, [palette.mode])
 
   const [nodeData, setNodeData] = useState<Node>()
 
