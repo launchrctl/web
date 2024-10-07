@@ -1,0 +1,18 @@
+uiWizard:
+  title: Another Platform Configuration
+  description: Please follow the steps below to configure your platform and
+    prepare it for future control actions.
+  success: Platform configuration finished
+  steps:
+    - title: Name your platform
+      description: You can change this information later in your platform settings.
+      actions:
+        - multistep.platform:platform
+    - title: Configure environments
+      description: You can change this information later in your platform settings.
+      actions:
+        - multistep.platform:domainname
+    - title: Select app packages
+      description: Activate app packages needed in [Platform Name] playbooks
+      actions:
+        - multistep.platform:platformdomains
