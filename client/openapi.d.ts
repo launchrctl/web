@@ -163,6 +163,7 @@ export interface components {
         ActionRunParams: {
             arguments: Record<string, never>;
             options: Record<string, never>;
+            changed?: string[];
         };
         ActionRunInfo: {
             id: string;

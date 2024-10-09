@@ -1,6 +1,11 @@
 import { Breadcrumbs } from '@mui/material'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Dialog from '@mui/material/Dialog'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
 import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 import {
@@ -15,22 +20,33 @@ import { withTheme } from '@rjsf/core'
 import { Theme } from '@rjsf/mui'
 import { DescriptionFieldProps, TitleFieldProps } from '@rjsf/utils'
 import validator from '@rjsf/validator-ajv8'
+import isEqual from 'lodash/isEqual'
 import merge from 'lodash/merge'
 import { type FC, useContext, useEffect, useState } from 'react'
 
 import { components } from '../../openapi'
 import { AppContext } from '../context/AppContext'
-import type { IFormValues } from '../types'
 import {
   customizeUiSchema,
   sentenceCase,
   splitActionId,
 } from '../utils/helpers'
 
+interface IFormValues {
+  id: string
+}
+
 const Form = withTheme(Theme)
 
-export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
+export const FormFlow: FC<{ actionId: string; isFullpage?: boolean }> = ({
+  actionId,
+  isFullpage = false,
+}) => {
+  const [changed, setChanged] = useState<Set<string>>(new Set())
+  const [formValues, setFormValues] = useState<IFormValues | null>(null)
   const [actionRunning, setActionRunning] = useState(false)
+  const [openDialog, setOpenDialog] = useState(false)
+  const [previousSubmit, setPreviousSubmit] = useState<IFormValues | null>(null)
   const apiUrl = useApiUrl()
   const publish = usePublish()
   const { addAction } = useContext(AppContext)
@@ -55,6 +71,11 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
     uischema = merge({}, uischema, customizeUiSchema(jsonschema))
   }
 
+  // Reset formValues to null on each rerender
+  useEffect(() => {
+    setFormValues(null)
+  }, [actionId])
+
   useEffect(() => {
     if (!jsonschema && !isFetching && open) {
       open({
@@ -68,6 +89,15 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
   const onSubmit = async ({ formData }: IChangeEvent<IFormValues>) => {
     if (!formData) return
 
+    if (isEqual(formData, previousSubmit)) {
+      console.log('equal')
+      setOpenDialog(true)
+    } else {
+      await handleSubmission(formData)
+    }
+  }
+
+  const handleSubmission = async (formData: IFormValues) => {
     setActionRunning(true)
     publish?.({
       channel: 'processes',
@@ -75,12 +105,11 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
       payload: { action: actionId },
       date: new Date(),
     })
-
     try {
       const result = await mutateAsync({
         url: `${apiUrl}/actions/${actionId}`,
         method: 'post',
-        values: formData,
+        values: { ...formData, changed: [...changed] },
         successNotification: {
           message: 'Action successfully created.',
           description: 'Success with no errors',
@@ -105,11 +134,19 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
           payload: { action: result.data.id },
           date: new Date(),
         })
+        setPreviousSubmit(formData)
       }
     } catch (error) {
       console.error('Error creating action:', error)
     } finally {
       setActionRunning(false)
+    }
+  }
+
+  const handleDialogClose = (confirm: boolean) => {
+    setOpenDialog(false)
+    if (confirm) {
+      handleSubmission(formValues as IFormValues) // Submit the previous form values
     }
   }
 
@@ -173,6 +210,22 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
     )
   }
 
+  const handleChange = (
+    data: IChangeEvent<IFormValues>,
+    id: string | undefined
+  ) => {
+    if (data.formData !== undefined && !isEqual(data.formData, formValues)) {
+      setFormValues(data.formData)
+    } else if (data.formData === undefined) {
+      setFormValues(null)
+    }
+
+    // If an id exists, update the changed set
+    if (id) {
+      setChanged((prevChanged) => new Set(prevChanged).add(id))
+    }
+  }
+
   return (
     <Box
       sx={{
@@ -186,19 +239,47 @@ export const FormFlow: FC<{ actionId: string }> = ({ actionId }) => {
     >
       {!isFetching && (
         <Form
+          idSeparator={'/'}
           schema={jsonschema || {}}
           uiSchema={uischema || {}}
+          formData={formValues}
           validator={validator}
           onSubmit={onSubmit}
           templates={{ DescriptionFieldTemplate, TitleFieldTemplate }}
+          onChange={handleChange}
         >
           <Button variant="contained" type="submit" disabled={actionRunning}>
             Submit
           </Button>
-          <Divider sx={{ my: 2 }} />
-          <Button href={`/actions/${actionId}/show`}>Or Go to form page</Button>
+
+          {!isFullpage && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Button href={`/actions/${actionId}/show`}>
+                Or Go to form page
+              </Button>
+            </>
+          )}
         </Form>
       )}
+
+      <Dialog open={openDialog} onClose={() => handleDialogClose(false)}>
+        <DialogTitle>Confirm Submission</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            The form data is the same as the previous submission. Do you want to
+            proceed with the submission?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => handleDialogClose(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={() => handleDialogClose(true)} color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
