@@ -6,3 +6,6 @@ node_modules/
 **/**/coverage
 jest.config.ts
 openapi.d.ts
+
+# This is copied file from lib
+src/pages/wizard/CustomFieldTemplate.tsx

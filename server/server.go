@@ -1,6 +1,6 @@
 // Package server provides Web API for launchr actions.
 //
-//go:generate go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen@latest --config=cfg.yaml openapi.yaml
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --config=cfg.yaml openapi.yaml
 package server
 
 import (

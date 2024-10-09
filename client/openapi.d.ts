@@ -146,6 +146,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/wizard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists all wizards
+         * @description Returns all multistep actions
+         *
+         */
+        get: operations["getWizards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/wizard/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Returns wizard by id
+         * @description returns wizard by id
+         */
+        get: operations["getWizardByID"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -183,6 +224,15 @@ export interface components {
             code: number;
             message: string;
         };
+        WizardShort: {
+            id: string;
+            title: string;
+            description: string;
+            success: string;
+        };
+        WizardFull: components["schemas"]["WizardShort"] & {
+            steps: components["schemas"]["ActionFull"][];
+        };
     };
     responses: {
         /** @description unexpected error */
@@ -204,6 +254,8 @@ export interface components {
         Offset: number;
         /** @description number of elements to return */
         Limit: number;
+        /** @description ID of wizard to fetch */
+        WizardId: string;
     };
     requestBodies: never;
     headers: never;
@@ -406,6 +458,51 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActionRunStreamData"][];
+                };
+            };
+            default: components["responses"]["DefaultError"];
+        };
+    };
+    getWizards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description wizards response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WizardShort"][];
+                };
+            };
+            default: components["responses"]["DefaultError"];
+        };
+    };
+    getWizardByID: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of wizard to fetch */
+                id: components["parameters"]["WizardId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description wizard response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WizardFull"];
                 };
             };
             default: components["responses"]["DefaultError"];

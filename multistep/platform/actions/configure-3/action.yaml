@@ -1,0 +1,13 @@
+action:
+  title: Select app packages
+  description: Activate app packages needed in [Platform Name] playbooks
+  image: alpine:latest
+  command: ["sh", "-c", "for i in $(seq 10); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
+  options:
+    - name: applications
+      title: Select Applications for Work
+      type: array
+      items:
+        type: sting
+        enum:  ['foo', 'bar', 'fuzz', 'qux']
+      default: ['foo', 'bar', 'fuzz', 'qux']
