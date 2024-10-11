@@ -9,14 +9,16 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+const STILL_ACTIVE = 259
+
 func setSysProcAttr(cmd *exec.Cmd) {
 	cmd.SysProcAttr = &windows.SysProcAttr{
 		CreationFlags: windows.CREATE_NEW_PROCESS_GROUP,
 	}
 }
 
-func isProcessRunning(pid uint32) bool {
-	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
+func isProcessRunning(pid int) bool {
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
 	if err != nil {
 		return false
 	}
@@ -27,9 +29,5 @@ func isProcessRunning(pid uint32) bool {
 	if err != nil {
 		return false
 	}
-	if code == windows.STILL_ACTIVE {
-		return true
-	}
-
-	return false
+	return code == STILL_ACTIVE
 }
