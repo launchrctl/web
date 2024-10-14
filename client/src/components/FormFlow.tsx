@@ -239,7 +239,7 @@ export const FormFlow: FC<{ actionId: string; isFullpage?: boolean }> = ({
     >
       {!isFetching && (
         <Form
-          idSeparator={'/'}
+          idSeparator={'____'}
           schema={jsonschema || {}}
           uiSchema={uischema || {}}
           formData={formValues}
