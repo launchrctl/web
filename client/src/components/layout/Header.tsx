@@ -1,3 +1,4 @@
+import AssistantIcon from '@mui/icons-material/Assistant'
 import GitHubIcon from '@mui/icons-material/GitHub'
 import ListIcon from '@mui/icons-material/List'
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew'
@@ -49,12 +50,19 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => {
       sx={{
         boxShadow: 'none',
         borderBottom: (theme) => `1px solid ${theme.palette.action.focus}`,
+        height: '68px',
       }}
     >
       <Toolbar>
         <Title collapsed={false} />
         <Box sx={{ flexGrow: 1 }} />
         <Stack direction="row" spacing={1} alignItems="center">
+          <Tooltip title="Wizard experiment">
+            <IconButton href="/wizard" size="small" color="inherit">
+              <AssistantIcon />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Actions list">
             <IconButton href="/actions" size="small" color="inherit">
               <ListIcon />

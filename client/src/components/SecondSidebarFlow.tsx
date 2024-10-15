@@ -100,7 +100,18 @@ export const SecondSidebarFlow: FC<{
         {expand === '25vw' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
       </IconButton>
       {isAction(nodeId) ? (
-        <FormFlow actionId={nodeId} />
+        <Box
+          sx={{
+            px: 2,
+            pb: 2,
+            '.MuiGrid-item:has(#root_options__title + div:empty), .MuiGrid-item:has(#root_arguments__title + div:empty)':
+              {
+                display: 'none',
+              },
+          }}
+        >
+          <FormFlow actionId={nodeId} formType={'sidebar'} />
+        </Box>
       ) : (
         <ActionsListFlow actionsGroup={actionsGroup} />
       )}

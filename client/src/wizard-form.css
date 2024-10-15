@@ -1,0 +1,11 @@
+.wizard-form {
+
+  > .form-group:first-child {
+    padding: 1.5rem;
+  }
+}
+
+.MuiGrid-item:has(#root____arguments__title + div:empty),
+.MuiGrid-item:has(#root____options__title + div:empty) {
+  display: none;
+}

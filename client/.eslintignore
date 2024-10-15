@@ -6,3 +6,10 @@ node_modules/
 **/**/coverage
 jest.config.ts
 openapi.d.ts
+
+# This is copied files from lib
+src/pages/wizard/widgets/SwitchPackage.tsx
+src/pages/wizard/ObjectFieldTemplate.tsx
+
+# Temp ignore
+src/pages/wizard/Show.tsx
