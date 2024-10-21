@@ -7,9 +7,16 @@ import (
 	"strconv"
 )
 
-func pidFileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
+func pidFileInfo(path string) (pid int, active bool) {
+	var err error
+	if _, err = os.Stat(path); err != nil {
+		return 0, false
+	}
+	pid, err = readPidFile(path)
+	if err != nil {
+		return 0, false
+	}
+	return pid, isProcessRunning(pid)
 }
 
 func readPidFile(path string) (int, error) {

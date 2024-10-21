@@ -1,4 +1,5 @@
-// Package executes Launchr application.
+//go:build ignore
+
 package main
 
 import (
@@ -8,5 +9,5 @@ import (
 )
 
 func main() {
-	launchr.RunAndExit()
+	launchr.GenAndExit()
 }

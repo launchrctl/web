@@ -1,5 +1,4 @@
-//go:build !windows
-// +build !windows
+//go:build unix
 
 package web
 
@@ -7,8 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
-
-	"github.com/launchrctl/launchr/pkg/log"
 )
 
 func setSysProcAttr(cmd *exec.Cmd) {
@@ -20,7 +17,6 @@ func setSysProcAttr(cmd *exec.Cmd) {
 func isProcessRunning(pid int) bool {
 	process, err := os.FindProcess(pid)
 	if err != nil {
-		log.Debug("Failed to find process: %s\n", err)
 		return false
 	}
 

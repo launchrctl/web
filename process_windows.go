@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 package web
 
@@ -15,8 +14,9 @@ func setSysProcAttr(cmd *exec.Cmd) {
 	}
 }
 
-func isProcessRunning(pid uint32) bool {
-	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
+func isProcessRunning(pid int) bool {
+	p := uint32(pid)
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, p)
 	if err != nil {
 		return false
 	}
@@ -27,7 +27,7 @@ func isProcessRunning(pid uint32) bool {
 	if err != nil {
 		return false
 	}
-	if code == windows.STILL_ACTIVE {
+	if windows.NTStatus(code) == windows.STATUS_PENDING {
 		return true
 	}
 

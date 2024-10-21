@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/launchrctl/launchr/pkg/cli"
+	"github.com/launchrctl/launchr"
 )
 
 type fileStreams interface {
@@ -17,19 +17,19 @@ type fileStreams interface {
 // webCli implements Streams interface.
 // @todo Maybe refactor original streams.
 type webCli struct {
-	in    *cli.In
-	out   *cli.Out
+	in    *launchr.In
+	out   *launchr.Out
 	err   io.Writer
 	files []*os.File
 }
 
 // In returns the reader used for stdin
-func (cli *webCli) In() *cli.In {
+func (cli *webCli) In() *launchr.In {
 	return cli.in
 }
 
 // Out returns the writer used for stdout
-func (cli *webCli) Out() *cli.Out {
+func (cli *webCli) Out() *launchr.Out {
 	return cli.out
 }
 
@@ -93,12 +93,12 @@ func (w *wrappedWriter) Write(p []byte) (int, error) {
 }
 
 func createFileStreams(runId string) (*webCli, error) {
-	outfile, err := os.Create(fmt.Sprintf("%s-out.txt", runId))
+	outfile, err := os.Create(runId + "-out.txt")
 	if err != nil {
 		return nil, fmt.Errorf("error creating output file: %w", err)
 	}
 
-	errfile, err := os.Create(fmt.Sprintf("%s-err.txt", runId))
+	errfile, err := os.Create(runId + "-err.txt")
 	if err != nil {
 		return nil, fmt.Errorf("error creating error file: %w", err)
 	}
@@ -116,8 +116,8 @@ func createFileStreams(runId string) (*webCli, error) {
 	// Build and return webCli
 	return &webCli{
 		files: []*os.File{outfile, errfile},
-		in:    cli.NewIn(io.NopCloser(strings.NewReader(""))),
-		out:   cli.NewOut(out),
+		in:    launchr.NewIn(io.NopCloser(strings.NewReader(""))),
+		out:   launchr.NewOut(out),
 		err:   errWriter,
 	}, nil
 }

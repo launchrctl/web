@@ -13,11 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/launchrctl/launchr/pkg/log"
+	"gopkg.in/yaml.v3"
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
-	"gopkg.in/yaml.v3"
 )
 
 type launchrServer struct {
@@ -60,26 +59,22 @@ func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Re
 	}
 
 	customisation := make(CustomisationConfig)
-	if launchrConfig == nil {
-		log.Debug("Launchr config doesn't exist")
-	} else {
-		if launchrConfig.VarsFile != "" {
-			vars := make(map[string]bool)
-			for _, item := range launchrConfig.Variables {
-				vars[item] = true
-			}
+	if launchrConfig != nil && launchrConfig.VarsFile != "" {
+		vars := make(map[string]bool)
+		for _, item := range launchrConfig.Variables {
+			vars[item] = true
+		}
 
-			gvFile, err := parseVarsFile(launchrConfig.VarsFile)
-			if err != nil {
-				sendError(w, http.StatusInternalServerError, "error getting group vars file")
-				return
-			}
+		gvFile, err := parseVarsFile(launchrConfig.VarsFile)
+		if err != nil {
+			sendError(w, http.StatusInternalServerError, "error getting group vars file")
+			return
+		}
 
-			if len(launchrConfig.Variables) > 0 {
-				for key, value := range gvFile {
-					if _, ok := vars[key]; ok {
-						customisation[key] = value
-					}
+		if len(launchrConfig.Variables) > 0 {
+			for key, value := range gvFile {
+				if _, ok := vars[key]; ok {
+					customisation[key] = value
 				}
 			}
 		}
@@ -269,13 +264,12 @@ func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
 
 	var uiSchema map[string]interface{}
 
-	yamlData, err := os.ReadFile(fmt.Sprintf("%s/ui-schema.yaml", a.Dir()))
+	yamlData, err := os.ReadFile(filepath.Join(a.Dir(), "ui-schema.yaml"))
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return ActionFull{}, err
 		}
-
-		fmt.Println("Info: ui-schema.yaml not found, using empty UISchema")
+		launchr.Log().Debug("ui-schema.yaml not found, using empty ui-schema", "action_id", a.ID)
 		uiSchema = map[string]interface{}{}
 	} else {
 		err = yaml.Unmarshal(yamlData, &uiSchema)
@@ -305,7 +299,7 @@ func apiActionShort(a *action.Action) (ActionShort, error) {
 
 func sendError(w http.ResponseWriter, code int, message string) {
 	petErr := Error{
-		Code:    int32(code),
+		Code:    code,
 		Message: message,
 	}
 	w.WriteHeader(code)

@@ -23,6 +23,7 @@ bin/launchr web --help
 
 The documentation for `launchr` usage can be found in [the main project](https://github.com/launchrctl/launchr).
 
+@todo update readme
 ## To build the client:
 ### Node
 ```shell
@@ -79,6 +80,7 @@ Useful make commands:
 2. Test the code - `make test`
 3. Lint the code - `make lint`
 
+@todo review
 ## Test for release
 
 ```shell

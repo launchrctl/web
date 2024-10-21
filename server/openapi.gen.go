@@ -83,7 +83,7 @@ type CustomisationConfig = map[string]interface{}
 
 // Error defines model for Error.
 type Error struct {
-	Code    int32  `json:"code"`
+	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -565,28 +565,28 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xYS2/jNhD+KwLbo2w52Ztu3k1auFisF3F7SnNgpJHEXfERPpoYhv97QVJPS45lxEl7",
-	"siWOON98M/NpqB1KOBWcAdMKxTsksMQUNEh3tUw04WyV2v8pqEQSYW+gGK1uAp4F2K0HmgcZ6KRAISJ2",
-	"UWBt/zNMAcWIpChEEp4MkZCiWEsDIVJJARTbffVWWCulJWE52u/DyuudYSuW8ePOdQGBNIwRlldAxv1L",
-	"YyM4D8JXQokeOmaGPoK0zqEEajmzsUvQRjbOnwzIbeu9dDt1vVH8QqihKL5aLEJECauuwhoHYRpykA7I",
-	"OssUTEaifhJxBAf3G42E3brbW5KU4EyBS/8NZNiU+lZKLu11wpkG5tBgIUqSYIsm+qEspF1n518lZChG",
-	"v0RtcUV+VUV+N+esH5Jh8CIg0ZAGUNnUaDvF+JspSwegLNcZiu9fd+af2RRcarQPd0hILkBq4uOzwAd0",
-	"8McfkFiiXmY5n1Xs/bFZf9t4y2qhsm63mA/XZ4QK69n1lS5QjHKiC/M4TziNSmxYUshEl/XfSPzMow4m",
-	"G78h0wD+tRqFR7G492X9YNMsM5zAbt/DaGtmxl0ScDkT3Nn5HvEFUXfNfZevh/AAzv7hsHP7WeozT9Jh",
-	"3/UDWt0gm36NtVGnSqpxu/Hmh7idAlVbnQD+3eqfeg06lrmhtVyOpqS66TVp/udWwFLm6q2FUUmcjS0p",
-	"MMvBUUg0UDWiYU2UWEq8tdc+xeegXgt9OdQHKWlZbJGdSM2mqQVgVjDvUSIBa3Da7t8DKEQZYUQV7qZX",
-	"kXbXlpvOnhIwvcEav5byju4Ntkq46a00ahrWkju65u+0oSidro2TZ52umP+9lWPoD4h0q2EDMWyF3iN7",
-	"jVSvi68E3hPokeCntrEmuoTxN+2gT71t/+UwHsQXozSnROEDfKMC2TP+wllG8stqZYia9+Rh9aQu9oxL",
-	"irUvg0/XKBypCgpK4XwCU27P1n7IT9h9ZQ2oce1IKo3uv4WXLFh+X9nB4qtv42q2so1akgSYcvAqVpcC",
-	"JwUE1/MFCpGRJYpRobVQcRQ9Pz/PsVuec5lH1bMq+rr6cvttczu7ni/mhaZlpz5Q5RKF6B+QygO6mi/m",
-	"Cy9gwLAgKEaf5lfOoVUhR3FUY4x3KB8bl+7ciKYCXJZB2Y/rb+YkCCSuZ130O+hlE3RvIrpeLM4ahBp5",
-	"nj6kHAj3cE6qcAc1MOQs3KR2zFMTQ9Qb6dyAZSjFcmvJJ0p7hmo27XpNbbQj6f4ov7Lm1x8IHreB6+Uj",
-	"tH7erm5c+tqzxpE5rjWJmrPI/uGNSTmdCzdkHqX+4szfjbG3D5HgaoRreIHEaFDtoadP851hy3rlTRQ/",
-	"GVD6M0+3F2a3HbNGKPYmQTMfBJilQT0hHB7i9oNKuLo8VjfLflwxSNNUwrABo3rQOdWI/YOxGuvFO29S",
-	"Kd1/3JNnCGWTkqlSackISPXIJfv1kOSj6Yp27iPEZP1sAI+kbc2gl7k3Ji6caNt+jvkA/Z3Qde+U0sH2",
-	"p1IaKXeEUGd2ZFA/dqoxN43dB2b49CPVd6kJlv5T2gcLROdcd75MNLl5V7lovQxKrPqgVJMwRTGsbaDq",
-	"T0BH5q7eV6z/4/TVAXg8Td1Q36f7ex5sdpLDk2aVkgHP46fM9y/8/lF4QsknDtvFh5cejsA7se73/wYA",
-	"AP//vuYFImgYAAA=",
+	"H4sIAAAAAAAC/8xYy3LjthL9FRbuXVKiPNlxp7GdlFKu0ZSVrBwvYLJJYoZ4GI/YKpX+PQWAT5GyqLLs",
+	"ZCWRaKJPn+4+bHCHEk4FZ8C0QvEOCSwxBQ3SXS0TTThbpfZ/CiqRRNgbKEarm4BnAXbrgeZBBjopUIiI",
+	"XRRY2/8MU0AxIikKkYRnQySkKNbSQIhUUgDFdl+9FdZKaUlYjvb7sPJ6b9iKZfy4c11AIA1jhOUVkHH/",
+	"0tgIzoNwRyjRQ8fM0CeQ1jmUQC1nNnYJ2sjG+bMBuW29l26nrjeKXwk1FMVXi0WIKGHVVVjjIExDDtIB",
+	"WWeZgslI1E8ijuDgfqORsFt3e0uSEpwpcOm/gQybUt9KyaW9TjjTwBwaLERJEmzRRD+UhbTr7Px/CRmK",
+	"0f+itrgiv6oiv5tz1g/JMHgVkGhIA6hsarSdYvzVlKUDUJbrDMUPbzvzz2wKLjXahzskJBcgNfHxWeAD",
+	"OvjTD0gsUa+znM8q9n7frL9tvGW1UFm3W8yH6zNChfXs+koXKEY50YV5miecRiU2LClkosv6byR+5lEH",
+	"k43fkGkA/1yNwqNYPPiyfrRplhlOYLfvYbQ1M+MuCbicCe7sfI/4gqi75qHL12N4AGf/eNi5/Sz1mSfp",
+	"sO/6Aa1ukE2/xtqoUyXVuN1480PcToGqrU4A/271T70FHcvc0FouR1NS3fSaNP9jK2Apc/XewqgkzsaW",
+	"FJjl4CgkGqga0bAmSiwl3tprn+JzUK+Fvhzqg5S0LLbITqRm09QCMCuYDyiRgDU4bffvARSijDCiCnfT",
+	"q0i7a8tNZ08JmN5gjd9KeUf3Blsl3PRWGjUNa8kdXfN32lCUTtfGybNOV8z/3sox9AdEutWwgRi2Qu+R",
+	"vUWq18U3Au8J9EjwU9tYE13C+Jt20Kfetv9yGA/i2ijNKVH4AN+oQPaMrznLSH5ZrQxR8548rJ7UxZ5x",
+	"SbH2ZYDCkZqgoBTOJ/Dkdmzth+yE3RfWgBjXjKRS6P47eMmC5feVHSvufBNXk5Vt05IkwJSDV3G6FDgp",
+	"IPgyX6AQGVmiGBVaCxVH0cvLyxy75TmXeVQ9q6K71fXtt83t7Mt8MS80LTvVgSqXKER/g1Qe0NV8MV94",
+	"+QKGBUEx+mV+5RxaDXIERzXGeIfysWHp3g1oKsBlGZT9uP5iToBA4nrSRb+BXjZB9+ahL4vFWWNQI87T",
+	"R5QD2R5OSRXuoAaGnIWb0455amKIegOdG68MpVhuLflEac9QzaZdr6mNdiTdH+VX1vz648DTNnCdfITW",
+	"r9vVjUtfe9I4MsW1JlFzEtk/vjMpp3PhRsyj1F+c+fsx9vYhElyNcA2vkBgNqj3y9Gm+N2xZr7yL4mcD",
+	"Sn/l6fbC7LZD1gjF3iRopoMAszSo54PDI9x+UAlXl8fqJtnPKwZpmkoYNmBUjzmnGrF/LFZjvXjvTSql",
+	"+5d78gyhbFIyVSotGQGpHrlkvx6SfDRd0c59gpisnw3gkbStGfQy987EhRNt248xn6C/E7rug1I62P5U",
+	"SiPlDhDqzI4M6sdONeamsfvEDJ9+pPoqNcHSf0j7ZIHonOrOl4kmNx8qF62XQYlVn5NqEqYohrUNVP0B",
+	"6Mjc1fuG9V+cvjoAj6epG+rHdH/Pg81OcnjOrFIy4Hn8jPnxhd8/CE8o+cRhu/jw0sMReCfW/f6fAAAA",
+	"///k7iMNZhgAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

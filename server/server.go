@@ -13,11 +13,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path"
-	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 	"syscall"
@@ -29,10 +26,7 @@ import (
 	"github.com/go-chi/render"
 	"github.com/gorilla/websocket"
 	"github.com/launchrctl/launchr"
-	"github.com/launchrctl/launchr/pkg/cli"
-	"github.com/launchrctl/launchr/pkg/log"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
-	"gopkg.in/yaml.v3"
 )
 
 // RunOptions is a set of options for running openapi http server.
@@ -48,13 +42,10 @@ type RunOptions struct {
 	// Client server.
 	ClientFS    fs.FS
 	ProxyClient string
-	RunInfoDir  string
 }
 
-// RunInfo is structure that stores current running server metadata.
-type RunInfo struct {
-	// BaseURL stores server accessible URL.
-	BaseURL string `yaml:"BaseURL"`
+func (o RunOptions) BaseURL() string {
+	return "http://localhost:" + strings.Split(o.Addr, ":")[1]
 }
 
 const (
@@ -64,8 +55,6 @@ const (
 	swaggerJSONPath = "/swagger.json"
 
 	statusRunning string = "running"
-
-	runInfoName = "server-info.yaml"
 )
 
 // Run starts http server.
@@ -92,6 +81,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	}))
 	store := &launchrServer{
 		ctx:       ctx,
+		baseURL:   opts.BaseURL(),
 		apiPrefix: opts.APIPrefix,
 	}
 	app.GetService(&store.actionMngr)
@@ -114,12 +104,9 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		)
 	})
 
-	r.Post("/api/shutdown", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/api/shutdown", func(w http.ResponseWriter, _ *http.Request) {
 		cancel()
-		_, err = w.Write([]byte("Server is shutting down..."))
-		if err != nil {
-			log.Warn(err.Error())
-		}
+		_, _ = w.Write([]byte("Server is shutting down..."))
 	})
 
 	// Register router in openapi and start the server.
@@ -132,140 +119,44 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 	// @todo remove all stopped containers when stopped
 	// @todo add special prefix for web run containers.
-	baseURL := "http://localhost:" + strings.Split(s.Addr, ":")[1]
-	store.baseURL = baseURL
+	store.baseURL = opts.BaseURL()
 	if opts.SwaggerJSON {
-		fmt.Println("Swagger UI: " + baseURL + opts.APIPrefix + swaggerUIPath)
-		fmt.Println("swagger.json: " + baseURL + opts.APIPrefix + swaggerJSONPath)
+		launchr.Term().Info().
+			Printfln("Swagger UI: %s\nswagger.json: %s", store.basePath()+swaggerUIPath, store.basePath()+swaggerJSONPath)
 	}
-
-	runInfo := RunInfo{BaseURL: baseURL}
-
-	defer onShutdown(opts.RunInfoDir)
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		popInBrowser(baseURL)
-	}()
-
-	go func() {
-		<-signals
-		log.Info("terminating...\n")
+		sig := <-signals
+		launchr.Log().Debug("shutting down on signal", "signal", sig)
 		cancel()
 	}()
 
+	var errShutdown error
 	go func() {
 		<-ctx.Done()
-		fmt.Println("Shutting down the server...")
-		if err = s.Shutdown(context.Background()); err != nil {
-			fmt.Printf("Error shutting down the server: %v\n", err)
+		launchr.Term().Info().Println("Shutting down...")
+		ctxShut, cancelShut := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancelShut()
+		errShutdown = s.Shutdown(ctxShut)
+		// Force shutdown.
+		if errShutdown != nil {
+			errShutdown = s.Close()
 		}
 	}()
-
-	err = storeRunInfo(runInfo, opts.RunInfoDir)
-	if err != nil {
-		return err
-	}
 
 	if err = s.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 
-	return nil
-}
-
-func onShutdown(dir string) {
-	err := os.RemoveAll(dir)
-	if err != nil {
-		log.Warn(err.Error())
-	}
-}
-
-// GetRunInfo lookups server run info metadata and tries to get it from storage.
-func GetRunInfo(storePath string) (*RunInfo, error) {
-	riPath := fmt.Sprintf("%s/%s", storePath, runInfoName)
-
-	_, err := os.Stat(riPath)
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-
-	data, err := os.ReadFile(filepath.Clean(riPath))
-	if err != nil {
-		return nil, fmt.Errorf("error reading plugin storage path: %w", err)
-	}
-
-	var ri RunInfo
-	err = yaml.Unmarshal(data, &ri)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling yaml: %w", err)
-	}
-
-	return &ri, nil
-}
-
-func storeRunInfo(runInfo RunInfo, storePath string) error {
-	ri, err := yaml.Marshal(&runInfo)
-	if err != nil {
-		return err
-	}
-
-	err = os.MkdirAll(storePath, 0750)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(fmt.Sprintf("%s/%s", storePath, runInfoName), ri, os.FileMode(0640))
-	if err != nil {
-		return err
+	if errShutdown != nil {
+		launchr.Log().Error("error on shutting down", "error", err)
+		return errShutdown
 	}
 
 	return nil
-}
-
-// CheckHealth helper to check if server is available by request.
-func CheckHealth(url string) (bool, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodHead, url, nil)
-	if err != nil {
-		return false, err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return false, err
-	}
-	_ = resp.Body.Close()
-
-	return resp.StatusCode == http.StatusOK, nil
-}
-
-func popInBrowser(url string) bool {
-	client := &http.Client{}
-	for {
-		req, err := http.NewRequest(http.MethodHead, url, nil)
-		if err != nil {
-			log.Warn(err.Error())
-			return false
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Info("The server isn't ready yet, please standby...")
-			time.Sleep(time.Second)
-			continue
-		}
-		_ = resp.Body.Close()
-
-		if resp.StatusCode == http.StatusOK {
-			cli.Println("The web server can be reached through the following URL: %s.", url)
-			if err = openBrowser(url); err != nil {
-				log.Debug("Failed to open browser: %v\n", err)
-			}
-		}
-		break
-	}
-
-	return true
 }
 
 func spaHandler(opts *RunOptions) http.HandlerFunc {
@@ -313,7 +204,7 @@ func serveSwaggerUI(swagger *openapi3.T, r chi.Router, opts *RunOptions) {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
+	CheckOrigin: func(_ *http.Request) bool {
 		return true
 	},
 }
@@ -327,7 +218,8 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			log.Fatal(err.Error())
+			launchr.Log().Error("failed to upgrade to websocket", "error", err)
+			return
 		}
 		defer ws.Close()
 
@@ -335,18 +227,17 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 		for {
 			_, message, err = ws.ReadMessage()
 			if err != nil {
-				log.Info(err.Error())
-				break
+				launchr.Log().Error("failed to read ws message", "error", err)
+				return
 			}
 
 			var msg messageType
 			if err = json.Unmarshal(message, &msg); err != nil {
-				log.Debug("Error unmarshalling message: %v", err)
+				launchr.Log().Info("error unmarshalling ws command", "error", err)
 				continue
 			}
 
-			log.Info("Received command: %s", msg.Message)
-			log.Info("Received params: %v", msg.Action)
+			launchr.Log().Debug("received ws command", "command", msg.Message, "params", msg.Action)
 
 			switch msg.Message {
 			case "get-processes":
@@ -354,7 +245,7 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 			case "get-process":
 				go getStreams(msg, ws, l)
 			default:
-				log.Info("Unknown command: %s", msg.Message)
+				launchr.Log().Info("unknown command", "command", msg.Message)
 			}
 		}
 	}
@@ -381,21 +272,21 @@ func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 			return runningActions[i].Status < runningActions[j].Status
 		})
 
-		responseMessage := map[string]interface{}{
+		msgAllProcesses := map[string]interface{}{
 			"message":   "send-processes",
 			"action":    msg.Action,
 			"processes": runningActions,
 		}
 
-		finalResponse, err := json.Marshal(responseMessage)
+		resp, err := json.Marshal(msgAllProcesses)
 		if err != nil {
-			log.Debug("Error marshaling final response: %v", err)
+			launchr.Log().Error("error on marshaling the response", "error", err)
 			return
 		}
 
 		l.wsMutex.Lock()
-		if writeErr := ws.WriteMessage(websocket.TextMessage, finalResponse); writeErr != nil {
-			log.Debug(writeErr.Error())
+		if writeErr := ws.WriteMessage(websocket.TextMessage, resp); writeErr != nil {
+			launchr.Log().Error("error on writing ws all processes", "error", writeErr)
 		}
 		l.wsMutex.Unlock()
 
@@ -405,23 +296,23 @@ func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 			}
 		}
 
-		completeMessage := map[string]interface{}{
+		msgFinished := map[string]interface{}{
 			"channel":   "processes",
 			"message":   "send-processes-finished",
 			"action":    msg.Action,
 			"processes": runningActions,
 		}
 
-		finalCompleteResponse, err := json.Marshal(completeMessage)
+		resp, err = json.Marshal(msgFinished)
 		if err != nil {
-			log.Debug("Error marshaling final response: %v", err)
+			launchr.Log().Error("error on marshaling the finished processes response", "error", err)
 			return
 		}
 
 		if !anyProccessRunning {
 			l.wsMutex.Lock()
-			if err = ws.WriteMessage(websocket.TextMessage, finalCompleteResponse); err != nil {
-				log.Debug(err.Error())
+			if err = ws.WriteMessage(websocket.TextMessage, resp); err != nil {
+				launchr.Log().Error("error on writing ws finished processes", "error", err)
 			}
 			l.wsMutex.Unlock()
 			break
@@ -456,56 +347,43 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 		}
 
 		// Send the process data
-		responseMessage := map[string]interface{}{
+		msgAllProcesses := map[string]interface{}{
 			"channel": "process",
 			"message": "send-process",
 			"action":  msg.Action,
 			"data":    sd,
 		}
 
-		finalResponse, err := json.Marshal(responseMessage)
+		resp, err := json.Marshal(msgAllProcesses)
 		if err != nil {
-			log.Debug("Error marshaling response: %v", err)
+			launchr.Log().Error("error on marshaling the response", "error", err)
 			return
 		}
 
 		l.wsMutex.Lock()
-		if err = ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
-			log.Debug(err.Error())
+		if err = ws.WriteMessage(websocket.TextMessage, resp); err != nil {
+			launchr.Log().Error("error on writing ws all streams", "error", err)
 		}
 		l.wsMutex.Unlock()
 	}
 
 	// Send the final message indicating streams have finished with the last stream data
-	finalMessage := map[string]interface{}{
+	msgFinished := map[string]interface{}{
 		"channel": "process",
 		"message": "send-process-finished",
 		"action":  msg.Action,
 		"data":    lastStreamData,
 	}
 
-	finalResponse, err := json.Marshal(finalMessage)
+	finalResponse, err := json.Marshal(msgFinished)
 	if err != nil {
-		log.Debug("Error marshaling final message: %v", err)
+		launchr.Log().Error("error on marshaling the finished streams response", "error", err)
 		return
 	}
 
 	l.wsMutex.Lock()
 	if err = ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
-		log.Debug(err.Error())
+		launchr.Log().Error("error on writing ws finished streams", "error", err)
 	}
 	l.wsMutex.Unlock()
-}
-
-func openBrowser(url string) error {
-	switch runtime.GOOS {
-	case "linux":
-		return exec.Command("xdg-open", url).Start()
-	case "windows":
-		return exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		return exec.Command("open", url).Start()
-	default:
-		return fmt.Errorf("unsupported platform")
-	}
 }

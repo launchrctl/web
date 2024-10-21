@@ -1,58 +1,50 @@
-name: Create Archive on Tag
+name: Create release
 
 on:
   push:
     tags:
-      - '*'
+      - "v*.*.*"
 
 jobs:
-  build_and_archive:
+  create_release:
+    name: build / push
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Node.js 21
+    - name: Set up Node.js 22 (LTS)
       uses: actions/setup-node@v4
       with:
-        node-version: '21'
+        node-version: '22'
 
-    - name: Enable Corepack
-      working-directory: client
-      run: corepack enable
-
-    - name: Install dependencies
-      working-directory: client
-      run: yarn install
-
-    - name: Build project
-      working-directory: client
-      run: yarn build
-
-    - name: Create archives of dist folder
+    - name: Build the artifacts
       working-directory: client
       run: |
-        zip -r dist.zip dist
-        tar -czvf dist.tar.gz dist
+        corepack enable
+        yarn install
+        yarn build
 
-    - name: Upload archives as artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist.zip
-        path: client/dist.zip
+    - name: Create web client artifacts
+      working-directory: client/dist
+      run: |
+        tar -czf ../../client-assets.tar.gz *
+        zip -r ../../client-assets.zip *
 
-    - name: Upload tar.gz as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist.tar.gz
-        path: client/dist.tar.gz
+    - name: Determine if prerelease
+      run: |
+        TAG="${GITHUB_REF##*/}"
+        if [[ "$TAG" == *-* ]]; then
+          echo "PRERELEASE=true" >> $GITHUB_ENV
+        else
+          echo "PRERELEASE=false" >> $GITHUB_ENV
+        fi
 
-    - name: Upload dist.zip and dist.tar.gz to the release
-      uses: svenstaro/upload-release-action@v2
+    - name: Release
+      uses: softprops/action-gh-release@v2
       with:
-        file: client/dist.*
-        file_glob: true
-        tag: ${{ github.ref_name }}
-        release_name: ${{ github.ref_name }}
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        prerelease: ${{ env.PRERELEASE }}
+        files: |
+          client-assets.tar.gz
+          client-assets.zip
