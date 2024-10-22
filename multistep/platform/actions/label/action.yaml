@@ -1,0 +1,14 @@
+action:
+  title: Label collection
+  description: |
+    Name this label collection and related labels.
+  image: alpine:latest
+  command: ["sh", "-c", "for i in $(seq 10); do echo -e \"\\033[32m$$i\\033[0m\"; sleep 1; done"]
+  options:
+    - name: label
+      title: Label
+      type: string
+    - name: labels
+      type: array
+      items:
+        type: string

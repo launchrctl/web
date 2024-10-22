@@ -14,6 +14,7 @@ require (
 	github.com/oapi-codegen/nethttp-middleware v1.0.2
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 	github.com/oapi-codegen/runtime v1.1.1
+	github.com/santhosh-tekuri/jsonschema v1.2.4
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sys v0.25.0
 	gopkg.in/yaml.v3 v3.0.1
