@@ -44,6 +44,7 @@ type RunOptions struct {
 	ProxyClient string
 }
 
+// BaseURL returns base url for run options.
 func (o RunOptions) BaseURL() string {
 	return "http://localhost:" + strings.Split(o.Addr, ":")[1]
 }

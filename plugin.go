@@ -77,7 +77,7 @@ web stop`,
 			}
 
 			if url, _ := getExistingWeb(webPidFile, webRunFlags.PluginDir); url != "" {
-				return fmt.Errorf("Another web UI is already running at %s\nPlease stop the existing server before starting a new one.", url)
+				return fmt.Errorf("another web UI is already running at %s\nPlease stop the existing server before starting a new one", url)
 			}
 
 			if foreground {

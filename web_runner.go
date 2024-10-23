@@ -139,7 +139,7 @@ func stopWeb(pidFile, pluginDir string) (err error) {
 	}
 
 	if checkHealth(serverRunInfo.URL) {
-		return fmt.Errorf("The web UI is currently running at %s\nPlease stop it through the user interface or terminate the process.", serverRunInfo.URL)
+		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
 
 	launchr.Term().Success().Println(onSuccess)
@@ -226,7 +226,7 @@ func cleanupPluginTemp(dir string) {
 
 // checkHealth helper to check if server is available by request.
 func checkHealth(url string) bool {
-	resp, err := http.Head(url)
+	resp, err := http.Head(url) //nolint G107 // @todo URL may come from user input, potential vulnerability.
 	if err != nil {
 		// Error is thrown on an incorrect url.
 		panic(err)

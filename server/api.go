@@ -122,7 +122,7 @@ func (l *launchrServer) basePath() string {
 }
 
 func (l *launchrServer) GetActions(w http.ResponseWriter, _ *http.Request) {
-	actions := l.actionMngr.AllRef()
+	actions := l.actionMngr.All()
 	var result = make([]ActionShort, 0, len(actions))
 	for _, a := range actions {
 		ab, err := apiActionShort(a)
@@ -142,7 +142,7 @@ func (l *launchrServer) GetActions(w http.ResponseWriter, _ *http.Request) {
 
 func (l *launchrServer) GetActionByID(w http.ResponseWriter, _ *http.Request, id string) {
 	// @todo return executing actions for a show page.
-	a, ok := l.actionMngr.GetRef(id)
+	a, ok := l.actionMngr.Get(id)
 	if !ok {
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action with id %q is not found", id))
 		return
