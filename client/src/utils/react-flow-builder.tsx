@@ -10,7 +10,7 @@ import { getCustomisation } from '../utils/page-customisation'
 // Coefficient less than 0.51 behaves unpredictably.
 // Use coefficient between 0.51 till endless
 export const elementsScaleCoef = 1
-export const actionWidth = 260 * elementsScaleCoef
+export const actionWidth = 300 * elementsScaleCoef
 export const actionHeight = 60 * elementsScaleCoef
 export const grandFolderGap = 80 * elementsScaleCoef
 export const folderLabelHeight = 50 * elementsScaleCoef
@@ -18,6 +18,10 @@ export const actionsGroupOuterGap = 4 * elementsScaleCoef
 export const gapBetweenActions = 4 * elementsScaleCoef
 
 const layerColorSchemesHSL = [
+  [214.79, 87.25, 50.78],
+  [346.93, 83.26, 57.84],
+  [160.47, 68.42, 51.57],
+  [252.15, 91.86, 66.27],
   [214.79, 87.25, 50.78],
   [346.93, 83.26, 57.84],
   [160.47, 68.42, 51.57],

@@ -1,5 +1,6 @@
 import 'reactflow/dist/style.css'
 
+import { Typography } from '@mui/material'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import Paper from '@mui/material/Paper'
@@ -118,6 +119,11 @@ const WhiteBand = ({ data }: { data: INodeData }) => {
             typography: 'subtitle2',
             fontSize: `${16 * elementsScaleCoef}px`,
             lineHeight: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: '1',
+            WebkitBoxOrient: 'vertical',
           }}
         >
           {data?.label}
@@ -128,7 +134,12 @@ const WhiteBand = ({ data }: { data: INodeData }) => {
               typography: 'subtitle2',
               fontSize: `${11 * elementsScaleCoef}px`,
               color: '#667085',
-              lineHeight: 1.2,
+              lineHeight: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: '1',
+              WebkitBoxOrient: 'vertical',
             }}
           >
             {data?.description}
@@ -232,7 +243,18 @@ function NodeWrapper({ data }: { data: INodeData }) {
           color: '#fff',
         }}
       >
-        {data?.label}
+        <Typography
+          sx={{
+            lineHeight: 1,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitLineClamp: '2',
+            WebkitBoxOrient: 'vertical',
+          }}
+        >
+          {data?.label}
+        </Typography>
         {data.actionsAmount && (
           <Box
             className={'actions-pill'}
