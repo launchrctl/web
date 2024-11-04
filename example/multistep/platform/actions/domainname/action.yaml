@@ -1,0 +1,12 @@
+action:
+  title: Define domain name
+  description: Enter a name to personalize your platform interface. Usually platformname.tech.
+  arguments:
+    - name: domainName
+      title: Define domain name
+      type: string
+      required: true
+runtime:
+  type: container
+  image: alpine:latest
+  command: [ "sh", "-c", "for i in $(seq 15); do echo $$i; sleep 1; done" ]

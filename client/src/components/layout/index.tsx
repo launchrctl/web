@@ -36,7 +36,6 @@ export const ThemedLayoutV2: FC<RefineThemedLayoutV2Props> = ({
             sx={{
               flexGrow: 1,
               bgcolor: (theme) => theme.palette.background.default,
-              paddingBlockEnd: '100px',
               '& > .MuiPaper-root, & > div:not([class]) > .MuiPaper-root': {
                 borderRadius: {
                   xs: 0,

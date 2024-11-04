@@ -2,14 +2,13 @@ import CloseIcon from '@mui/icons-material/Close'
 import { TabContext, TabList, TabPanel } from '@mui/lab'
 import { Box, IconButton, Modal, Tab } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { FC, SyntheticEvent, useContext, useState } from 'react'
+import { FC, SyntheticEvent, useState } from 'react'
 
 import { AnimatedFab } from '../components/AnimatedFab'
-import { AppContext } from '../context/AppContext'
+import { useAction } from '../hooks/ActionHooks'
 import StatusBoxAction from './StatusBoxAction'
 
 const StatusBox: FC = () => {
-  const { appState } = useContext(AppContext)
   const [open, setOpen] = useState(false)
   const [selectedActionIndex, setSelectedActionIndex] = useState('1')
   const theme = useTheme()
@@ -20,19 +19,17 @@ const StatusBox: FC = () => {
     setSelectedActionIndex(newValue)
   }
 
-  const renderAnimatedFab = appState.runningActions.length > 0
+  const { started } = useAction()
+  const renderAnimatedFab = started && started.size > 0
 
-  if (appState.runningActions.length === 0) {
+  if (!started || started.size === 0) {
     return null
   }
 
   return (
     <>
       {renderAnimatedFab && (
-        <AnimatedFab
-          handleOpen={handleOpen}
-          badgeLength={appState.runningActions.length}
-        />
+        <AnimatedFab handleOpen={handleOpen} badgeLength={started.size} />
       )}
       <Modal
         open={open}
@@ -63,29 +60,31 @@ const StatusBox: FC = () => {
                 onChange={handleChange}
                 variant="scrollable"
                 scrollButtons="auto"
-                sx={{ width: 'calc(100% - 40px)' }}
+                sx={{ width: 'calc(100% - 40px)', minHeight: '36px' }}
               >
-                {appState.runningActions.map((action, index) => (
+                {[...started].map((action, index) => (
                   <Tab
-                    key={action.id}
-                    label={action.id || 'No Id'}
+                    key={action}
+                    label={action || 'No Id'}
                     value={(index + 1).toString()}
                     sx={{
-                      px: 0,
-                      fontSize: '10px',
+                      px: 1,
+                      py: 1,
+                      minHeight: '36px',
+                      fontSize: '11px',
                       fontFamily: 'monospace',
                     }}
                   />
                 ))}
               </TabList>
-              <IconButton size="small" onClick={handleClose} sx={{ m: 1 }}>
+              <IconButton size="small" onClick={handleClose} sx={{ mx: 1 }}>
                 <CloseIcon />
               </IconButton>
             </Box>
-            {appState.runningActions.map((action, index) => (
+            {[...started].map((action, index) => (
               <TabPanel
                 value={(index + 1).toString()}
-                key={action.id}
+                key={action}
                 sx={{ padding: 0, height: 'calc(100% - 50px)' }}
               >
                 <StatusBoxAction action={action} />

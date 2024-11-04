@@ -1,0 +1,22 @@
+uiSchema:
+  wizard:
+    options:
+      "ui:CustomObjectTemplate": "packages"
+      erp:
+        'ui:widget': 'SwitchPackage'
+        'ui:icon': 'HubIcon'
+      crm:
+        'ui:widget': 'SwitchPackage'
+        'ui:icon': 'HomeIcon'
+      messenger:
+        'ui:widget': 'SwitchPackage'
+        'ui:icon': 'SettingsIcon'
+      mails:
+        'ui:widget': 'SwitchPackage'
+        'ui:icon': 'HubIcon'
+      calls:
+        'ui:widget': 'SwitchPackage'
+        'ui:icon': 'HomeIcon'
+      docs:
+        'ui:widget': 'SwitchPackage'
+        'ui:icon': 'SettingsIcon'
