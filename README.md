@@ -48,6 +48,8 @@ To run Launchr Web server:
 ```shell
 # Run web server on http://localhost:8080
 bin/launchr web
+# To use example as base dir for actions discovery.
+LAUNCHR_ACTIONS_PATH=example bin/launchr web
 # Run web server on http://localhost:3000
 bin/launchr web -p 3000
 # Serve swagger-ui and swagger.json

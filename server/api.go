@@ -103,7 +103,7 @@ func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.R
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action run info with id %q is not found", id))
 		return
 	}
-	streams := ri.Action.GetInput().IO
+	streams := ri.Action.Input().Streams()
 	fStreams, ok := streams.(fileStreams)
 	if !ok {
 		panic("not supported")
@@ -209,6 +209,12 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action with id %q is not found", id))
 		return
 	}
+
+	if err := a.EnsureLoaded(); err != nil {
+		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on loading action %q", id))
+		return
+	}
+
 	// Parse JSON Schema input.
 	var params ActionRunParams
 	if err = json.NewDecoder(r.Body).Decode(&params); err != nil {
@@ -231,11 +237,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		//	streams.Close()
 		//}
 	}()
-	err = a.SetInput(action.Input{
-		Args: params.Arguments,
-		Opts: params.Options,
-		IO:   streams,
-	})
+	err = a.SetInput(action.NewInput(a, params.Arguments, params.Options, streams))
 	if err != nil {
 		// @todo validate must have info about which fields failed.
 		sendError(w, http.StatusBadRequest, "invalid actions input")

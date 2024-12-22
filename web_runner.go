@@ -66,17 +66,17 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 	return server.Run(ctx, p.app, serverOpts)
 }
 
-func (p *Plugin) runBackgroundWeb(cmd *launchr.Command, flags webFlags, pidFile string) error {
+func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile string) error {
 	if isBackGroundEnv() {
 		err := redirectOutputs(flags.PluginDir)
 		if err != nil {
 			return err
 		}
 
-		return p.runWeb(cmd.Context(), flags)
+		return p.runWeb(ctx, flags)
 	}
 
-	pid, err := runBackgroundCmd(cmd, pidFile)
+	pid, err := runBackgroundCmd(pidFile)
 	if err != nil {
 		return err
 	}
@@ -146,16 +146,14 @@ func stopWeb(pidFile, pluginDir string) (err error) {
 	return nil
 }
 
-func runBackgroundCmd(cmd *launchr.Command, pidFile string) (int, error) {
+func runBackgroundCmd(pidFile string) (int, error) {
 	err := launchr.EnsurePath(filepath.Dir(pidFile))
 	if err != nil {
 		return 0, fmt.Errorf("cannot create tmp directory for %q", pidFile)
 	}
 
 	// Prepare the command to restart itself in the background
-	args := append([]string{cmd.Name()}, os.Args[2:]...)
-
-	command := exec.Command(os.Args[0], args...) //nolint G204
+	command := exec.Command(os.Args[0], os.Args[1:]...) //nolint G204
 	command.Env = append(os.Environ(), backgroundEnvVar+"=1")
 
 	// Set platform-specific process ID

@@ -1,0 +1,35 @@
+runtime: plugin
+action:
+  title: Web UI
+  description: >-
+    Starts Web UI. Example: "web", "web --foreground", "web stop"
+  alias:
+    - ui
+  arguments:
+    - name: op
+      title: Operation
+      description: "Operates the web server. Optional. Allowed: [stop]"
+      type: string
+      enum: [stop]
+  options:
+    - name: port
+      shorthand: p
+      title: Port
+      description: Web server port
+      type: integer
+      default: 8080
+    - name: foreground
+      title: Foreground
+      description: Run server in foreground. By default Web UI starts in background.
+      type: boolean
+      default: false
+    - name: proxy-client
+      title: Proxy client
+      description: Proxies to client web server, useful in local development
+      type: string
+      default: ""
+    - name: swagger-ui
+      title: Swagger UI
+      description: Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui
+      type: boolean
+      default: false

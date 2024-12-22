@@ -2,11 +2,13 @@
 package web
 
 import (
+	"context"
+	_ "embed"
 	"fmt"
 	"path/filepath"
 
 	"github.com/launchrctl/launchr"
-	"github.com/spf13/cobra"
+	"github.com/launchrctl/launchr/pkg/action"
 )
 
 const (
@@ -17,6 +19,9 @@ const (
 	// APIPrefix is a default api prefix on the server.
 	APIPrefix = "/api"
 )
+
+//go:embed action.yaml
+var actionYaml []byte
 
 func init() {
 	launchr.RegisterPlugin(&Plugin{})
@@ -48,54 +53,37 @@ type webFlags struct {
 	PluginDir    string
 }
 
-// CobraAddCommands implements [launchr.CobraPlugin] interface to provide web functionality.
-func (p *Plugin) CobraAddCommands(rootCmd *launchr.Command) error {
-	pluginTmpDir := p.cfg.Path(pluginName)
-	webPidFile := filepath.Join(pluginTmpDir, pidFile)
+// DiscoverActions implements [launchr.ActionDiscoveryPlugin] interface.
+func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
+	a := action.NewFromYAML("web", actionYaml)
+	a.SetRuntime(action.NewFnRuntime(func(ctx context.Context, a *action.Action) error {
+		pluginTmpDir := p.cfg.Path(pluginName)
+		webPidFile := filepath.Join(pluginTmpDir, pidFile)
+		input := a.Input()
+		webRunFlags := webFlags{
+			PluginDir:    pluginTmpDir,
+			Port:         input.Opt("port").(int),
+			UseSwaggerUI: input.Opt("swagger-ui").(bool),
+			ProxyClient:  input.Opt("proxy-client").(string),
+		}
+		foreground := input.Opt("foreground").(bool)
 
-	webRunFlags := webFlags{
-		PluginDir: pluginTmpDir,
-	}
+		// If 'stop' arg passed, try to interrupt process and remove PID file.
+		op := input.Arg("op")
+		switch op {
+		case stopArg:
+			return stopWeb(webPidFile, webRunFlags.PluginDir)
+		}
 
-	var foreground bool
-	var cmd = &launchr.Command{
-		Use:       "web [stop]",
-		Short:     "Starts Web UI",
-		Args:      cobra.MatchAll(cobra.RangeArgs(0, 1), cobra.OnlyValidArgs),
-		ValidArgs: []string{stopArg},
-		Aliases:   []string{"ui"},
-		Example: `web
-web --foreground
-web stop`,
-		RunE: func(cmd *launchr.Command, args []string) error {
-			// Don't show usage help on a runtime error.
-			cmd.SilenceUsage = true
+		if url, _ := getExistingWeb(webPidFile, webRunFlags.PluginDir); url != "" {
+			return fmt.Errorf("another web UI is already running at %s\nPlease stop the existing server before starting a new one", url)
+		}
 
-			// If 'stop' arg passed, try to interrupt process and remove PID file.
-			if len(args) > 0 && args[0] == stopArg {
-				return stopWeb(webPidFile, webRunFlags.PluginDir)
-			}
+		if foreground {
+			return p.runWeb(ctx, webRunFlags)
+		}
 
-			if url, _ := getExistingWeb(webPidFile, webRunFlags.PluginDir); url != "" {
-				return fmt.Errorf("another web UI is already running at %s\nPlease stop the existing server before starting a new one", url)
-			}
-
-			if foreground {
-				return p.runWeb(cmd.Context(), webRunFlags)
-			}
-
-			return p.runBackgroundWeb(cmd, webRunFlags, webPidFile)
-		},
-	}
-
-	cmd.Flags().IntVarP(&webRunFlags.Port, "port", "p", 8080, `Web server port`)
-	// Check if swagger assets are available before adding option.
-	if _, err := GetSwaggerUIAssetsFS(); err == nil {
-		cmd.Flags().BoolVarP(&webRunFlags.UseSwaggerUI, "swagger-ui", "", false, `Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui`)
-	}
-	cmd.Flags().StringVarP(&webRunFlags.ProxyClient, "proxy-client", "", "", `Proxies to client web server, useful in local development`)
-	cmd.Flags().BoolVarP(&foreground, "foreground", "", false, `Run server in foreground`)
-	// Command flags.
-	rootCmd.AddCommand(cmd)
-	return nil
+		return p.runBackgroundWeb(ctx, webRunFlags, webPidFile)
+	}))
+	return []*action.Action{a}, nil
 }

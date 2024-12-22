@@ -7,8 +7,12 @@ export const sentenceCase = (a: string) => {
 }
 
 export const splitActionId = (actionId: string) => {
+  if (!actionId.includes(':') && !actionId.includes('.')) {
+    return { levels: [], id: actionId }
+  }
+
   const [path, id] = actionId.split(':')
-  const levels = path?.split('.') || []
+  const levels = path ? path.split('.') : []
   return { levels, id }
 }
 

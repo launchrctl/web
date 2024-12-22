@@ -25,8 +25,9 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 	"github.com/gorilla/websocket"
-	"github.com/launchrctl/launchr"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
+
+	"github.com/launchrctl/launchr"
 )
 
 // RunOptions is a set of options for running openapi http server.
@@ -331,7 +332,7 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 		ri, _ := l.actionMngr.RunInfoByID(msg.Action)
 
 		// Get the streams data
-		streams := ri.Action.GetInput().IO
+		streams := ri.Action.Input().Streams()
 		fStreams, _ := streams.(fileStreams)
 		params := GetRunningActionStreamsParams{
 			Offset: new(int),
