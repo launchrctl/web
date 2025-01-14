@@ -147,10 +147,6 @@ func (l *launchrServer) GetActionByID(w http.ResponseWriter, _ *http.Request, id
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action with id %q is not found", id))
 		return
 	}
-	if err := a.EnsureLoaded(); err != nil {
-		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on loading action %q", id))
-		return
-	}
 
 	afull, err := apiActionFull(l.basePath(), a)
 	if err != nil {
@@ -166,10 +162,6 @@ func (l *launchrServer) GetActionJSONSchema(w http.ResponseWriter, _ *http.Reque
 	a, ok := l.actionMngr.Get(id)
 	if !ok {
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action with id %q is not found", id))
-		return
-	}
-	if err := a.EnsureLoaded(); err != nil {
-		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on loading action %q", id))
 		return
 	}
 
@@ -207,11 +199,6 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	a, ok := l.actionMngr.Get(id)
 	if !ok {
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action with id %q is not found", id))
-		return
-	}
-
-	if err := a.EnsureLoaded(); err != nil {
-		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on loading action %q", id))
 		return
 	}
 
@@ -260,9 +247,12 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 }
 
 func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
+	short, err := apiActionShort(a)
+	if err != nil {
+		return ActionFull{}, err
+	}
 	jsonschema := a.JSONSchema()
 	jsonschema.ID = fmt.Sprintf("%s/actions/%s/schema.json", baseURL, url.QueryEscape(a.ID))
-	def := a.ActionDef()
 
 	var uiSchema map[string]interface{}
 
@@ -282,21 +272,20 @@ func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
 
 	return ActionFull{
 		ID:          a.ID,
-		Title:       def.Title,
-		Description: def.Description,
+		Title:       short.Title,
+		Description: short.Description,
 		JSONSchema:  jsonschema,
 		UISchema:    uiSchema,
 	}, nil
 }
 
 func apiActionShort(a *action.Action) (ActionShort, error) {
-	err := a.EnsureLoaded()
 	def := a.ActionDef()
 	return ActionShort{
 		ID:          a.ID,
 		Title:       def.Title,
 		Description: def.Description,
-	}, err
+	}, nil
 }
 
 func sendError(w http.ResponseWriter, code int, message string) {
