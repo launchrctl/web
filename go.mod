@@ -10,7 +10,7 @@ require (
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/render v1.0.3
 	github.com/gorilla/websocket v1.5.3
-	github.com/launchrctl/launchr v0.16.5-0.20241222204415-24d5b3d7ff0c
+	github.com/launchrctl/launchr v0.17.1
 	github.com/oapi-codegen/nethttp-middleware v1.0.2
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 	github.com/oapi-codegen/runtime v1.1.1
@@ -30,7 +30,7 @@ require (
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v27.4.1+incompatible // indirect
+	github.com/docker/docker v27.5.0+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dprotaso/go-yit v0.0.0-20240618133044-5a0af90af097 // indirect
