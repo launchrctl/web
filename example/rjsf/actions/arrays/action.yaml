@@ -1,0 +1,13 @@
+action:
+  title: RJSF Example of Arrays
+  description: RJSF Arrays arguments
+  arguments:
+    - name: optarr
+      title: Array
+      description: Some additional info for option
+      type: array
+
+runtime:
+  type: container
+  image: alpine:latest
+  command: [ "sh", "-c", "for i in $(seq 60); do echo $$i; sleep 1; done" ]

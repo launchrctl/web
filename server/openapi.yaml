@@ -234,12 +234,12 @@ components:
           properties:
             arguments:
               type: object
-              x-go-type: "action.TypeArgs"
+              x-go-type: "action.InputParams"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/action"
             options:
               type: object
-              x-go-type: "action.TypeOpts"
+              x-go-type: "action.InputParams"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/action"
             changed:

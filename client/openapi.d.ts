@@ -180,7 +180,7 @@ export interface components {
         };
         JSONSchema: Record<string, never>;
         Error: {
-            /** Format: int32 */
+            /** Format: int */
             code: number;
             message: string;
         };

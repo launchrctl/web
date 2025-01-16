@@ -26,7 +26,7 @@ const (
 
 // Generate implements [launchr.GeneratePlugin] interface.
 func (p *Plugin) Generate(config launchr.GenerateConfig) error {
-	launchr.Term().Info().Println("Preparing launchrctl/web plugin assets...")
+	launchr.Term().Info().Printfln("Preparing %s plugin assets...", repoName)
 
 	// Download web client assets.
 	subdir := "web-plugin"
@@ -62,6 +62,9 @@ func downloadGithubRelease(dir string, project string, version string) error {
 	releaseURL, err := getGithubReleaseDownloadURL(project, version)
 	if err != nil {
 		return err
+	}
+	if releaseURL == "" {
+		return fmt.Errorf("gen: failed to get release url for %s %s", project, version)
 	}
 	launchr.Log().Debug("get github release archive stream", "url", releaseURL)
 	gzippedStream, err := getFileStreamByURL(releaseURL)
@@ -118,6 +121,9 @@ func getGithubReleaseDownloadURL(repo, version string) (string, error) {
 	}
 	// Parse release JSON.
 	defer releaseResp.Body.Close()
+	if releaseResp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("gen: failed to fetch %s (%d)", apiURL, releaseResp.StatusCode)
+	}
 	body, err := io.ReadAll(releaseResp.Body)
 	if err != nil {
 		return "", err
@@ -148,7 +154,7 @@ func getFileStreamByURL(url string) (io.ReadCloser, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("could not download from the url: %s", url)
+		return nil, fmt.Errorf("gen: could not download from the url %s", url)
 	}
 
 	// Return the body of the file.
