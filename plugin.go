@@ -48,6 +48,7 @@ func (p *Plugin) OnAppInit(app launchr.App) error {
 
 type webFlags struct {
 	Port         int
+	IsPortSet    bool
 	ProxyClient  string
 	UseSwaggerUI bool
 	PluginDir    string
@@ -63,6 +64,7 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 		webRunFlags := webFlags{
 			PluginDir:    pluginTmpDir,
 			Port:         input.Opt("port").(int),
+			IsPortSet:    input.IsOptChanged("port"),
 			UseSwaggerUI: input.Opt("swagger-ui").(bool),
 			ProxyClient:  input.Opt("proxy-client").(string),
 		}

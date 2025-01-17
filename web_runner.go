@@ -34,7 +34,9 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 
 	port := webOpts.Port
 	if !isAvailablePort(port) {
-		launchr.Term().Warning().Printfln("The port %d you are trying to use for the web server is not available.", port)
+		if webOpts.IsPortSet {
+			return fmt.Errorf("requested port %d is not available", port)
+		}
 		port, err = getAvailablePort(port)
 		if err != nil {
 			return err
@@ -138,7 +140,7 @@ func stopWeb(pidFile, pluginDir string) (err error) {
 		return nil
 	}
 
-	if checkHealth(serverRunInfo.URL) {
+	if err = checkHealth(serverRunInfo.URL); err == nil {
 		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
 
@@ -223,14 +225,16 @@ func cleanupPluginTemp(dir string) {
 }
 
 // checkHealth helper to check if server is available by request.
-func checkHealth(url string) bool {
+func checkHealth(url string) error {
 	resp, err := http.Head(url) //nolint G107 // @todo URL may come from user input, potential vulnerability.
 	if err != nil {
-		// Error is thrown on an incorrect url.
-		panic(err)
+		return err
 	}
 	_ = resp.Body.Close()
-	return resp.StatusCode == http.StatusOK
+	if resp.StatusCode == http.StatusOK {
+		return nil
+	}
+	return fmt.Errorf("bad response code %d", resp.StatusCode)
 }
 
 // getServerInfo lookups server run info metadata and tries to get it from storage.
@@ -278,8 +282,8 @@ func getExistingWeb(pidFile string, pluginDir string) (string, error) {
 		return serverRunInfo.URL, nil
 	}
 
-	if !checkHealth(serverRunInfo.URL) {
-		return serverRunInfo.URL, errors.New("web: unhealthy response")
+	if err = checkHealth(serverRunInfo.URL); err != nil {
+		return serverRunInfo.URL, fmt.Errorf("web unhealthy response: %w", err)
 	}
 
 	return serverRunInfo.URL, nil
@@ -320,10 +324,10 @@ func isAvailablePort(port int) bool {
 func openInBrowserWhenReady(url string) error {
 	// Wait until the service is healthy.
 	retries := 0
-	for !checkHealth(url) {
+	for err := checkHealth(url); err != nil; {
 		time.Sleep(time.Second)
 		if retries == 10 {
-			return errors.New("the service is unhealthy")
+			return fmt.Errorf("web is unhealthy: %w", err)
 		}
 		retries++
 		if retries == 3 {
