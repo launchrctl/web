@@ -143,7 +143,7 @@ func stopWeb(pidFile, pluginDir string) (err error) {
 	if err = checkHealth(serverRunInfo.URL); err == nil {
 		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
-
+	cleanupPluginTemp(pluginDir)
 	launchr.Term().Success().Println(onSuccess)
 	return nil
 }
