@@ -10,7 +10,8 @@ action:
       title: Operation
       description: "Operates the web server. Optional. Allowed: [stop]"
       type: string
-      enum: [stop]
+      enum: [start, stop]
+      default: start
   options:
     - name: port
       shorthand: p
