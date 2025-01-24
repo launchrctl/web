@@ -39,7 +39,7 @@ const (
 type ActionFull struct {
 	Description string                 `json:"description"`
 	ID          string                 `json:"id"`
-	JSONSchema  jsonschema.Schema      `json:"jsonschema"`
+	JSONSchema  JSONSchema             `json:"jsonschema"`
 	Title       string                 `json:"title"`
 	UISchema    map[string]interface{} `json:"uischema,omitempty"`
 }
@@ -88,7 +88,31 @@ type Error struct {
 }
 
 // JSONSchema defines model for JSONSchema.
-type JSONSchema = map[string]interface{}
+type JSONSchema = jsonschema.Schema
+
+// WizardFull defines model for WizardFull.
+type WizardFull struct {
+	Description string       `json:"description"`
+	ID          string       `json:"id"`
+	Steps       []WizardStep `json:"steps"`
+	Success     string       `json:"success"`
+	Title       string       `json:"title"`
+}
+
+// WizardShort defines model for WizardShort.
+type WizardShort struct {
+	Description string `json:"description"`
+	ID          string `json:"id"`
+	Success     string `json:"success"`
+	Title       string `json:"title"`
+}
+
+// WizardStep defines model for WizardStep.
+type WizardStep struct {
+	Actions     *[]ActionFull `json:"actions,omitempty"`
+	Description *string       `json:"description,omitempty"`
+	Title       *string       `json:"title,omitempty"`
+}
 
 // ActionId defines model for ActionId.
 type ActionId = string
@@ -101,6 +125,9 @@ type Limit = int
 
 // Offset defines model for Offset.
 type Offset = int
+
+// WizardId defines model for WizardId.
+type WizardId = string
 
 // DefaultError defines model for DefaultError.
 type DefaultError = Error
@@ -143,6 +170,12 @@ type ServerInterface interface {
 	// Customisation config
 	// (GET /customisation)
 	GetCustomisationConfig(w http.ResponseWriter, r *http.Request)
+	// Lists all wizards
+	// (GET /wizard)
+	GetWizards(w http.ResponseWriter, r *http.Request)
+	// Returns wizard by id
+	// (GET /wizard/{id})
+	GetWizardByID(w http.ResponseWriter, r *http.Request, id WizardId)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -194,6 +227,18 @@ func (_ Unimplemented) GetActionJSONSchema(w http.ResponseWriter, r *http.Reques
 // Customisation config
 // (GET /customisation)
 func (_ Unimplemented) GetCustomisationConfig(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Lists all wizards
+// (GET /wizard)
+func (_ Unimplemented) GetWizards(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Returns wizard by id
+// (GET /wizard/{id})
+func (_ Unimplemented) GetWizardByID(w http.ResponseWriter, r *http.Request, id WizardId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -421,6 +466,45 @@ func (siw *ServerInterfaceWrapper) GetCustomisationConfig(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetWizards operation middleware
+func (siw *ServerInterfaceWrapper) GetWizards(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWizards(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWizardByID operation middleware
+func (siw *ServerInterfaceWrapper) GetWizardByID(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id WizardId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWizardByID(w, r, id)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -558,6 +642,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/customisation", wrapper.GetCustomisationConfig)
 	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/wizard", wrapper.GetWizards)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/wizard/{id}", wrapper.GetWizardByID)
+	})
 
 	return r
 }
@@ -565,28 +655,30 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xYy27juBL9FYH3LmXL6dlp504yAw+CTiPGrDJZMFJJYrdIKnxMYhj+9wEfesuxgjjp",
-	"WdkSS6xTp6qOitqjhNOKM2BKoniPKiwwBQXCXq0TRTjbpOZ/CjIRpDI3UIw2VwHPAmzXA8WDDFRSoBAR",
-	"s1hhZf4zTAHFiKQoRAKeNBGQolgJDSGSSQEUm33VrjJWUgnCcnQ4hN7rnWYblvHjzlUBgdCMEZZ7INP+",
-	"hTYRvA3CDaFEjR0zTR9BGOdQAjWcmdgFKC0a508axK71Xtqdut4ofiFUUxRfrFYhooT5q7DGQZiCHIQF",
-	"cptlEmYjkT9JdQQHdxtNhN26OxiSZMWZBJv+K8iwLtW1EFyY64QzBcyiwVVVkgQbNNEPaSDtOzv/X0CG",
-	"YvS/qC2uyK3KyO1mnfVD0gxeKkgUpAF4mxptpxh/12VpAZTlbYbi+9eduWe2BRcKHcI9qgSvQCji4jPA",
-	"R3Twxx+QGKJeFjlfePb+3N5+2zpLv+Ct2y2W4/UFoZXxbPtKFShGOVGFflwmnEYl1iwpRKLK+m9U/cyj",
-	"DiYTvybzAP61mYRHcXXvyvrBpFlkOIH9oYfR1MyC2yTgclFxa+d6xBVE3TX3Xb4ewgGcw8Owc/tZ6jNP",
-	"0nHf9QPaXCGTfoWVlqdKqnG7deZD3FaB/FYngH83+idfg45Frmktl5Mp8TedJi03rNLKb/vO2vAqZ8JL",
-	"CsxysCwSBVROyFgTKBYC78y1y/KvBD5ITMtlC+5EgrZNRQAzsnmPEgFYgVV49zZAIcoII7KwN52WtLu2",
-	"9HT2FIDpFVb4tcR31G+0VcJ1b6XR1LAW3sk1d6cNRar0VluRVumGud9rMYV+QKRdDRuIYSv3DtlrpDp1",
-	"fCXwnkxPBD+3mRVRJUy/b0fd6mz7r4jpIC61VJwSiQf4JmWyZ3zJWUby8ypmiJq35bB6Uht7xgXFypUB",
-	"CidqgoKUOJ/Bk92xtR+zE3ZfWyNibDMSr9P9N/GaBevvGzNc3Lgm9vOVadOSJMCkhec5XVc4KSD4slyh",
-	"EGlRohgVSlUyjqLn5+cltstLLvLIPyujm83l9bft9eLLcrUsFC071YG8SxSif0BIB+hiuVqunIIBwxVB",
-	"MfpteWEdGg2yBEc1xniP8qmR6c6OaTLAZRmU/bj+ZlaAQOB63kV/gFo3Qfemoi+r1ZuGoUaf5w8qA+Ue",
-	"z0oed1ADQ9bCTmvHPDUxRL2xzg5ZmlIsdoZ8IpVjqGbTrNfURnuSHo7yK2p+3aHgcRfYTj5C69fd5sqm",
-	"rz1vHJnlWpOoOY8cHt6ZlNO5sIPmUerPzvzdFHuHEFVcTnANL5BoBbI9+PRpvtNsXa+8i+InDVJ95enu",
-	"zOy2o9YExc4kaKaDALM0qOeD4UHuMKqEi/NjtfPs5xWD0E0ljBswqsecU43YPxzLqV68cyZe6X5xT75B",
-	"KJuUzJVKQ0ZA/CPn7NchyUfTFe3th4jZ+tkAnkjbLYNe5t6ZuHCmbftJ5hP0d0bXfVBKR9ufSmkk7QFC",
-	"vrEjg/qxU425bew+McOnH/HfpmZYus9pnywQnVPd22Wiyc2HykXrZVRi/qNSTcIcxTC2gaw/Ax2Zu3pf",
-	"sv6L01cH4PE0dUP9mO7veTDZSYbnTJ+SEc/TZ8yPL/z+QXhGyScW29mHlx6OwDkx7g//BgAA//87yBSw",
-	"bBgAAA==",
+	"H4sIAAAAAAAC/8xZS3PbthP/Khz8/0dalNObbk7sdtTJxBlrOj24PsDkSkJCPIxHbVXD797Bgy+RlKhY",
+	"UnqySSyxu7/d/WEX2qKUU8EZMK3QbIsElpiCBumeblJNOJtn9v8MVCqJsC/QDM1vI76MsFuPNI+WoNM1",
+	"ihGxiwJr+z/DFNAMkQzFSMKLIRIyNNPSQIxUugaK7b56I6yU0pKwFSqKOGh9MGzOlnxYuV5DJA1jhK2C",
+	"If36pbEeHGfCZ0KJ7ipmhj6DtMohB2oxs75L0EZWyl8MyE2tPXc7NbVR/EaooWh2PZ3GiBIWnuLSDsI0",
+	"rEA6Q+6XSwWjLVHfiRiwg/uNetxuqvuT/INlNoz5q1s/bcALK6wEZwpc0t3CEptc30nJpX1OOdPAHAZY",
+	"iJyk2JqUfFPWrm1j4/9LWKIZ+l9Sp3TiV1Xid3PK2n4ZBm8CUg1ZBEGmNLZRAr+aPHcG5Pn9Es0e9yvz",
+	"3yzWXGpUxFskJBcgNfH+WcPHGf374v7LwksWMTKkgyF//gapDerb1YpfBfj/mIdvwusgS7F49Jg/2YjL",
+	"JU5hWzSFrmz6XHGHDM6vBHdyPoA+SmVIH5tOPMU75hRPu0Xchq4NB8m6SdF2aH5r3Vcaa6MOQVapXXjx",
+	"XbtdboatDhj+1VKh2mc6litDS+bsDUl46elpMmfC6LBtE3dChU0VR796jWZoRfTaPE9STpMcG5auZarz",
+	"8t9EfF8lgfCse+kasxU4FIkGqnpqrHIUS4k39tlH+WcavhOYGsvauAMBWlQZAcwy6CNKJWANjn78wYBi",
+	"tCSMqLV76Qu83rWGp7GnBExvscb7At+gpM5WKTetlYpe45KDe9f8m9oVpbN74/haZ3Pm/97JPut3gHSr",
+	"cWViXDO/t2wfqJ6y9jje4s4e58cWsyY6h/6jt1OtXrbN2/1OfDJKc0oU3rGvlyZbwp84W5LVaRkzRtUR",
+	"tps9mfN9ySXF2qcBintygoJSeDUCJ7djLd9FJ0aNs+QAMA3JNh4150+66z/CBY1DpG4+jjtq/TdDR63S",
+	"IFSLGEfspUF0GXMHcL9xfxY2TbpAKSmTpqAGWP+dZVbvvtdVi1gnyz3Rj0e/0Wj1nFeH0Br01B00JPQg",
+	"7dbvhkU3X+e2rf3skzIqbY5RTlJgyu0Y0L4ROF1D9GEyRTEyMkcztNZaqFmSvL6+TrBbnnC5SsK3Kvk8",
+	"/3T3ZXF39WEynaw1zRuGoqASxehvkMobdD2ZTqb+dAaGBUEz9Mvk2im0NeUgTBq4rvomgwc3jagI53mU",
+	"t/36i7nDFSQuxzr0G+ibyulWG/5hOj2q+z4iyGW57tZYpzkPdkelYT4T3HgwpKnyIWnNEa6rN5RiubHg",
+	"E6U9QiWadr2ENtmSrBjEV5b4+tn3eRO58hmA9eNmfuvCV4/VA4xWiyTV2F08vTMoYwtuCPqTI//Qh14R",
+	"I8FVD9bwBqnRoOr5vg3zg2E35cq7IH4xoPRHnm1OjG49RvRA7EWiqvONMMuisvfdnaCLTiZcn95WN6td",
+	"LhmkqTKhW4BJ2cIfKsT2HZDqq8UHLxKY7ifX5BFEWYVkLFVaMCISPjllve6CPBiuZOvu20bzZ2VwT9ju",
+	"GbQi987AxSNl65vHC/DviKo7U0g72x8KaaLccKyOrMio/OxQYS4quQtG+PAn4Qp2hKS/Nb4wQTRuLI6n",
+	"iSo2Z6WLWksnxcI8WYIwhjGsbKTKAXSg72oNsf/F7qt5tzsYpqar56n+lgYbnXT3DiWEpINz//3J+RO/",
+	"fckzIuVTZ9vJm5eWHZFX4iH0P5KMGtCoyTVRGsT+Ec3P2ZcZ0do3KgfR9c6ec0QLGprYjpvQwo9VgxOa",
+	"9/SHmorqd7KzckTjQmwQ+bNNaC30iqIo/g0AAP//b+v1CiseAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

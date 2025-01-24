@@ -1,0 +1,16 @@
+action:
+  title: Label collection
+  description: |
+    Name this label collection and related labels.
+  options:
+    - name: label
+      title: Label
+      type: string
+    - name: labels
+      type: array
+      items:
+        type: string
+runtime:
+  type: container
+  image: alpine:latest
+  command: [ "sh", "-c", "for i in $(seq 15); do echo $$i; sleep 1; done" ]

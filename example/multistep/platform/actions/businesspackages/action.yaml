@@ -1,0 +1,33 @@
+action:
+  title: Business
+  description: |
+    Business regroups applications related to your core business, in the fields of finance, marketing and user accounts management.
+  options:
+    - name: erp
+      title: ERP
+      type: boolean
+      description: Short description of the application or service
+    - name: crm
+      title: CRM
+      type: boolean
+      description: Short description of the application or service
+    - name: messenger
+      title: Instant Messenger
+      type: boolean
+      description: Short description of the application or service
+    - name: mails
+      title: Mails
+      type: boolean
+      description: Short description of the application or service
+    - name: calls
+      title: Calls
+      type: boolean
+      description: Short description of the application or service
+    - name: docs
+      title: Shared docs
+      type: boolean
+      description: Short description of the application or service
+runtime:
+  type: container
+  image: alpine:latest
+  command: [ "sh", "-c", "for i in $(seq 15); do echo $$i; sleep 1; done" ]

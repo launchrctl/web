@@ -1,4 +1,4 @@
-import { Dispatch, useCallback, useContext } from 'react'
+import { Dispatch, useContext } from 'react'
 
 import {
   Action,
@@ -10,10 +10,3 @@ import {
 export const useAction = (): State => useContext(ActionContext)
 export const useActionDispatch = (): Dispatch<Action> | null =>
   useContext(ActionDispatchContext)
-
-export const useClearActions = () => {
-  const dispatch = useActionDispatch()
-  return useCallback(() => {
-    dispatch?.({ type: 'clear-actions' })
-  }, [dispatch])
-}

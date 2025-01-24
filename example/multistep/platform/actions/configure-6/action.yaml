@@ -1,0 +1,12 @@
+action:
+  title: Customize branding
+  description: Activate app packages needed in namespace playbooks
+  arguments:
+    - name: platformName
+      title: Define platform name
+      type: string
+      description: Naming your platform helps with appropriation within your organization.
+runtime:
+  type: container
+  image: alpine:latest
+  command: [ "sh", "-c", "for i in $(seq 15); do echo $$i; sleep 1; done" ]

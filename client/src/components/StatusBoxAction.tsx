@@ -1,4 +1,4 @@
-import { Box, Stack, Tab, Tabs, Typography } from '@mui/material'
+import { Box, Chip, Stack, Tab, Tabs, Typography } from '@mui/material'
 import { useApiUrl, useCustom, useSubscription } from '@refinedev/core'
 import { FC, SyntheticEvent, useCallback, useEffect, useState } from 'react'
 
@@ -8,7 +8,7 @@ import { extractDateTimeFromId } from '../utils/helpers'
 import StatusBoxProcess from './StatusBoxProcess'
 
 interface IStatusBoxActionProps {
-  action: components['schemas']['ActionShort']
+  action: string
 }
 
 interface TabPanelProps {
@@ -58,7 +58,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
   const { refetch: queryRunning } = useCustom<
     components['schemas']['ActionRunInfo'][]
   >({
-    url: `${apiUrl}/actions/${action.id}/running`,
+    url: `${apiUrl}/actions/${action}/running`,
     method: 'get',
   })
 
@@ -89,7 +89,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
         }
       }
     })
-  }, [action.id, queryRunning])
+  }, [action, queryRunning])
 
   useEffect(() => {
     if (typeof activeRunningTab === 'object') {
@@ -117,7 +117,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
     types: ['send-processes', 'send-processes-finished'],
     onLiveEvent: ({ payload, type }) => {
       if (
-        action.id === payload?.data?.action &&
+        action === payload?.data?.action &&
         type === 'send-processes' &&
         payload?.data?.processes?.length > 0
       ) {
@@ -186,8 +186,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
     return array.map((info, idx) => {
       return (
         <TabPanel value={index} index={idx} key={info.id}>
-          {info.id}
-          <StatusBoxProcess ri={info} actionId={action.id} />
+          <StatusBoxProcess ri={info} actionId={action} />
         </TabPanel>
       )
     })
@@ -237,13 +236,13 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
       <Box>
         <Typography
           sx={{
-            px: 3,
-            color: (theme) =>
-              theme.palette.mode === 'dark' ? '#fff' : '#667085',
+            px: 2,
+            py: 1,
+            color: (theme) => theme.palette.primary.contrastText,
+            backgroundColor: (theme) => theme.palette.primary.main,
             fontSize: 11,
             fontWeight: 600,
             lineHeight: 1.45,
-            letterSpacing: '0.22px',
           }}
         >
           {title}
@@ -251,9 +250,8 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
         {list.length === 0 ? (
           <Typography
             sx={{
-              p: 2,
-              color: (theme) =>
-                theme.palette.mode === 'dark' ? '#fff' : '#667085',
+              px: 2,
+              py: 1,
               fontSize: 11,
               fontWeight: 600,
               lineHeight: 1.45,
@@ -269,6 +267,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
             value={activeTab === false ? activeTab : activeTab.index}
             onChange={onChangeHandler}
             sx={{
+              p: 0,
               borderLeft: 1,
               borderColor: 'divider',
               '& .MuiTabs-indicator': { left: 0 },
@@ -281,27 +280,45 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
                 label={
                   <>
                     <Typography
+                      component="div"
                       sx={{
                         fontSize: '12px',
                         fontFamily: 'monospace',
                         textTransform: 'lowercase',
+                        pb: 0.5,
                       }}
                       color={ACTION_STATE_COLORS[info.status]}
                     >
-                      {info.id}
+                      {info.id.split('-')[0]}
+                      <Chip
+                        variant="outlined"
+                        label={info.status}
+                        size="small"
+                        sx={{
+                          mx: 1,
+                          color: ACTION_STATE_COLORS[info.status],
+                          borderColor: ACTION_STATE_COLORS[info.status],
+                        }}
+                      />
                     </Typography>
                     <Typography
                       sx={{
                         fontSize: '10px',
                         fontFamily: 'monospace',
                         textTransform: 'lowercase',
+                        textAlign: 'start',
                       }}
                     >
                       started: {extractDateTimeFromId(info.id)}
                     </Typography>
                   </>
                 }
-                sx={{ alignItems: 'start', minHeight: 10 }}
+                sx={{
+                  alignItems: 'start',
+                  minHeight: 10,
+                  px: 2,
+                  py: 1,
+                }}
               />
             ))}
           </Tabs>

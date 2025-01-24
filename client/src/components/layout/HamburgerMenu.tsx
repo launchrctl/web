@@ -12,10 +12,10 @@ const HamburgerIcon = (props: IconButtonProps) => (
 
 export const HamburgerMenu: FC = () => {
   const {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+     
     siderCollapsed,
     setSiderCollapsed,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
+     
     mobileSiderOpen,
     setMobileSiderOpen,
   } = useThemedLayoutContext()

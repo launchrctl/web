@@ -14,18 +14,16 @@ interface IStatusBoxProcessProps {
   actionId: string
 }
 
-interface StreamData {
-  content: string
-  count: number
-  offset: number
-  type: 'stdOut' | 'stdErr'
-}
-
 const StatusBoxProcess: FC<IStatusBoxProcessProps> = ({ ri, actionId }) => {
-  const [streams, setStreams] = useState<StreamData[]>([])
+  const [streams, setStreams] = useState<
+    components['schemas']['ActionRunStreamData'][]
+  >([])
   const apiUrl = useApiUrl()
 
-  const { refetch: queryRunning } = useCustom<StreamData[], HttpError>({
+  const { refetch: queryRunning } = useCustom<
+    components['schemas']['ActionRunStreamData'][],
+    HttpError
+  >({
     url: `${apiUrl}/actions/${actionId}/running/${ri.id}/streams`,
     method: 'get',
   })

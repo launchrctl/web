@@ -149,6 +149,39 @@ paths:
                   $ref: '#/components/schemas/ActionRunStreamData'
         default:
           $ref: '#/components/responses/DefaultError'
+  /wizard:
+    get:
+      summary: Lists all wizards
+      description: |
+        Returns all multistep actions
+      operationId: getWizards
+      responses:
+        '200':
+          description: wizards response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WizardShort'
+        default:
+          $ref: '#/components/responses/DefaultError'
+  /wizard/{id}:
+    get:
+      summary: Returns wizard by id
+      description: returns wizard by id
+      operationId: getWizardByID
+      parameters:
+        - $ref: '#/components/parameters/WizardId'
+      responses:
+        '200':
+          description: wizard response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WizardFull'
+        default:
+          $ref: '#/components/responses/DefaultError'
 components:
   responses:
     DefaultError:
@@ -186,6 +219,13 @@ components:
         type: integer
         minimum: 1
         maximum: 100
+    WizardId:
+      name: id
+      in: path
+      description: ID of wizard to fetch
+      required: true
+      schema:
+        type: string
   schemas:
     Customisation:
       type: object
@@ -215,11 +255,7 @@ components:
             - jsonschema
           properties:
             jsonschema:
-              type: object
-              x-go-name: "JSONSchema"
-              x-go-type: "jsonschema.Schema"
-              x-go-type-import:
-                path: "github.com/launchrctl/launchr/pkg/jsonschema"
+              $ref: '#/components/schemas/JSONSchema'
             uischema:
               type: object
               x-go-name: "UISchema"
@@ -288,6 +324,10 @@ components:
               type: integer
     JSONSchema:
       type: object
+      x-go-name: "JSONSchema"
+      x-go-type: "jsonschema.Schema"
+      x-go-type-import:
+        path: "github.com/launchrctl/launchr/pkg/jsonschema"
     Error:
       type: object
       required:
@@ -299,3 +339,42 @@ components:
           format: int
         message:
           type: string
+    WizardShort:
+      allOf:
+        - type: object
+          required:
+            - id
+            - title
+            - description
+            - success
+          properties:
+            id:
+              type: string
+              x-go-name: "ID"
+            title:
+              type: string
+            description:
+              type: string
+            success:
+              type: string
+    WizardFull:
+      allOf:
+        - $ref: '#/components/schemas/WizardShort'
+        - type: object
+          required:
+            - steps
+          properties:
+            steps:
+              type: array
+              items:
+                $ref: '#/components/schemas/WizardStep'
+    WizardStep:
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionFull'

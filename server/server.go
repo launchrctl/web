@@ -235,7 +235,7 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 
 			var msg messageType
 			if err = json.Unmarshal(message, &msg); err != nil {
-				launchr.Log().Info("error unmarshalling ws command", "error", err)
+				launchr.Log().Error("error unmarshalling ws command", "error", err)
 				continue
 			}
 
@@ -271,10 +271,11 @@ func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 		}
 
 		sort.Slice(runningActions, func(i, j int) bool {
-			return runningActions[i].Status < runningActions[j].Status
+			return runningActions[i].ID < runningActions[j].ID
 		})
 
 		msgAllProcesses := map[string]interface{}{
+			"channel":   "processes",
 			"message":   "send-processes",
 			"action":    msg.Action,
 			"processes": runningActions,

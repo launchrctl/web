@@ -1,4 +1,3 @@
-working_directory: "{{ .current_working_dir }}"
 action:
   title: Build platform
   description: Build platform

@@ -1,14 +1,19 @@
 import { createContext, Dispatch, FC, ReactNode, useReducer } from 'react'
+
+import { components } from '../../openapi'
 export interface State {
   id: string
+  processes?: components['schemas']['ActionRunInfo'][]
+  started?: Set<string>
   hoverId?: string
-  type?: 'set-active-action' | 'set-hover-action' | 'clear-actions' | ''
+  type?: 'set-active-action' | 'set-hover-action' | 'set-process' | ''
 }
 
 export interface Action {
   id?: string
   hoverId?: string
   type?: string
+  process?: components['schemas']['ActionRunInfo']
 }
 
 interface Props {
@@ -17,6 +22,8 @@ interface Props {
 
 const initialState: State = {
   id: '',
+  processes: [],
+  started: new Set(),
   hoverId: '',
   type: '',
 }
@@ -30,6 +37,7 @@ const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'set-active-action': {
       return {
+        ...state,
         id: action.id || '',
       }
     }
@@ -39,10 +47,34 @@ const reducer = (state: State, action: Action): State => {
         hoverId: action.id || '',
       }
     }
-    case 'clear-actions': {
-      return {
-        ...state,
+    case 'set-process': {
+      if (action.process) {
+        const updatedProcesses = state.processes ? [...state.processes] : []
+
+        const existingIndex = updatedProcesses.findIndex(
+          (obj) => obj.id === action.process?.id
+        )
+
+        if (existingIndex !== -1 && updatedProcesses[existingIndex]) {
+          if (
+            updatedProcesses[existingIndex].status !== action.process.status
+          ) {
+            updatedProcesses[existingIndex] = {
+              ...updatedProcesses[existingIndex],
+              status: action.process.status,
+            }
+          }
+        } else {
+          updatedProcesses.push(action.process)
+        }
+        const idPart = action.process.id.split('-')[1]
+        return {
+          ...state,
+          processes: updatedProcesses,
+          started: idPart ? state.started?.add(idPart) : state.started,
+        }
       }
+      return state
     }
     default: {
       return {

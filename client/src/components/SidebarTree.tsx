@@ -310,6 +310,11 @@ export const SidebarTree: FC<{ actions: GetListResponse | undefined }> = ({
   const { id: nodeId } = useAction()
   const { levels } = splitActionId(nodeId)
   const dispatch = useActionDispatch()
+
+  const [expandedItems, setExpandedItems] = useState<string[]>(
+    levels.map((_, index) => levels.slice(0, index + 1).join('.'))
+  )
+
   useEffect(() => {
     if (actions?.data) {
       setItems(
@@ -332,17 +337,23 @@ export const SidebarTree: FC<{ actions: GetListResponse | undefined }> = ({
     })
   }
 
+  const onExpandedItemsChange = (
+    event: SyntheticEvent,
+    expandedItemIds: string[]
+  ) => {
+    setExpandedItems(expandedItemIds)
+  }
+
   return (
     <RichTreeView
       selectedItems={nodeId}
       apiRef={apiRef}
       onSelectedItemsChange={onSelectedItemsChange}
-      expandedItems={levels.map((_, index) =>
-        levels.slice(0, index + 1).join('.')
-      )}
+      onExpandedItemsChange={onExpandedItemsChange}
+      expandedItems={expandedItems}
       getItemLabel={getItemLabel}
       items={items}
       slots={{ item: CustomTreeItem }}
-    ></RichTreeView>
+    />
   )
 }
