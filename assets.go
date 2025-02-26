@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -24,11 +25,12 @@ func GetClientAssetsFS() fs.FS {
 	if clientAssetsFS != nil {
 		return clientAssetsFS
 	}
-	// If client assets were not set, we are in the development environment.
+
+	// If client assets were not set in a plugin init, we are in the development environment.
 	path := filepath.Join("client", "dist")
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		panic(path + " assets are not available")
+		panic(fmt.Sprintf("ui assets are not available on path %q. If it's a local environment, build assets or use flag --ui-assets=your/path", path))
 	}
 	SetClientAssetsFS(os.DirFS(path))
 	return clientAssetsFS
@@ -47,13 +49,4 @@ func GetSwaggerUIAssetsFS() (fs.FS, error) {
 	}
 	SetSwaggerUIAssetsFS(os.DirFS(path))
 	return swaggerAssetsFS, nil
-}
-
-// MustSubFS returns fs by subpath.
-func MustSubFS(orig fs.FS, path string) fs.FS {
-	sub, err := fs.Sub(orig, path)
-	if err != nil {
-		panic(err)
-	}
-	return sub
 }

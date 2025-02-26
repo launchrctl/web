@@ -26,7 +26,7 @@ LOCAL_BIN:=$(CURDIR)/bin
 
 # Linter config.
 GOLANGCI_BIN:=$(LOCAL_BIN)/golangci-lint
-GOLANGCI_TAG:=1.61.0
+GOLANGCI_TAG:=1.64.5
 
 .PHONY: all
 all: deps front test build
@@ -64,7 +64,6 @@ build:
 # Application related information available on build time.
 	$(eval LDFLAGS:=-X '$(GOPKG).name=launchr' -X '$(GOPKG).version=$(APP_VERSION)' $(LDFLAGS_EXTRA))
 	$(eval BIN?=$(LOCAL_BIN)/launchr)
-	go generate ./...
 	$(BUILD_ENVPARMS) go build -ldflags "$(LDFLAGS)" $(BUILD_OPTS) -o $(BIN) ./cmd/launchr
 
 # Install launchr

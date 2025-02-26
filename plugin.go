@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/launchrctl/launchr"
@@ -69,6 +70,16 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 			ProxyClient:  input.Opt("proxy-client").(string),
 		}
 		foreground := input.Opt("foreground").(bool)
+		// Override client assets.
+		clientAssets := input.Opt("ui-assets").(string)
+		if clientAssets != "" {
+			path := launchr.MustAbs(clientAssets)
+			_, err := os.Stat(path)
+			if os.IsNotExist(err) {
+				return fmt.Errorf("ui assets are not available on path: %s", path)
+			}
+			SetClientAssetsFS(os.DirFS(path))
+		}
 
 		// If 'stop' arg passed, try to interrupt process and remove PID file.
 		op := input.Arg("op")

@@ -29,6 +29,12 @@ action:
       description: Proxies to client web server, useful in local development
       type: string
       default: ""
+    - name: ui-assets
+      title: Client Assets Directory
+      description: >-
+        Specifies a local directory path to override built-in client assets.
+      type: string
+      default: ""
     - name: swagger-ui
       title: Swagger UI
       description: Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui

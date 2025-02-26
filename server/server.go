@@ -163,6 +163,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 func spaHandler(opts *RunOptions) http.HandlerFunc {
 	if opts.ProxyClient != "" {
+		launchr.Log().Debug("serving assets from proxy", "proxy", opts.ProxyClient)
 		target, _ := url.Parse(opts.ProxyClient)
 		proxy := httputil.NewSingleHostReverseProxy(target)
 
@@ -170,7 +171,12 @@ func spaHandler(opts *RunOptions) http.HandlerFunc {
 			proxy.ServeHTTP(w, r)
 		}
 	}
-
+	realpath := launchr.FsRealpath(opts.ClientFS)
+	if realpath == "" {
+		realpath = "[embed]"
+	}
+	launchr.Log().Debug("serving assets from path", "path", realpath)
+	fileServer := http.FileServer(http.FS(opts.ClientFS))
 	return func(w http.ResponseWriter, r *http.Request) {
 		f, err := opts.ClientFS.Open(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
 		if err == nil {
@@ -179,7 +185,7 @@ func spaHandler(opts *RunOptions) http.HandlerFunc {
 		if os.IsNotExist(err) {
 			r.URL.Path = "/"
 		}
-		http.FileServer(http.FS(opts.ClientFS)).ServeHTTP(w, r)
+		fileServer.ServeHTTP(w, r)
 	}
 }
 
