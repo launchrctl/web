@@ -1,0 +1,12 @@
+action:
+  title: Define platform name
+  description: Naming your platform helps with appropriation within your organization.
+  arguments:
+    - name: platformName
+      title: Define platform name
+      type: string
+      required: true
+runtime:
+  type: container
+  image: alpine:latest
+  command: [ "sh", "-c", "for i in $(seq 15); do echo $$i; sleep 1; done" ]

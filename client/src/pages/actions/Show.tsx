@@ -8,7 +8,7 @@ export const ActionShow: FC = () => {
   const { id: idFromRoute } = useResource()
   return (
     <Show title="">
-      <FormFlow actionId={idFromRoute as string} isFullpage={true} />
+      <FormFlow actionId={idFromRoute as string} formType="full" />
     </Show>
   )
 }

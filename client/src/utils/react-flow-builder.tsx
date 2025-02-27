@@ -17,6 +17,8 @@ export const folderLabelHeight = 50 * elementsScaleCoef
 export const actionsGroupOuterGap = 4 * elementsScaleCoef
 export const gapBetweenActions = 4 * elementsScaleCoef
 
+// It should be created dynamically maybe?
+// TODO: research MUI colors.
 const layerColorSchemesHSL = [
   [214.79, 87.25, 50.78],
   [346.93, 83.26, 57.84],

@@ -1,0 +1,34 @@
+uiWizard:
+  title: Platform Configuration
+  description: Please follow the steps below to configure your platform and
+    prepare it for future control actions.
+  success: Platform configuration finished
+  steps:
+    - title: Name your platform
+      description: You can change this information later in your platform settings.
+      actions:
+        - multistep.platform:platform
+    - title: Configure environments
+      description: You can change this information later in your platform settings.
+      actions:
+        - multistep.platform:domainname
+        - multistep.platform:platformdomains
+    - title: Select app packages
+      description: Activate app packages needed in [Platform Name] playbooks
+      actions:
+        - multistep.platform:packages
+        - multistep.platform:businesspackages
+    - title: Labelize people
+      description: |
+        Labels help you build a comprehensive and intuitive ontology that mirrors your organization. They are categorized through collections: each collection represents a functional area, while each label represent the variations that can occur within such area.
+        For example, a typical ontology in a community-driven business would be: Roles as Label collection 1, Interests Groups as Label collection 2, Skills as Label collection 3
+      actions:
+        - multistep.platform:label
+    - title: Define business entities
+      description: Lorem Ipsum has been the industry's standard dummy text.
+      actions:
+        - multistep.platform:platformdomains
+    - title: Customize branding
+      description: Lorem Ipsum has been the industry's standard dummy text.
+      actions:
+        - multistep.platform:platformdomains

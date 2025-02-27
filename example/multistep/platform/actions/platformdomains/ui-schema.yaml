@@ -1,0 +1,10 @@
+uiSchema:
+  options:
+    "ui:CustomObjectTemplate": "domains"
+    "ui:LayoutSettings":
+      - label: Dev environment
+        items: ["proddomain", "prodext"]
+      - label: Prod environment
+        items: ["devdomain", "devext"]
+      - label: Sandbox environment
+        items: ["sandboxdomain", "sandboxext"]

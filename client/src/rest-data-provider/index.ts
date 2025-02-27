@@ -1,6 +1,6 @@
 import type { DataProvider } from '@refinedev/core'
 import type { AxiosInstance } from 'axios'
-import { stringify } from 'query-string'
+import queryString from 'query-string'
 
 import { axiosInstance, generateFilter, generateSort } from './utils'
 
@@ -47,7 +47,7 @@ export const dataProvider = (
     const combinedQuery = { ...query, ...queryFilters }
     const urlWithQuery =
       Object.keys(combinedQuery).length > 0
-        ? `${url}?${stringify(combinedQuery)}`
+        ? `${url}?${queryString.stringify(combinedQuery)}`
         : url
 
     const { data, headers } = await httpClient[requestMethod](urlWithQuery, {
@@ -67,7 +67,7 @@ export const dataProvider = (
     const requestMethod = (method as MethodTypes) ?? 'get'
 
     const { data } = await httpClient[requestMethod](
-      `${apiUrl}/${resource}?${stringify({ id: ids })}`,
+      `${apiUrl}/${resource}?${queryString.stringify({ id: ids })}`,
       { headers }
     )
 
@@ -157,17 +157,17 @@ export const dataProvider = (
           _sort: _sort.join(','),
           _order: _order.join(','),
         }
-        requestUrl = `${requestUrl}&${stringify(sortQuery)}`
+        requestUrl = `${requestUrl}&${queryString.stringify(sortQuery)}`
       }
     }
 
     if (filters) {
       const filterQuery = generateFilter(filters)
-      requestUrl = `${requestUrl}&${stringify(filterQuery)}`
+      requestUrl = `${requestUrl}&${queryString.stringify(filterQuery)}`
     }
 
     if (query) {
-      requestUrl = `${requestUrl}&${stringify(query)}`
+      requestUrl = `${requestUrl}&${queryString.stringify(query)}`
     }
 
     let axiosResponse

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
+	"github.com/launchrctl/launchr/pkg/jsonschema"
 )
 
 type launchrServer struct {
@@ -193,6 +195,148 @@ func (l *launchrServer) GetRunningActionsByID(w http.ResponseWriter, _ *http.Req
 	_ = json.NewEncoder(w).Encode(result)
 }
 
+func (l *launchrServer) GetWizards(w http.ResponseWriter, _ *http.Request) {
+	var result []WizardShort
+
+	runDir, fileErr := os.Getwd()
+	if fileErr != nil {
+		http.Error(w, fileErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: make file search optimisations.
+	err := filepath.Walk(runDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() && info.Name() == "ui-wizard.yaml" {
+			content, err := os.ReadFile(filepath.Clean(path))
+			if err != nil {
+				return err
+			}
+
+			var data struct {
+				UIWizard WizardShort `yaml:"uiWizard"`
+			}
+			err = yaml.Unmarshal(content, &data)
+			if err != nil {
+				return err
+			}
+
+			relativePath, err := filepath.Rel(runDir, path)
+			if err != nil {
+				return err
+			}
+			relativePath = strings.TrimSuffix(relativePath, "/ui-wizard.yaml")
+			relativePath = strings.ReplaceAll(relativePath, string(filepath.Separator), ".")
+
+			result = append(result, WizardShort{
+				Description: data.UIWizard.Description,
+				ID:          relativePath,
+				Title:       data.UIWizard.Title,
+				Success:     data.UIWizard.Success,
+			})
+		}
+		return nil
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(result)
+}
+
+func (l *launchrServer) GetWizardByID(w http.ResponseWriter, _ *http.Request, id WizardId) {
+	runDir, err := os.Getwd()
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "Error getting working directory")
+		return
+	}
+
+	targetPath := filepath.Join(runDir, strings.ReplaceAll(string(id), ".", string(filepath.Separator)), "ui-wizard.yaml")
+	content, err := os.ReadFile(filepath.Clean(targetPath))
+	if err != nil {
+		if os.IsNotExist(err) {
+			sendError(w, http.StatusNotFound, fmt.Sprintf("Wizard with ID %q not found", id))
+		} else {
+			sendError(w, http.StatusInternalServerError, "Error reading wizard file")
+		}
+		return
+	}
+
+	type wizardStep struct {
+		Actions     []string `yaml:"actions"`
+		Description string   `yaml:"description"`
+		Title       string   `yaml:"title"`
+	}
+
+	type wizardShortWithSteps struct {
+		Description string       `yaml:"description"`
+		Success     string       `yaml:"success"`
+		Title       string       `yaml:"title"`
+		Steps       []wizardStep `yaml:"steps"`
+	}
+
+	var data struct {
+		UIWizard wizardShortWithSteps `yaml:"uiWizard"`
+	}
+
+	if err := yaml.Unmarshal(content, &data); err != nil {
+		sendError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	var steps []WizardStep
+
+	for _, step := range data.UIWizard.Steps {
+		var actions []ActionFull
+		for _, actionID := range step.Actions {
+			a, ok := l.actionMngr.Get(actionID)
+			if !ok {
+				sendError(w, http.StatusInternalServerError, fmt.Sprintf("Step action with ID %q not found", actionID))
+				return
+			}
+
+			if err := a.EnsureLoaded(); err != nil {
+				sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error loading step action %q", actionID))
+				return
+			}
+
+			afull, err := apiActionFull(l.basePath(), a)
+			if err != nil {
+				sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error building ActionFull for %q", actionID))
+				return
+			}
+			actions = append(actions, afull)
+		}
+
+		stepActions := actions
+		stepTitle := step.Title
+		stepDescription := step.Description
+
+		steps = append(steps, WizardStep{
+			Title:       &stepTitle,
+			Description: &stepDescription,
+			Actions:     &stepActions,
+		})
+	}
+
+	wizard := WizardFull{
+		Description: data.UIWizard.Description,
+		ID:          string(id),
+		Steps:       steps,
+		Title:       data.UIWizard.Title,
+		Success:     data.UIWizard.Success,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(wizard)
+}
+
 func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id string) {
 	// @todo error if action is already running. We need some pool of running processes with its io.
 	var err error
@@ -224,19 +368,29 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		//	streams.Close()
 		//}
 	}()
-	err = a.SetInput(action.NewInput(a, params.Arguments, params.Options, streams))
+
+	params = fillActionParamsWithMissedProperties(a, params)
+	input := action.NewInput(a, params.Arguments, params.Options, streams)
+
+	err = a.SetInput(input)
 	if err != nil {
 		// @todo validate must have info about which fields failed.
-		sendError(w, http.StatusBadRequest, "invalid actions input")
+		launchr.Log().Error("invalid actions input", "error", err)
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("invalid actions input: %q", err))
 		return
 	}
 
 	ri, chErr := l.actionMngr.RunBackground(l.ctx, a, runID)
 
 	go func() {
-		// @todo handle error somehow. We cant notify client, but must save the status
-		//defer streams.Close()
-		<-chErr
+		err := <-chErr
+		if err != nil {
+			launchr.Log().Error("Action execution failed", "runID", runID, "error", err)
+			// save error to error file)
+			if _, writeErr := streams.Err().Write([]byte(err.Error())); writeErr != nil {
+				launchr.Log().Error("Failed to write error to stream", "error", writeErr)
+			}
+		}
 	}()
 
 	w.WriteHeader(http.StatusCreated)
@@ -295,4 +449,34 @@ func sendError(w http.ResponseWriter, code int, message string) {
 	}
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(petErr)
+}
+
+// We cannot rely on experimental feature on frontend.
+// So we need to care about missed properties here.
+// https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/form-props#experimental_defaultformstatebehavior
+func fillActionParamsWithMissedProperties(a *action.Action, params ActionRunParams) ActionRunParams {
+	argsDefault := a.ActionDef().Arguments
+	optsDefault := a.ActionDef().Options
+
+	params.Arguments = fillMissingProperties(params.Arguments, argsDefault, "arguments")
+	params.Options = fillMissingProperties(params.Options, optsDefault, "options")
+
+	return params
+}
+
+func fillMissingProperties(properties map[string]interface{}, defaults action.ParametersList, propertyType string) map[string]interface{} {
+	if len(properties) < len(defaults) {
+		launchr.Log().Debug(fmt.Sprintf("not all %s were sent", propertyType), propertyType, fmt.Sprintf("%v", properties))
+		for _, def := range defaults {
+			if _, ok := properties[def.Name]; !ok {
+				if def.Default != nil {
+					properties[def.Name] = def.Default
+				} else {
+					properties[def.Name], _ = jsonschema.ConvertStringToType("", def.Type)
+				}
+			}
+		}
+		launchr.Log().Debug(fmt.Sprintf("%s updated with default values", propertyType), propertyType, fmt.Sprintf("%v", properties))
+	}
+	return properties
 }
