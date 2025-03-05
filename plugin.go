@@ -10,6 +10,8 @@ import (
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
+
+	"github.com/launchrctl/web/server"
 )
 
 const (
@@ -48,11 +50,12 @@ func (p *Plugin) OnAppInit(app launchr.App) error {
 }
 
 type webFlags struct {
-	Port         int
-	IsPortSet    bool
-	ProxyClient  string
-	UseSwaggerUI bool
-	PluginDir    string
+	Port              int
+	IsPortSet         bool
+	ProxyClient       string
+	UseSwaggerUI      bool
+	PluginDir         string
+	FrontendCustomize server.FrontendCustomize
 }
 
 // DiscoverActions implements [launchr.ActionDiscoveryPlugin] interface.
@@ -68,6 +71,10 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 			IsPortSet:    input.IsOptChanged("port"),
 			UseSwaggerUI: input.Opt("swagger-ui").(bool),
 			ProxyClient:  input.Opt("proxy-client").(string),
+			FrontendCustomize: server.FrontendCustomize{
+				VarsFile:  input.Opt("vars-file").(string),
+				Variables: action.InputOptSlice[string](input, "variables"),
+			},
 		}
 		foreground := input.Opt("foreground").(bool)
 		// Override client assets.
