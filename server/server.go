@@ -41,8 +41,9 @@ type RunOptions struct {
 	SwaggerJSON bool
 	SwaggerUIFS fs.FS
 	// Client server.
-	ClientFS    fs.FS
-	ProxyClient string
+	ClientFS          fs.FS
+	ProxyClient       string
+	FrontendCustomize FrontendCustomize
 }
 
 // BaseURL returns base url for run options.
@@ -85,6 +86,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		ctx:       ctx,
 		baseURL:   opts.BaseURL(),
 		apiPrefix: opts.APIPrefix,
+		customize: opts.FrontendCustomize,
 	}
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
