@@ -28,9 +28,11 @@ type launchrServer struct {
 	baseURL    string
 	apiPrefix  string
 	wsMutex    sync.Mutex
+	customize  FrontendCustomize
 }
 
-type launchrWebConfig struct {
+// FrontendCustomize stores variables to customize web appearance.
+type FrontendCustomize struct {
 	VarsFile  string   `yaml:"vars_file"`
 	Variables []string `yaml:"variables"`
 }
@@ -53,27 +55,20 @@ func parseVarsFile(path string) (map[string]interface{}, error) {
 }
 
 func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Request) {
-	var launchrConfig *launchrWebConfig
-	err := l.cfg.Get("web", &launchrConfig)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, "error getting config")
-		return
-	}
-
 	customisation := make(CustomisationConfig)
-	if launchrConfig != nil && launchrConfig.VarsFile != "" {
+	if l.customize.VarsFile != "" {
 		vars := make(map[string]bool)
-		for _, item := range launchrConfig.Variables {
+		for _, item := range l.customize.Variables {
 			vars[item] = true
 		}
 
-		gvFile, err := parseVarsFile(launchrConfig.VarsFile)
+		gvFile, err := parseVarsFile(l.customize.VarsFile)
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "error getting group vars file")
 			return
 		}
 
-		if len(launchrConfig.Variables) > 0 {
+		if len(l.customize.Variables) > 0 {
 			for key, value := range gvFile {
 				if _, ok := vars[key]; ok {
 					customisation[key] = value

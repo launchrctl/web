@@ -105,4 +105,4 @@ front-lint-fix:
 	docker run --rm -it -v $(PWD)/client:/usr/src/app -w /usr/src/app node:$(NODE_TAG) sh -c "corepack install && corepack enable && yarn lint --fix"
 
 dev:
-	DEV=1 make build && LAUNCHR_ACTIONS_PATH=example ./bin/launchr web --foreground -vvvv
+	DEV=1 make build && LAUNCHR_ACTIONS_PATH=example ./bin/launchr web --foreground -vvvv --vars-file example/customization/vars.yaml --variables plasmactl_web_ui_platform_name,plasmactl_web_ui_platform_page_name
