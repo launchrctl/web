@@ -87,6 +87,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		baseURL:   opts.BaseURL(),
 		apiPrefix: opts.APIPrefix,
 		customize: opts.FrontendCustomize,
+		app:       app,
 	}
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
