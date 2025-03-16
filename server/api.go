@@ -29,6 +29,7 @@ type launchrServer struct {
 	apiPrefix  string
 	wsMutex    sync.Mutex
 	customize  FrontendCustomize
+	app        launchr.App
 }
 
 // FrontendCustomize stores variables to customize web appearance.
@@ -353,7 +354,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams, err := createFileStreams(runID)
+	streams, err := createFileStreams(runID, l.app)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, "Error preparing streams")
 	}
