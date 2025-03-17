@@ -327,20 +327,20 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
     )
   }
 
-  const RunningProcesses = () => {
+  const RunningActions = () => {
     return ProcessesSection({
-      title: 'Running processes',
-      noMessage: 'No running processes',
+      title: 'Running actions',
+      noMessage: 'No Running actions',
       list: running.filter((a) => a.status === 'running'),
       activeTab: activeRunningTab,
       onChangeHandler: handleRunningTabChange,
     })
   }
 
-  const ArchiveProcesses = () => {
+  const FinishedActions = () => {
     return ProcessesSection({
-      title: 'Archive processes',
-      noMessage: 'No archive processes',
+      title: 'Finished actions',
+      noMessage: 'No finished actions',
       list: running.filter((a) => ['error', 'finished'].includes(a.status)),
       activeTab: activeArchiveTab,
       onChangeHandler: handleArchiveTabChange,
@@ -381,8 +381,8 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
           overflow: 'auto',
         }}
       >
-        {RunningProcesses()}
-        {ArchiveProcesses()}
+        {RunningActions()}
+        {FinishedActions()}
       </Stack>
     </Box>
   )

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/launchrctl/launchr"
@@ -92,13 +93,13 @@ func (w *wrappedWriter) Write(p []byte) (int, error) {
 	return w.w.Write(p)
 }
 
-func createFileStreams(runId string) (*webCli, error) {
-	outfile, err := os.Create(runId + "-out.txt")
+func createFileStreams(streamsDir, runId string) (*webCli, error) {
+	outfile, err := os.Create(filepath.Join(streamsDir, runId+"-out.txt"))
 	if err != nil {
 		return nil, fmt.Errorf("error creating output file: %w", err)
 	}
 
-	errfile, err := os.Create(runId + "-err.txt")
+	errfile, err := os.Create(filepath.Join(streamsDir, runId+"-err.txt"))
 	if err != nil {
 		return nil, fmt.Errorf("error creating error file: %w", err)
 	}

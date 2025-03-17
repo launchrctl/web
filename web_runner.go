@@ -52,6 +52,7 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 		ClientFS:          GetClientAssetsFS(),
 		SwaggerUIFS:       swaggerFS,
 		FrontendCustomize: webOpts.FrontendCustomize,
+		LogsDirPath:       filepath.Join(webOpts.PluginDir, "logs"),
 	}
 	go func() {
 		time.Sleep(time.Second)

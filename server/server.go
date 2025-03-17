@@ -44,6 +44,7 @@ type RunOptions struct {
 	ClientFS          fs.FS
 	ProxyClient       string
 	FrontendCustomize FrontendCustomize
+	LogsDirPath       string
 }
 
 // BaseURL returns base url for run options.
@@ -70,6 +71,11 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	}
 	swagger.Servers = nil
 
+	err = os.MkdirAll(opts.LogsDirPath, 0750)
+	if err != nil {
+		return fmt.Errorf("can't create logs dir")
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	// Prepare router and openapi.
@@ -83,10 +89,11 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 	store := &launchrServer{
-		ctx:       ctx,
-		baseURL:   opts.BaseURL(),
-		apiPrefix: opts.APIPrefix,
-		customize: opts.FrontendCustomize,
+		ctx:         ctx,
+		baseURL:     opts.BaseURL(),
+		apiPrefix:   opts.APIPrefix,
+		customize:   opts.FrontendCustomize,
+		logsDirPath: opts.LogsDirPath,
 	}
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)

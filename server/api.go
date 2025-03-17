@@ -22,13 +22,14 @@ import (
 )
 
 type launchrServer struct {
-	actionMngr action.Manager
-	cfg        launchr.Config
-	ctx        context.Context
-	baseURL    string
-	apiPrefix  string
-	wsMutex    sync.Mutex
-	customize  FrontendCustomize
+	actionMngr  action.Manager
+	cfg         launchr.Config
+	ctx         context.Context
+	baseURL     string
+	apiPrefix   string
+	wsMutex     sync.Mutex
+	customize   FrontendCustomize
+	logsDirPath string
 }
 
 // FrontendCustomize stores variables to customize web appearance.
@@ -353,7 +354,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 
 	// Prepare action for run.
 	// Can we fetch directly json?
-	streams, err := createFileStreams(runID)
+	streams, err := createFileStreams(l.logsDirPath, runID)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, "Error preparing streams")
 	}

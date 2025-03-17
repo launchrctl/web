@@ -67,11 +67,14 @@ const reducer = (state: State, action: Action): State => {
         } else {
           updatedProcesses.push(action.process)
         }
-        const idPart = action.process.id.split('-')[1]
+
+        const processId = action.process.id.split('-');
+        processId.shift();
+        const actionId = processId.join('-')
         return {
           ...state,
           processes: updatedProcesses,
-          started: idPart ? state.started?.add(idPart) : state.started,
+          started: actionId ? state.started?.add(actionId) : state.started,
         }
       }
       return state
