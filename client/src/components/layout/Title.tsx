@@ -2,18 +2,15 @@ import MuiLink from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
 import { useLink, useRouterContext, useRouterType } from '@refinedev/core'
 import type { RefineLayoutThemedTitleProps } from '@refinedev/mui'
-import type { FC } from 'react'
+import { useState, useEffect, type FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import Logo from '/images/logo.svg'
 
 import { getCustomisation } from '../../utils/page-customisation'
 
-const defaultText = import.meta.env.VITE_APP_NAME
-
 export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
   wrapperStyles,
-  text = defaultText,
 }) => {
   const { t } = useTranslation()
   const routerType = useRouterType()
@@ -22,9 +19,25 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
 
   const ActiveLink = routerType === 'legacy' ? LegacyLink : Link
 
-  const logoUrl = getCustomisation()?.plasmactl_web_ui_platform_logo ?? Logo
+  interface Customisation {
+    plasmactl_web_ui_platform_logo?: string;
+    plasmactl_web_ui_platform_header_name?: string;
+  }
+
+  const [customisation, setCustomisation] = useState<Customisation | null>(null);
+
+  useEffect(() => {
+    const fetchCustomisation = async () => {
+      const result = await getCustomisation();
+      setCustomisation(result);
+    };
+
+    fetchCustomisation();
+  }, []);
+
+  const logoUrl = customisation?.plasmactl_web_ui_platform_logo ?? Logo;
   const logoText =
-    getCustomisation()?.plasmactl_web_ui_platform_header_name ?? text
+    customisation?.plasmactl_web_ui_platform_header_name ?? 'Launchr Web UI';
 
   return (
     <MuiLink

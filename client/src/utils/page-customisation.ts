@@ -4,19 +4,18 @@ import { svgToBase64 } from './helpers'
 const apiUrl = getApiUrl()
 
 export const setCustomisation = async () => {
-  if (!localStorage.getItem('plasmactl_web_ui_customisation')) {
-    const response = await fetch(`${apiUrl}/customisation`, {
-      method: 'GET',
-    })
-    const data = await response.json()
-    localStorage.setItem('plasmactl_web_ui_customisation', JSON.stringify(data))
-  }
+  const response = await fetch(`${apiUrl}/customisation`, {
+    method: 'GET',
+  })
+  const data = await response.json()
+  sessionStorage.setItem('plasmactl_web_ui_customisation', JSON.stringify(data))
 
   setFavicon()
+  return data
 }
 
 export const getCustomisation = () => {
-  const customisation = localStorage.getItem('plasmactl_web_ui_customisation')
+  const customisation = sessionStorage.getItem('plasmactl_web_ui_customisation')
   if (customisation) {
     const parsed = JSON.parse(customisation)
     if (parsed) {
