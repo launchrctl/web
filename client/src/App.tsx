@@ -2,10 +2,10 @@ import { Refine } from '@refinedev/core'
 import { RefineKbar } from '@refinedev/kbar'
 import { ErrorComponent, useNotificationProvider } from '@refinedev/mui'
 import routerBindings, {
-  DocumentTitleHandler,
   UnsavedChangesNotifier,
+  useDocumentTitle,
 } from '@refinedev/react-router-v6'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   BrowserRouter,
   Navigate,
@@ -27,18 +27,26 @@ import { WizardList, WizardShow } from './pages/wizard'
 import { dataProvider as launchrDataProvider } from './rest-data-provider'
 import { ThemeProvider } from './ThemeProvider'
 import { getApiUrl } from './utils/app-urls-resolver'
-import { getCustomisation, setCustomisation } from './utils/page-customisation'
+import { setCustomisation } from './utils/page-customisation'
 
 const apiUrl = getApiUrl()
 
-const customTitleHandler = () => {
-  return getCustomisation()?.plasmactl_web_ui_platform_page_name ?? 'Platform'
-}
-
 export function App() {
+  const [isLoading, setLoading] = useState(true)
+
+  const setTitle = useDocumentTitle();
   useEffect(() => {
-    setCustomisation()
+    (async () => {
+      const data = await setCustomisation();
+      const customisation: { plasmactl_web_ui_platform_page_name?: string } = data;
+      setTitle(customisation?.plasmactl_web_ui_platform_page_name ?? 'Platform');
+      setLoading(false);
+    })();
   }, [])
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <ActionProvider>
@@ -95,7 +103,6 @@ export function App() {
               </Routes>
 
               <UnsavedChangesNotifier />
-              <DocumentTitleHandler handler={customTitleHandler} />
               <RefineKbar />
             </GlobalKBarProvider>
           </Refine>

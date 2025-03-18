@@ -11,6 +11,7 @@ export const setCustomisation = async () => {
   sessionStorage.setItem('plasmactl_web_ui_customisation', JSON.stringify(data))
 
   setFavicon()
+  return data
 }
 
 export const getCustomisation = () => {
