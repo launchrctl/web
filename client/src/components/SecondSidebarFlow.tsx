@@ -11,6 +11,7 @@ import { components } from '../../openapi'
 import { useActionDispatch } from '../hooks/ActionHooks'
 import { ActionsListFlow } from './ActionsListFlow'
 import { FormFlow } from './FormFlow'
+import { useAction } from '../hooks/ActionHooks'
 
 export type IActionsGroup = {
   id: string
@@ -21,8 +22,7 @@ const isAction = (id: string) => id.split(':')[1]?.length
 
 export const SecondSidebarFlow: FC<{
   actions: GetListResponse
-  nodeId: string
-}> = ({ actions, nodeId }) => {
+}> = ({ actions }) => {
   const [actionsGroup, setActionsGroup] = useState<IActionsGroup>({
     id: '',
     list: [],
@@ -30,6 +30,8 @@ export const SecondSidebarFlow: FC<{
   const dispatch = useActionDispatch()
   const theme = useTheme()
   const [expand, setExpand] = useState('25vw')
+  const { id: nodeId } = useAction()
+
 
   useEffect(() => {
     if (actions.data && nodeId && !isAction(nodeId)) {

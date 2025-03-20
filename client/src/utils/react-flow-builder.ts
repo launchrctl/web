@@ -1,58 +1,29 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-
 import { GetListResponse } from '@refinedev/core'
-
-import { IFlowNodeType } from '../types'
-import { sentenceCase } from '../utils/helpers'
-import { getCustomisation } from '../utils/page-customisation'
-
-// Coefficient less than 0.51 behaves unpredictably.
-// Use coefficient between 0.51 till endless
-export const elementsScaleCoef = 1
-export const actionWidth = 300 * elementsScaleCoef
-export const actionHeight = 60 * elementsScaleCoef
-export const grandFolderGap = 80 * elementsScaleCoef
-export const folderLabelHeight = 50 * elementsScaleCoef
-export const actionsGroupOuterGap = 4 * elementsScaleCoef
-export const gapBetweenActions = 4 * elementsScaleCoef
-
-// It should be created dynamically maybe?
-// TODO: research MUI colors.
-const layerColorSchemesHSL = [
-  [214.79, 87.25, 50.78],
-  [346.93, 83.26, 57.84],
-  [160.47, 68.42, 51.57],
-  [252.15, 91.86, 66.27],
-  [214.79, 87.25, 50.78],
-  [346.93, 83.26, 57.84],
-  [160.47, 68.42, 51.57],
-  [252.15, 91.86, 66.27],
-  [214.79, 87.25, 50.78],
-  [346.93, 83.26, 57.84],
-  [160.47, 68.42, 51.57],
-  [252.15, 91.86, 66.27],
-  [214.79, 87.25, 50.78],
-  [346.93, 83.26, 57.84],
-  [160.47, 68.42, 51.57],
-  [252.15, 91.86, 66.27],
-  [214.79, 87.25, 50.78],
-  [346.93, 83.26, 57.84],
-  [160.47, 68.42, 51.57],
-  [252.15, 91.86, 66.27],
-]
+import { FlowColor, IFlowNodeType } from '../types'
+import { sentenceCase, splitActionId } from './helpers'
+import { getCustomisation } from './page-customisation'
+import {
+  UI_SCALE,
+  UI_ACTION_WIDTH,
+  UI_ACTION_HEIGHT,
+  UI_GROUP_PADDING,
+  UI_GROUP_LABEL_HEIGHT,
+  UI_GROUP_OUTER_GAP,
+  UI_GROUP_GAP,
+  COLOR_SCHEMES,
+} from './constants'
 
 export const buildNodeColor = ({
   index = 0,
   isFilled = false,
   isHovered = false,
   isDarker = false,
-}) => {
+}: FlowColor) => {
   return `
     hsla(
-      ${layerColorSchemesHSL[index || 0][0]}deg
-      ${layerColorSchemesHSL[index || 0][1]}%
-      ${isDarker ? layerColorSchemesHSL[index || 0][2] - 20 : layerColorSchemesHSL[index || 0][2]}%
+      ${COLOR_SCHEMES[index || 0]?.[0] ?? 0}deg
+      ${COLOR_SCHEMES[index || 0]?.[1] ?? 0}%
+      ${isDarker ? (COLOR_SCHEMES[index || 0]?.[2] ?? 0) - 20 : (COLOR_SCHEMES[index || 0]?.[2] ?? 0)}%
       ${isFilled ? '' : `/ ${isHovered ? '40%' : '10%'}`}
     )
   `
@@ -61,8 +32,8 @@ export const buildNodeColor = ({
 interface IParams {
   width: number
   height: number
-  x: number
-  y: number
+  x?: number
+  y?: number
 }
 
 interface IFolder {
@@ -70,10 +41,10 @@ interface IFolder {
   parentId?: string
   type: IFlowNodeType
   actions?: {
-    [key: string]: IFolder | IParams
+    [key: string]: IFolder
   }
   folders?: {
-    [key: string]: IFolder | IParams
+    [key: string]: IFolder
   }
   data: {
     label: string
@@ -86,6 +57,24 @@ interface IFolder {
   _params?: IParams
 }
 
+function setActionParams(action: IFolder) {
+  action._params = {
+    width: UI_ACTION_WIDTH,
+    height: UI_ACTION_HEIGHT,
+  }
+}
+
+function setFolderParams(
+  folder: IFolder,
+  currentWidth: number,
+  currentHeight: number
+) {
+  folder._params = {
+    width: currentWidth,
+    height: currentHeight,
+  }
+}
+
 function setActionsAndItsFolderSize(folder: IFolder) {
   let currentWidth: number | undefined = 0
   let currentHeight: number | undefined = 0
@@ -93,17 +82,14 @@ function setActionsAndItsFolderSize(folder: IFolder) {
   if (folder.actions && Object.keys(folder.actions).length > 0) {
     for (const action of Object.values(folder.actions)) {
       if (action) {
-        action._params = {
-          width: actionWidth,
-          height: actionHeight,
-        }
+        setActionParams(action)
       }
     }
 
-    currentWidth = actionWidth
+    currentWidth = UI_ACTION_WIDTH
     currentHeight =
-      Object.keys(folder.actions).length * actionHeight +
-      (Object.keys(folder.actions).length * gapBetweenActions) / 2
+      Object.keys(folder.actions).length * UI_ACTION_HEIGHT +
+      (Object.keys(folder.actions).length * UI_GROUP_GAP) / 2
 
     folder.actions._params = {
       width: currentWidth,
@@ -113,14 +99,11 @@ function setActionsAndItsFolderSize(folder: IFolder) {
     if (Object.keys(folder.folders).length === 0) {
       currentWidth = folder.actions._params.width
       currentHeight =
-        folderLabelHeight +
+        UI_GROUP_LABEL_HEIGHT +
         (folder.actions._params.height ?? 0) +
-        actionsGroupOuterGap
+        UI_GROUP_OUTER_GAP
 
-      folder._params = {
-        width: currentWidth,
-        height: currentHeight,
-      }
+      setFolderParams(folder, currentWidth, currentHeight)
 
       if (folder.data) {
         folder.data.filled = true
@@ -133,6 +116,28 @@ function setActionsAndItsFolderSize(folder: IFolder) {
       setActionsAndItsFolderSize(subFolder)
     }
   }
+}
+
+function calculateSubfolderSize(
+  subFolder,
+  verticalMode,
+  subfoldersWidth,
+  subfoldersHeight
+) {
+  const { width: subWidth, height: subHeight } = setElementsSize(subFolder)
+  return verticalMode
+    ? {
+        subfoldersWidth: Math.max(subfoldersWidth, subWidth),
+        subfoldersHeight:
+          subfoldersHeight +
+          (subfoldersHeight === 0 ? subHeight : subHeight + UI_GROUP_PADDING),
+      }
+    : {
+        subfoldersWidth:
+          subfoldersWidth +
+          (subfoldersWidth === 0 ? subWidth : subWidth + UI_GROUP_PADDING),
+        subfoldersHeight: Math.max(subfoldersHeight, subHeight),
+      }
 }
 
 function setElementsSize(folder: IFolder) {
@@ -163,24 +168,24 @@ function setElementsSize(folder: IFolder) {
     verticalMode = true
   }
   for (const subFolder of Object.values(folder.folders)) {
-    const { width: subWidth, height: subHeight } = setElementsSize(subFolder)
-
-    if (verticalMode) {
-      subfoldersWidth = Math.max(subfoldersWidth, subWidth)
-      subfoldersHeight +=
-        subfoldersHeight === 0 ? subHeight : subHeight + grandFolderGap
-    } else {
-      subfoldersWidth +=
-        subfoldersWidth === 0 ? subWidth : subWidth + grandFolderGap
-      subfoldersHeight = Math.max(subfoldersHeight, subHeight)
-    }
+    const {
+      subfoldersWidth: newSubfoldersWidth,
+      subfoldersHeight: newSubfoldersHeight,
+    } = calculateSubfolderSize(
+      subFolder,
+      verticalMode,
+      subfoldersWidth,
+      subfoldersHeight
+    )
+    subfoldersWidth = newSubfoldersWidth
+    subfoldersHeight = newSubfoldersHeight
   }
 
   // Folder width is sum of action width, subfolder width and padding
   if (actionsWidth !== 0 && subfoldersWidth !== 0) {
-    folderWidth = grandFolderGap * 3 + actionsWidth + subfoldersWidth
+    folderWidth = UI_GROUP_PADDING * 3 + actionsWidth + subfoldersWidth
   } else if (actionsWidth === 0 && subfoldersWidth !== 0) {
-    folderWidth = grandFolderGap * 2 + subfoldersWidth
+    folderWidth = UI_GROUP_PADDING * 2 + subfoldersWidth
   } else if (actionsWidth !== 0 && subfoldersWidth === 0) {
     folderWidth = actionsWidth
   }
@@ -188,8 +193,8 @@ function setElementsSize(folder: IFolder) {
   // Folder height is max of action height and subfolder height
   folderHeight =
     subfoldersHeight === 0
-      ? actionsHeight + folderLabelHeight
-      : grandFolderGap * 2 + Math.max(actionsHeight, subfoldersHeight)
+      ? actionsHeight + UI_GROUP_LABEL_HEIGHT
+      : UI_GROUP_PADDING * 2 + Math.max(actionsHeight, subfoldersHeight)
 
   if (folder.id !== 'start') {
     // Update folder width and height
@@ -223,7 +228,7 @@ const setInnerBlocksCoordinates = (
     }
 
     if (verticalMode) {
-      folder._params.x = grandFolderGap
+      folder._params.x = UI_GROUP_PADDING
 
       let heightsOfBlocksAbove = 0
 
@@ -236,8 +241,8 @@ const setInnerBlocksCoordinates = (
 
       folder._params.y =
         !index || index === 0
-          ? grandFolderGap
-          : heightsOfBlocksAbove + grandFolderGap * (index + 1)
+          ? UI_GROUP_PADDING
+          : heightsOfBlocksAbove + UI_GROUP_PADDING * (index + 1)
     } else {
       if (
         folder.folders &&
@@ -245,8 +250,8 @@ const setInnerBlocksCoordinates = (
         (!folder.actions ||
           (folder.actions && Object.keys(folder.actions).length === 0))
       ) {
-        folder._params.x = (index + 1) * grandFolderGap
-        folder._params.y = grandFolderGap
+        folder._params.x = (index + 1) * UI_GROUP_PADDING
+        folder._params.y = UI_GROUP_PADDING
       }
 
       if (
@@ -257,13 +262,13 @@ const setInnerBlocksCoordinates = (
       ) {
         const prefixWidth =
           parentFolder.actions && Object.keys(parentFolder.actions).length > 0
-            ? parentFolder.actions._params.width + grandFolderGap
+            ? parentFolder.actions._params.width + UI_GROUP_PADDING
             : 0
         folder._params.x =
           prefixWidth +
-          (index + 1) * grandFolderGap +
+          (index + 1) * UI_GROUP_PADDING +
           index * folder._params.width
-        folder._params.y = grandFolderGap
+        folder._params.y = UI_GROUP_PADDING
       }
 
       if (
@@ -274,14 +279,14 @@ const setInnerBlocksCoordinates = (
       ) {
         folder._params.x =
           parentFolder.folders && Object.keys(parentFolder.folders).length > 0
-            ? grandFolderGap
+            ? UI_GROUP_PADDING
             : 0
         if (
           parentFolder.folders &&
           Object.keys(parentFolder.folders).length > 0 &&
           index === 0
         ) {
-          folder._params.y = grandFolderGap
+          folder._params.y = UI_GROUP_PADDING
         }
         if (
           parentFolder.folders &&
@@ -289,16 +294,16 @@ const setInnerBlocksCoordinates = (
           index !== 0
         ) {
           folder._params.y =
-            grandFolderGap +
-            index * actionHeight +
-            (index * gapBetweenActions) / 2
+            UI_GROUP_PADDING +
+            index * UI_ACTION_HEIGHT +
+            (index * UI_GROUP_GAP) / 2
         }
         if (
           parentFolder.folders &&
           Object.keys(parentFolder.folders).length <= 0 &&
           index === 0
         ) {
-          folder._params.y = folderLabelHeight + gapBetweenActions / 2
+          folder._params.y = UI_GROUP_LABEL_HEIGHT + UI_GROUP_GAP / 2
         }
         if (
           parentFolder.folders &&
@@ -306,9 +311,9 @@ const setInnerBlocksCoordinates = (
           index !== 0
         ) {
           folder._params.y =
-            folderLabelHeight +
-            ((index + 1) * gapBetweenActions) / 2 +
-            index * actionHeight
+            UI_GROUP_LABEL_HEIGHT +
+            ((index + 1) * UI_GROUP_GAP) / 2 +
+            index * UI_ACTION_HEIGHT
         }
       }
 
@@ -320,18 +325,18 @@ const setInnerBlocksCoordinates = (
       ) {
         let prefixWidth =
           parentFolder.actions && Object.keys(parentFolder.actions).length > 0
-            ? parentFolder.actions._params.width + grandFolderGap
+            ? parentFolder.actions._params.width + UI_GROUP_PADDING
             : 0
 
         if (index > 0) {
           for (let k = 0; k < index; k++) {
             prefixWidth +=
               Object.values(parentFolder.folders)[k]._params.width +
-              grandFolderGap
+              UI_GROUP_PADDING
           }
         }
-        folder._params.x = prefixWidth + grandFolderGap
-        folder._params.y = grandFolderGap
+        folder._params.x = prefixWidth + UI_GROUP_PADDING
+        folder._params.y = UI_GROUP_PADDING
       }
     }
 
@@ -350,14 +355,12 @@ const setInnerBlocksCoordinates = (
 }
 
 const setFolderCoordinates = (data) => {
-  let offset = grandFolderGap * 2 * elementsScaleCoef
+  let offset = UI_GROUP_PADDING * 2 * UI_SCALE
   for (const folder of Object.values(data.folders)) {
     folder._params.y = offset
-    folder._params.x = actionWidth + grandFolderGap * 2
+    folder._params.x = UI_ACTION_WIDTH + UI_GROUP_PADDING * 2
     offset =
-      folder._params.height +
-      folder._params.y +
-      grandFolderGap * elementsScaleCoef
+      folder._params.height + folder._params.y + UI_GROUP_PADDING * UI_SCALE
 
     for (const [i, subFolder] of Object.values(folder.folders).entries()) {
       setInnerBlocksCoordinates(subFolder, i, folder)
@@ -387,46 +390,43 @@ const nodesSetCoordinates = (data) => {
   buildGraph(data)
 }
 
-const destructureThroughNodes = (arr, nodes) => {
-  const obj = {}
-  if (nodes.id) {
-    for (const [key, value] of Object.entries(nodes)) {
-      if (key && key !== 'folders' && key !== 'actions') {
-        obj[key] = value
-      }
+const destructureNodesObj = (nodes) => {
+  const arr = []
 
-      if (key === '_params') {
-        obj.style = {
-          width: value.width,
-          height: value.height,
-        }
-        obj.position = {
-          x: value.x,
-          y: value.y,
-        }
+  const traverseNodes = (node) => {
+    if (!node.id) return
+
+    const { folders, actions, _params, ...rest } = node
+    const obj = { ...rest }
+
+    if (_params) {
+      obj.style = {
+        width: _params.width,
+        height: _params.height,
+      }
+      obj.position = {
+        x: _params.x,
+        y: _params.y,
       }
     }
 
     arr.push(obj)
 
-    if (nodes.folders && Object.keys(nodes.folders).length > 0) {
-      for (const folder of Object.values(nodes.folders)) {
-        destructureThroughNodes(arr, folder)
+    if (folders) {
+      for (const folder of Object.values(folders)) {
+        traverseNodes(folder)
       }
     }
 
-    if (nodes.actions && Object.keys(nodes.actions).length > 0) {
-      for (const action of Object.values(nodes.actions)) {
-        destructureThroughNodes(arr, action)
+    if (actions) {
+      for (const action of Object.values(actions)) {
+        traverseNodes(action)
       }
     }
   }
 
+  traverseNodes(nodes)
   return arr
-}
-
-const destructureNodesObj = (nodes) => {
-  return destructureThroughNodes([], nodes)
 }
 
 const setLayerIndexes = (folders, index) => {
@@ -480,10 +480,7 @@ const calculateAmountOfActions = (nodes, writeInto = false) => {
   return writeInto ? nodes.data.actionsAmount : undefined
 }
 
-export const getNodesAndEdges = (
-  actions: GetListResponse | undefined,
-  colorMode: string
-) => {
+export const getNodes = (actions: GetListResponse | undefined) => {
   if (!actions) {
     return []
   }
@@ -505,8 +502,10 @@ export const getNodesAndEdges = (
     if (!item.id || typeof item.id !== 'string') {
       continue
     }
+    const { levels } = splitActionId(item.id)
+
     const idParts = item.id.split(':')
-    const folders = idParts[0].split('.')
+    const folders = levels
 
     let currentFolder = nodes.folders
     let parentId = ''
@@ -573,8 +572,6 @@ export const getNodesAndEdges = (
     }
   }
 
-  const edges = []
-
   if (nodes.folders) {
     // Set layer indexes
     let layerIndex = 0
@@ -596,26 +593,119 @@ export const getNodesAndEdges = (
 
       layerIndex += 1
     }
-
-    for (const folder of Object.keys(nodes.folders)) {
-      edges.push({
-        id: `start-${folder}`,
-        source: 'start',
-        target: folder,
-        type: 'smoothstep',
-        style: {
-          strokeWidth: 2 * elementsScaleCoef,
-          stroke: colorMode === 'dark' ? '#fff' : '#000',
-        },
-        pathOptions: {
-          borderRadius: 20 * elementsScaleCoef,
-        },
-      })
-    }
   }
 
   nodesSetCoordinates(nodes)
   calculateAmountOfActions(nodes)
 
-  return [destructureNodesObj(nodes), edges.reverse()]
+  const newNodes = new Set<string>()
+  for (const item of actions.data) {
+    if (!item.id || typeof item.id !== 'string') {
+      continue
+    }
+    const { levels } = splitActionId(item.id)
+    levels.reduce((acc, level) => {
+      if (acc) {
+        newNodes.add(`${acc}.${level}`)
+        return `${acc}.${level}`
+      }
+      newNodes.add(level)
+      return level
+    }, '')
+
+    newNodes.add(item.id)
+  }
+  const newNodesArray = [...newNodes]
+  const newNodesArraySorted = newNodesArray.sort((a, b) => {
+    const aLevels = splitActionId(a).levels.length + (a.includes(':') ? 1 : 0)
+    const bLevels = splitActionId(b).levels.length + (b.includes(':') ? 1 : 0)
+    return bLevels - aLevels
+  })
+  console.log('newNodesArraySorted', newNodesArraySorted)
+
+  const findAllChildrenActions = (node: string) => {
+    return [...newNodes].filter((n) => n.startsWith(node) && n.includes(':'))
+  }
+
+  const findDirectChild = (node: string) =>
+    [...newNodes].filter((n) => {
+      return (
+        n.startsWith(node) &&
+        n.substring(node.length + 1).length > 0 &&
+        !n.substring(node.length + 1).includes('.') &&
+        !n.substring(node.length + 1).includes(':')
+      )
+    })
+
+  const findFolderHeight = (node: string) => {
+    const children = findAllChildrenActions(node)
+    return (
+      children.length * UI_ACTION_HEIGHT +
+      (children.length - 1) * UI_GROUP_GAP +
+      UI_GROUP_LABEL_HEIGHT
+    )
+  }
+
+  const newNodesResultArray = Array.from(newNodes).map((node) => {
+    const { isRoot } = splitActionId(node as string)
+    let type = 'node-action'
+    if (!node.includes(':')) {
+      type = 'node-wrapper'
+    }
+    if (type === 'node-wrapper') {
+      const direct = findDirectChild(node)
+      console.log(node, direct)
+    }
+    return {
+      id: node,
+      type,
+      data: {
+        actionsAmount: findAllChildrenActions(node).length,
+        topLayer: isRoot,
+      },
+      style: {
+        width: UI_ACTION_WIDTH,
+        height:
+          type === 'node-action' ? UI_ACTION_HEIGHT : findFolderHeight(node),
+      },
+    }
+  })
+  console.log('newNodesResultArray', newNodesResultArray)
+
+  console.log('destructureNodesObj(nodes)', destructureNodesObj(nodes))
+  return destructureNodesObj(nodes)
+}
+
+export const getEdges = (actions: GetListResponse | undefined) => {
+  if (!actions) {
+    return []
+  }
+  const edges = new Set()
+
+  for (const item of actions.data) {
+    if (!item.id || typeof item.id !== 'string') {
+      continue
+    }
+    const { levels } = splitActionId(item.id)
+    if (levels.length < 1) {
+      continue
+    }
+    edges.add(levels[0])
+  }
+
+  return (
+    Array.from(edges).map((edge) => ({
+      id: `start-${edge}`,
+      source: 'start',
+      target: edge as string,
+      type: 'smoothstep',
+      style: {
+        strokeWidth: 2 * UI_SCALE,
+        stroke: '#000',
+      },
+      pathOptions: {
+        borderRadius: 20 * UI_SCALE,
+      },
+    })) || []
+  )
 }
