@@ -9,3 +9,85 @@
   white-space: nowrap !important;
   border: 0 !important;
 }
+
+div.flow-directory__action {
+  width: 300px;
+  background-color: var(--xy-node-background-color-default);
+}
+
+div.flow-directory__action:hover {
+  color: white;
+  background-color: rgb(var(--primary-color));
+}
+
+div.flow-directory__action--active {
+  color: white;
+  background-color: rgb(var(--primary-color));
+}
+
+.flow-directory__action .MuiTypography-body2 {
+  color: inherit;
+}
+
+.flow-action.flow-action--start {
+  border-color: transparent;
+  font-family: Inter, Arial, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 1px 1px;
+  border-radius: 6px;
+  padding-inline: 12px;
+  text-align: start;
+  justify-content: space-between;
+  display: flex;
+  align-items: center;
+}
+
+div.flow-directory {
+  border-radius: 6px;
+  border-color: rgb(var(--primary-color));
+  background-color: rgba(var(--primary-color), 0.1);
+  min-width: 10rem;
+}
+
+div.flow-directory--active {
+  border-color: rgb(var(--primary-color));
+}
+
+.flow-directory__header {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  gap: 1rem;
+  background-color: rgb(var(--primary-color));
+  color: white;
+  border-top-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  min-width: 5rem;
+}
+
+button.flow-directory__header-button {
+  padding: 2px 8px;
+  gap: 2px;
+  min-width: 10px;
+}
+
+button.flow-directory__header-button .MuiButton-icon {
+  margin-inline-end: 0;
+}
+
+.react-flow__node-rootDirectory:nth-child(4n) {
+  --primary-color: 122, 90, 248;
+}
+
+.react-flow__node-rootDirectory:nth-child(4n + 1) {
+  --primary-color: 237, 58, 97;
+}
+
+.react-flow__node-rootDirectory:nth-child(4n + 2) {
+  --primary-color: 20, 112, 239;
+}
+
+.react-flow__node-rootDirectory:nth-child(4n + 3) {
+  --primary-color: 47, 216, 161;
+}
