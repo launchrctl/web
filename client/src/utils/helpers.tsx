@@ -8,12 +8,12 @@ export const sentenceCase = (a: string) => {
 
 export const splitActionId = (actionId: string) => {
   if (!actionId.includes(':') && !actionId.includes('.')) {
-    return { levels: [], id: actionId }
+    return { levels: [], id: actionId, isRoot: true }
   }
 
   const [path, id] = actionId.split(':')
   const levels = path ? path.split('.') : []
-  return { levels, id }
+  return { levels, id, isRoot: false }
 }
 
 // Returns array of ids of duplicated actions

@@ -1,9 +1,6 @@
 import 'reactflow/dist/style.css'
 
-import { Typography } from '@mui/material'
-import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
-import Paper from '@mui/material/Paper'
 import { styled, useTheme } from '@mui/material/styles'
 import { GetListResponse } from '@refinedev/core'
 import {
@@ -20,162 +17,24 @@ import Flow, {
   NodeTypes,
   Position,
   ReactFlowInstance,
-  useEdgesState,
   useNodesState,
 } from 'reactflow'
-import { useDebouncedCallback } from 'use-debounce'
 
-import ActionIcon from '/images/action.svg'
-import CheckIcon from '/images/check.svg'
+import WhiteBand from './flow/WhiteBand'
+import NodeWrapper from './flow/NodeWrapper'
+
 import FlowBg from '/images/flow-bg.svg'
 import FlowBgDark from '/images/flow-bg-dark.svg'
 
 import { useAction, useActionDispatch } from '../hooks/ActionHooks'
-import { IFlowNodeType } from '../types'
-import {
-  actionHeight,
-  actionWidth,
-  buildNodeColor,
-  elementsScaleCoef,
-  folderLabelHeight,
-  getNodesAndEdges,
-} from '../utils/react-flow-builder'
-
-type INodeData = {
-  actionsAmount?: number
-  filled?: boolean
-  topLayer?: boolean
-  description?: string
-  isExecuting: boolean
-  isActive: boolean
-  isHovered: boolean
-  label?: string
-  layerIndex?: boolean
-  type: IFlowNodeType
-}
+import { INodeData } from '../types'
+import { getNodes, getEdges } from '../utils/react-flow-builder'
+import { UI_SCALE } from '../utils/constants'
 
 const nodeTypes: NodeTypes = {
   'node-start': NodeStart,
   'node-wrapper': NodeWrapper,
   'node-action': NodeAction,
-}
-const WhiteBand = ({ data }: { data: INodeData }) => {
-  const [active, setActive] = useState(false)
-  // TODO: for now always false, since `data.isExecuting` is never processed.
-  // Add progress indicator into each card on flow while action is executing.
-  const [executing, setExecuting] = useState(false)
-
-  useEffect(() => {
-    setActive(data.isActive)
-  }, [data.isActive])
-
-  useEffect(() => {
-    setExecuting(data.isExecuting)
-  }, [data.isExecuting])
-
-  return (
-    <Box
-      className="react-flow__node-default"
-      sx={{
-        width: `${actionWidth}px`,
-        height: `${actionHeight}px`,
-        boxShadow: `0 ${elementsScaleCoef}px ${elementsScaleCoef}px rgba(0, 0, 0, 0.2)`,
-        borderRadius: `${6 * elementsScaleCoef}px`,
-        border: 0,
-        paddingInline: `${12 * elementsScaleCoef}px`,
-        textAlign: 'start',
-        gap: `${12 * elementsScaleCoef}px`,
-        justifyContent: 'space-between',
-        backgroundColor:
-          data.layerIndex === undefined
-            ? ''
-            : buildNodeColor({
-                index: Number(data.layerIndex),
-                isFilled: true,
-              }),
-        backgroundImage:
-          data.layerIndex === undefined || (!active && !data.isHovered)
-            ? 'linear-gradient(#fff, #fff)'
-            : `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`,
-        display: 'flex',
-        alignItems: 'center',
-        cursor: data.type === 'node-action' ? 'pointer' : 'grab',
-        '&:hover': {
-          backgroundImage:
-            data.layerIndex === undefined
-              ? 'linear-gradient(#fff, #fff)'
-              : `linear-gradient(rgba(255, 255, 255, ${active ? '0.65' : '0.8'}), rgba(255, 255, 255, ${active ? '0.65' : '0.8'}))`,
-        },
-      }}
-    >
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 0.5,
-        }}
-      >
-        <Box
-          sx={{
-            typography: 'subtitle2',
-            fontSize: `${16 * elementsScaleCoef}px`,
-            lineHeight: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: '1',
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          {data?.label}
-        </Box>
-        {data?.description && (
-          <Box
-            sx={{
-              typography: 'subtitle2',
-              fontSize: `${11 * elementsScaleCoef}px`,
-              color: '#667085',
-              lineHeight: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: '-webkit-box',
-              WebkitLineClamp: '1',
-              WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {data?.description}
-          </Box>
-        )}
-      </Box>
-      {data.type === 'node-action' && (
-        <Box
-          sx={{
-            color: '#000',
-            '& img': {
-              display: 'block',
-              width: `${16 * elementsScaleCoef}px`,
-              height: `${16 * elementsScaleCoef}px`,
-            },
-          }}
-        >
-          {executing ? (
-            <CircularProgress
-              variant="indeterminate"
-              disableShrink
-              thickness={7}
-              value={70}
-              size={16}
-              sx={{
-                display: 'block',
-                'animation-duration': '0.5s',
-              }}
-            />
-          ) : (
-            <img src={active ? CheckIcon : ActionIcon} />
-          )}
-        </Box>
-      )}
-    </Box>
-  )
 }
 
 function NodeStart({ data }: { data: INodeData }) {
@@ -189,121 +48,15 @@ function NodeStart({ data }: { data: INodeData }) {
         style={{
           backgroundColor: palette?.mode === 'dark' ? '#000' : '#fff',
           borderColor: palette?.mode === 'dark' ? '#fff' : '#000',
-          borderWidth: `${2 * elementsScaleCoef}px`,
-          width: `${8 * elementsScaleCoef}px`,
-          height: `${8 * elementsScaleCoef}px`,
+          borderWidth: `${2 * UI_SCALE}px`,
+          width: `${8 * UI_SCALE}px`,
+          height: `${8 * UI_SCALE}px`,
           minWidth: 0,
           minHeight: 0,
-          right: `-${4 * elementsScaleCoef}px`,
+          right: `-${4 * UI_SCALE}px`,
         }}
       />
     </>
-  )
-}
-function NodeWrapper({ data }: { data: INodeData }) {
-  const { palette } = useTheme()
-  return (
-    <Paper
-      sx={{
-        height: '100%',
-        backgroundColor: buildNodeColor({
-          index: Number(data.layerIndex),
-          isFilled: data.filled,
-          isDarker: data.filled && data.isHovered,
-          isHovered: data.isHovered,
-        }),
-        backgroundImage: 'none',
-        borderRadius: `${6 * elementsScaleCoef}px`,
-        outline: `${2 * elementsScaleCoef}px solid ${buildNodeColor({
-          index: Number(data.layerIndex),
-          isFilled: true,
-          isDarker: data.isHovered,
-        })}`,
-      }}
-    >
-      <Box
-        sx={{
-          typography: 'subtitle2',
-          backgroundColor: buildNodeColor({
-            index: Number(data.layerIndex),
-            isFilled: true,
-            isDarker: data.isHovered,
-          }),
-          borderBottomRightRadius: `${6 * elementsScaleCoef}px`,
-          borderTopLeftRadius: `${6 * elementsScaleCoef}px`,
-          display: 'inline-flex',
-          verticalAlign: 'top',
-          fontSize: `${16 * elementsScaleCoef}px`,
-          gap: `${12 * elementsScaleCoef}px`,
-          height: `${folderLabelHeight}px`,
-          alignItems: 'center',
-          paddingInline: `${12 * elementsScaleCoef}px`,
-          paddingBlockEnd: data.filled ? '' : `${2 * elementsScaleCoef}px`,
-          width: data.filled ? '100%' : 'auto',
-          color: '#fff',
-        }}
-      >
-        <Typography
-          sx={{
-            lineHeight: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: '2',
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          {data?.label}
-        </Typography>
-        {data.actionsAmount && (
-          <Box
-            className={'actions-pill'}
-            sx={{
-              backgroundColor: '#fff',
-              borderRadius: `${5 * elementsScaleCoef}px`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: `${2 * elementsScaleCoef}px`,
-              padding: `${2 * elementsScaleCoef}px ${11 * elementsScaleCoef}px ${2 * elementsScaleCoef}px ${7 * elementsScaleCoef}px`,
-              color: '#000',
-              marginInlineStart: data.filled ? 'auto' : '',
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: `rgba(255, 255, 255, 0.8)`,
-              },
-              '& img': {
-                display: 'block',
-                width: `${16 * elementsScaleCoef}px`,
-                height: `${16 * elementsScaleCoef}px`,
-              },
-            }}
-          >
-            <img src={ActionIcon} />
-            {data.actionsAmount}
-          </Box>
-        )}
-      </Box>
-      {data.topLayer && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          style={{
-            position: 'relative',
-            left: `-${5 * elementsScaleCoef}px`,
-            transform: 'none',
-            backgroundColor: palette?.mode === 'dark' ? '#000' : '#fff',
-            borderColor: palette?.mode === 'dark' ? '#fff' : '#000',
-            borderWidth: `${2 * elementsScaleCoef}px`,
-            width: `${8 * elementsScaleCoef}px`,
-            height: `${8 * elementsScaleCoef}px`,
-            minWidth: 0,
-            minHeight: 0,
-            top: `-${folderLabelHeight / 2 + 4 * elementsScaleCoef}px`,
-          }}
-        />
-      )}
-    </Paper>
   )
 }
 
@@ -325,30 +78,27 @@ const ReactFlowStyled = styled(Flow)(() => ({
   },
 }))
 
-interface IActionsFlowProps {
+export const ActionsFlow: FC<{
   actions: GetListResponse | undefined
-}
-
-export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
+}> = ({ actions }) => {
   const { palette } = useTheme()
   const [isLoading, setLoading] = useState(true)
   const [nodes, setNodes] = useNodesState([])
-  const [edges, setEdges] = useEdgesState([])
   const dispatch = useActionDispatch()
-  const { id: nodeId, hoverId } = useAction()
+  const { id: nodeId } = useAction()
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance>()
+  const [nodeData, setNodeData] = useState<Node>()
 
   useEffect(() => {
-    const [receivedNodes, receivedEdges] = getNodesAndEdges(
-      actions,
-      palette?.mode
-    )
+    const receivedNodes = getNodes(actions)
 
-    setNodes(receivedNodes)
-    setEdges(receivedEdges)
-
+    if (receivedNodes) {
+      setNodes(receivedNodes)
+    }
     setLoading(false)
   }, [actions])
+
+  const edges = getEdges(actions)
 
   useEffect(() => {
     if (nodeId && nodes && nodes.some((a) => a.id === nodeId)) {
@@ -368,13 +118,7 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       })
       if (nodeId) {
         const maxZoom = 0.6
-        // TODO: Check this feature.
-        // if (nodeClickState.id.includes(':')) {
-        //   maxZoom = 0.8
-        // }
-        // if (nodeClickState.isActionsGroup) {
-        //   maxZoom = 0.7
-        // }
+
         if (flowInstance) {
           flowInstance.fitView({
             duration: 400,
@@ -385,28 +129,6 @@ export const ActionsFlow: FC<IActionsFlowProps> = ({ actions }) => {
       }
     }
   }, [nodeId])
-
-  const debouncedSet = useDebouncedCallback((id) => {
-    setNodes((prev) => {
-      prev.map((a) => {
-        a.data.isHovered = a.id === id
-        return a
-      })
-      return [...prev]
-    })
-  }, 100)
-
-  useEffect(() => {
-    return debouncedSet(hoverId)
-  }, [hoverId])
-
-  // TODO: Check this feature.
-  // useEffect(() => {
-  //   const [, receivedEdges] = getNodesAndEdges(actions, palette?.mode)
-  //   setEdges(receivedEdges)
-  // }, [palette.mode])
-
-  const [nodeData, setNodeData] = useState<Node>()
 
   const nodeClickHandler = (e: ReactMouseEvent, node: Node) => {
     const target = e.target as HTMLElement
