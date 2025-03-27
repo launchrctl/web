@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
@@ -25,6 +26,9 @@ const (
 
 //go:embed action.yaml
 var actionYaml []byte
+
+//go:embed action.terminate.yaml
+var actionTerminateYaml []byte
 
 func init() {
 	launchr.RegisterPlugin(&Plugin{})
@@ -105,5 +109,31 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 
 		return p.runBackgroundWeb(ctx, webRunFlags, webPidFile)
 	}))
-	return []*action.Action{a}, nil
+
+	terminateA := action.NewFromYAML("test:terminate", actionTerminateYaml)
+	terminateA.SetRuntime(action.NewFnRuntime(func(ctx context.Context, a *action.Action) error {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		for i := 1; i <= 6; i++ {
+			select {
+			case <-ctx.Done():
+				fmt.Println("someFunction: Context cancelled, stopping early")
+				str := []byte("someFunction: Context cancelled, stopping early")
+				_, _ = a.Input().Streams().Out().Write(str)
+				return ctx.Err()
+			case <-ticker.C:
+				fmt.Printf("someFunction: Running... %d0 seconds\n", i)
+				str := []byte(fmt.Sprintf("someFunction: Running... %d0 seconds\n", i))
+				_, err := a.Input().Streams().Out().Write(str)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}))
+
+	return []*action.Action{a, terminateA}, nil
 }
