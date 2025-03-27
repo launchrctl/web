@@ -94,6 +94,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		customize:   opts.FrontendCustomize,
 		logsDirPath: opts.LogsDirPath,
 		app:         app,
+		stateMngr:   NewStateManager(),
 	}
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
