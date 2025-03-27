@@ -7,7 +7,6 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
-import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 import {
   useApiUrl,
@@ -15,7 +14,6 @@ import {
   useNotification,
   useOne,
   usePublish,
-  useSubscription,
 } from '@refinedev/core'
 import type { IChangeEvent } from '@rjsf/core'
 import { withTheme } from '@rjsf/core'
@@ -28,9 +26,10 @@ import { type FC, useEffect, useState } from 'react'
 import { components } from '../../openapi'
 import formTemplates from '../components/rjsf/templates'
 import formWidgets from '../components/rjsf/widgets'
-import { useActionDispatch } from '../hooks/ActionHooks'
+import { useAction, useActionDispatch } from '../hooks/ActionHooks'
 import {
   customizeUiSchema,
+  extractDateTimeFromId,
   sentenceCase,
   splitActionId,
 } from '../utils/helpers'
@@ -48,7 +47,6 @@ export const FormFlow: FC<{
 }> = ({ actionId, formType = 'sidebar', onSubmitCallback }) => {
   const [changed, setChanged] = useState<Set<string>>(new Set())
   const [formValues, setFormValues] = useState<IFormValues | null>(null)
-  const [actionRunning, setActionRunning] = useState(false)
   const [openDialog, setOpenDialog] = useState(false)
   const [previousSubmit, setPreviousSubmit] = useState<IFormValues | null>(null)
   const apiUrl = useApiUrl()
@@ -57,6 +55,8 @@ export const FormFlow: FC<{
   const { open } = useNotification()
   const { levels } = splitActionId(actionId)
   const dispatch = useActionDispatch()
+  const { running } = useAction()
+  const actionRunning = running?.has(actionId)
 
   const queryResult = useOne<components['schemas']['ActionFull']>({
     resource: 'actions',
@@ -101,51 +101,47 @@ export const FormFlow: FC<{
     }
   }
 
-  useSubscription({
-    channel: 'processes',
-    types: ['send-processes-finished'],
-    onLiveEvent: ({ payload, type }) => {
-      if (
-        actionId === payload?.data?.action &&
-        type === 'send-processes-finished'
-      ) {
-        setActionRunning(false)
-      }
-    },
-  })
-
   const handleSubmission = async (formData: IFormValues) => {
     if (onSubmitCallback) {
-      onSubmitCallback(actionId);
+      onSubmitCallback(actionId)
     }
-    setActionRunning(true)
-    publish?.({
-      channel: 'processes',
-      type: 'get-processes',
-      payload: { action: actionId },
-      date: new Date(),
-    })
     try {
       const result = await mutateAsync({
         url: `${apiUrl}/actions/${actionId}`,
         method: 'post',
         values: { ...formData, changed: [...changed] },
-        successNotification: {
-          message: 'Action successfully created.',
-          description: 'Success with no errors',
-          type: 'success',
+        successNotification: (data) => {
+          return {
+            description: `Action started successfully.`,
+            message: data?.data?.id
+              ? extractDateTimeFromId(data?.data?.id as string)
+              : '',
+            type: 'success',
+          }
         },
-        errorNotification: {
-          message: 'Error.',
-          description: 'Something went wrong',
-          type: 'error',
+        errorNotification: () => {
+          return {
+            message: 'Error.',
+            description: 'Something went wrong',
+            type: 'error',
+          }
         },
       })
 
       if (result && actionId) {
         dispatch?.({
+          type: 'start-action',
+          id: actionId,
+        })
+        dispatch?.({
           type: 'set-process',
           process: result.data as components['schemas']['ActionRunInfo'],
+        })
+        publish?.({
+          channel: 'processes',
+          type: 'get-processes',
+          payload: { action: actionId },
+          date: new Date(),
         })
         publish?.({
           channel: 'process',
@@ -155,8 +151,21 @@ export const FormFlow: FC<{
         })
         setPreviousSubmit(formData)
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating action:', error)
+
+      let message = 'An unknown error occurred'
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        message = String((error as { message: unknown }).message)
+      } else if (typeof error === 'string') {
+        message = error
+      }
+
+      open?.({
+        type: 'error',
+        message,
+        description: 'Error creating action:',
+      })
     }
   }
 
@@ -231,14 +240,6 @@ export const FormFlow: FC<{
             </Button>
           )}
 
-          {formType === 'sidebar' && (
-            <>
-              <Divider sx={{ my: 2 }} />
-              <Button href={`/actions/${actionId}/show`}>
-                Or Go to form page
-              </Button>
-            </>
-          )}
           {formType === 'wizard' && (
             <Paper
               sx={{

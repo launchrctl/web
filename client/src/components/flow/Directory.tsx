@@ -5,13 +5,12 @@ import {
   Box,
   Button,
   List,
-  ListItemButton,
-  ListItemText,
   Paper,
   Stack,
 } from '@mui/material'
 import BoltIcon from '@mui/icons-material/Bolt'
 import CheckIcon from '@mui/icons-material/Check'
+import ActionButton from './ActionButton'
 
 type ActionShort = components['schemas']['ActionShort']
 
@@ -94,25 +93,7 @@ const RecursiveDirectory = ({ actions, id }: RecursiveDirectoryProps) => {
           {directChildActions.length > 0 && (
             <List disablePadding dense>
               {directChildActions.map((action) => (
-                <ListItemButton
-                  key={action.id}
-                  onClick={() => actionClickHandler(action.id)}
-                  className={`flow-directory__action ${
-                    activeNodeId === action.id
-                      ? 'flow-directory__action--active'
-                      : ''
-                  }`}
-                >
-                  <ListItemText
-                    primary= {sentenceCase(action.id.split(':').pop() || action.id)}
-                    secondary={action.description}
-                    slotProps={{
-                      primary: { noWrap: true },
-                      secondary: { noWrap: true },
-                    }}
-                  ></ListItemText>
-                  {action.id === activeNodeId ? <CheckIcon /> : <BoltIcon />}
-                </ListItemButton>
+                <ActionButton key={action.id} action={action} />
               ))}
             </List>
           )}

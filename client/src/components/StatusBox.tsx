@@ -9,6 +9,9 @@ import { useAction } from '../hooks/ActionHooks'
 import StatusBoxAction from './StatusBoxAction'
 
 const StatusBox: FC = () => {
+  const { started, processes } = useAction()
+  const renderAnimatedFab = started && started.size > 0
+
   const [open, setOpen] = useState(false)
   const [selectedActionIndex, setSelectedActionIndex] = useState('1')
   const theme = useTheme()
@@ -19,9 +22,6 @@ const StatusBox: FC = () => {
     setSelectedActionIndex(newValue)
   }
 
-  const { started } = useAction()
-  const renderAnimatedFab = started && started.size > 0
-
   if (!started || started.size === 0) {
     return null
   }
@@ -29,7 +29,13 @@ const StatusBox: FC = () => {
   return (
     <>
       {renderAnimatedFab && (
-        <AnimatedFab handleOpen={handleOpen} badgeLength={started.size} />
+        <AnimatedFab
+          handleOpen={handleOpen}
+          startedLength={processes?.length}
+          runningLength={processes?.filter((process) => process.status === 'running').length}
+          errorLength={processes?.filter((process) => process.status === 'error').length}
+          finishedLength={processes?.filter((process) => process.status === 'finished').length}
+        />
       )}
       <Modal
         open={open}
@@ -85,7 +91,7 @@ const StatusBox: FC = () => {
               <TabPanel
                 value={(index + 1).toString()}
                 key={action}
-                sx={{ padding: 0, height: 'calc(100% - 50px)' }}
+                sx={{ padding: 0, height: 'calc(100% - 50px)', width: '100vw' }}
               >
                 <StatusBoxAction action={action} />
               </TabPanel>
