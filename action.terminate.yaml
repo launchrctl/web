@@ -1,0 +1,5 @@
+runtime: plugin
+action:
+  title: "Test: Terminate"
+  description: >-
+    Removes key-value pair from keyring
