@@ -4,7 +4,7 @@ import { FC, SyntheticEvent, useCallback, useEffect, useState } from 'react'
 
 import { components } from '../../openapi'
 import { ACTION_STATE_COLORS } from '../constants'
-import { extractDateTimeFromId } from '../utils/helpers'
+import { extractDateTimeFromId, splitRunId } from '../utils/helpers'
 import StatusBoxProcess from './StatusBoxProcess'
 
 interface IStatusBoxActionProps {
@@ -289,7 +289,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
                       }}
                       color={ACTION_STATE_COLORS[info.status]}
                     >
-                      {info.id.split('-')[0]}
+                      { splitRunId(info.id).id }
                       <Chip
                         variant="outlined"
                         label={info.status}

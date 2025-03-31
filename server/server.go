@@ -372,6 +372,7 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 			"message": "send-process",
 			"action":  msg.Action,
 			"data":    sd,
+			"status":  ri.Status,
 		}
 
 		resp, err := json.Marshal(msgAllProcesses)
