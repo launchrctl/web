@@ -7,7 +7,6 @@ import ListItem from '@mui/material/ListItem'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import Typography from '@mui/material/Typography'
 import { type FC, Fragment } from 'react'
-import { useDebouncedCallback } from 'use-debounce'
 
 import ArrowRightIcon from '/images/arrow-right.svg'
 
@@ -26,16 +25,10 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
     label: string
     items: components['schemas']['ActionShort'][]
   }[] = []
-
-  const breadcrumbs = actionsGroup.id.includes('.')
-    ? actionsGroup.id
-        .split('.')
-        .slice(0, -1)
-        .map((a) => sentenceCase(a))
-    : []
-  const title = actionsGroup.id.includes('.')
-    ? actionsGroup.id.split('.').pop()
-    : actionsGroup.id
+  const { levels, id } = splitActionId(actionsGroup.id)
+  const breadcrumbs =
+    levels.length > 0 ? levels.map((a) => sentenceCase(a)) : []
+  const title = id
 
   if (actionsGroup.list.length > 0) {
     const attachedActions = actionsGroup.list.filter((a) =>
@@ -103,27 +96,6 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
         }
       }
     }
-  }
-
-  const debounced = useDebouncedCallback((id = false) => {
-    if (id) {
-      dispatch?.({
-        type: 'set-hover-action',
-        id,
-      })
-    } else {
-      dispatch?.({
-        type: 'set-hover-action',
-      })
-    }
-  }, 25)
-
-  const wrappedHandleMouseEnter = (id: string) => {
-    debounced(id)
-  }
-
-  const wrappedHandleMouseLeave = () => {
-    debounced()
   }
 
   const actionClickHandler = (id: string) => {
@@ -222,8 +194,6 @@ export const ActionsListFlow: FC<ActionsListFlowProps> = ({ actionsGroup }) => {
                     >
                       <Box
                         className={'action-button'}
-                        onMouseEnter={() => wrappedHandleMouseEnter(item.id)}
-                        onMouseLeave={() => wrappedHandleMouseLeave()}
                         onClick={() => actionClickHandler(item.id)}
                         sx={{
                           display: 'flex',
