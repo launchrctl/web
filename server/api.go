@@ -376,7 +376,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	}
 
 	// Generate custom runID.
-	runID := strconv.FormatInt(time.Now().Unix(), 10) + "-" + a.ID
+	runID := strconv.FormatInt(time.Now().Unix(), 10) + "___" + a.ID
 
 	// Prepare action for run.
 	// Can we fetch directly json?

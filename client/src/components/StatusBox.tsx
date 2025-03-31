@@ -19,7 +19,7 @@ const StatusBox: FC = () => {
     setSelectedActionIndex(newValue)
   }
 
-  const { started } = useAction()
+  const { started, running, proc } = useAction()
   const renderAnimatedFab = started && started.size > 0
 
   if (!started || started.size === 0) {
@@ -29,7 +29,13 @@ const StatusBox: FC = () => {
   return (
     <>
       {renderAnimatedFab && (
-        <AnimatedFab handleOpen={handleOpen} badgeLength={started.size} />
+        <AnimatedFab
+          handleOpen={handleOpen}
+          startedLength={started.size}
+          runningLength={running.size}
+          errorLength={proc.error.size}
+          finishedLength={proc.finished.size}
+        />
       )}
       <Modal
         open={open}
