@@ -94,6 +94,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		apiPrefix:   opts.APIPrefix,
 		customize:   opts.FrontendCustomize,
 		logsDirPath: opts.LogsDirPath,
+		stateMngr:   NewStateManager(),
 	}
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
@@ -370,6 +371,7 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 			"message": "send-process",
 			"action":  msg.Action,
 			"data":    sd,
+			"status":  ri.Status,
 		}
 
 		resp, err := json.Marshal(msgAllProcesses)
