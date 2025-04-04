@@ -21,12 +21,12 @@ import (
 )
 
 const (
-	backgroundEnvVar   = "LAUNCHR_BACKGROUND"
+	backgroundEnvVar   = launchr.EnvVar("web_background")
 	serverInfoFilename = "server-info.json"
 )
 
 func isBackGroundEnv() bool {
-	return len(os.Getenv(backgroundEnvVar)) == 1
+	return len(backgroundEnvVar.Get()) == 1
 }
 
 func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
@@ -72,7 +72,7 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 
 func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile string) error {
 	if isBackGroundEnv() {
-		err := redirectOutputs(flags.PluginDir)
+		err := redirectOutputs(p.app, flags.PluginDir)
 		if err != nil {
 			return err
 		}
@@ -158,7 +158,7 @@ func runBackgroundCmd(pidFile string) (int, error) {
 
 	// Prepare the command to restart itself in the background
 	command := exec.Command(os.Args[0], os.Args[1:]...) //nolint G204
-	command.Env = append(os.Environ(), backgroundEnvVar+"=1")
+	command.Env = append(os.Environ(), backgroundEnvVar.EnvString("1"))
 
 	// Set platform-specific process ID
 	setSysProcAttr(command)
@@ -176,7 +176,7 @@ func runBackgroundCmd(pidFile string) (int, error) {
 	return command.Process.Pid, nil
 }
 
-func redirectOutputs(dir string) error {
+func redirectOutputs(app launchr.App, dir string) error {
 	err := launchr.EnsurePath(dir)
 	if err != nil {
 		return fmt.Errorf("can't create plugin temporary directory")
@@ -188,7 +188,7 @@ func redirectOutputs(dir string) error {
 	}
 
 	// Redirect log messages to a file.
-	launchr.Log().SetOutput(outLog)
+	launchr.Log().SetOutput(app.SensitiveWriter(outLog))
 	// Discard console output because it's intended for user interaction.
 	launchr.Term().SetOutput(io.Discard)
 
