@@ -18,7 +18,6 @@ import (
 
 	"github.com/launchrctl/launchr"
 	"github.com/launchrctl/launchr/pkg/action"
-	"github.com/launchrctl/launchr/pkg/jsonschema"
 )
 
 type launchrServer struct {
@@ -366,7 +365,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		//}
 	}()
 
-	params = fillActionParamsWithMissedProperties(a, params)
+	params = convertUserInput(a, params)
 	input := action.NewInput(a, params.Arguments, params.Options, streams)
 
 	err = a.SetInput(input)
@@ -448,32 +447,38 @@ func sendError(w http.ResponseWriter, code int, message string) {
 	_ = json.NewEncoder(w).Encode(petErr)
 }
 
-// We cannot rely on experimental feature on frontend.
-// So we need to care about missed properties here.
-// https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/form-props#experimental_defaultformstatebehavior
-func fillActionParamsWithMissedProperties(a *action.Action, params ActionRunParams) ActionRunParams {
-	argsDefault := a.ActionDef().Arguments
-	optsDefault := a.ActionDef().Options
+// Use front-end changed property to filter out default arguments and options.
+func convertUserInput(a *action.Action, params ActionRunParams) ActionRunParams {
+	changedArgs := make(map[string]bool)
+	changedOpts := make(map[string]bool)
+	args := make(action.InputParams)
+	opts := make(action.InputParams)
 
-	params.Arguments = fillMissingProperties(params.Arguments, argsDefault, "arguments")
-	params.Options = fillMissingProperties(params.Options, optsDefault, "options")
+	for _, p := range *params.Changed {
+		split := strings.Split(p, "____")
+		if split[1] == "arguments" {
+			changedArgs[split[2]] = true
+		} else if split[1] == "options" {
+			changedOpts[split[2]] = true
+		}
+	}
+
+	// Store changed arguments
+	for _, arg := range a.ActionDef().Arguments {
+		if changedArgs[arg.Name] {
+			args[arg.Name] = params.Arguments[arg.Name]
+		}
+	}
+
+	// Store changed options
+	for _, opt := range a.ActionDef().Options {
+		if changedOpts[opt.Name] {
+			opts[opt.Name] = params.Options[opt.Name]
+		}
+	}
+
+	params.Arguments = args
+	params.Options = opts
 
 	return params
-}
-
-func fillMissingProperties(properties map[string]interface{}, defaults action.ParametersList, propertyType string) map[string]interface{} {
-	if len(properties) < len(defaults) {
-		launchr.Log().Debug(fmt.Sprintf("not all %s were sent", propertyType), propertyType, fmt.Sprintf("%v", properties))
-		for _, def := range defaults {
-			if _, ok := properties[def.Name]; !ok {
-				if def.Default != nil {
-					properties[def.Name] = def.Default
-				} else {
-					properties[def.Name], _ = jsonschema.ConvertStringToType("", def.Type)
-				}
-			}
-		}
-		launchr.Log().Debug(fmt.Sprintf("%s updated with default values", propertyType), propertyType, fmt.Sprintf("%v", properties))
-	}
-	return properties
 }
