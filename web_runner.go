@@ -43,14 +43,12 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 		}
 	}
 
-	swaggerFS, _ := GetSwaggerUIAssetsFS()
 	serverOpts := &server.RunOptions{
 		Addr:              fmt.Sprintf(":%d", port), // @todo use proper addr
 		APIPrefix:         APIPrefix,
-		SwaggerJSON:       webOpts.UseSwaggerUI,
 		ProxyClient:       webOpts.ProxyClient,
 		ClientFS:          GetClientAssetsFS(),
-		SwaggerUIFS:       swaggerFS,
+		SwaggerUIFS:       GetSwaggerUIAssetsFS(),
 		FrontendCustomize: webOpts.FrontendCustomize,
 		LogsDirPath:       filepath.Join(webOpts.PluginDir, "logs"),
 	}

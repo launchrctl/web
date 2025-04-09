@@ -37,16 +37,6 @@ func GetClientAssetsFS() fs.FS {
 }
 
 // GetSwaggerUIAssetsFS returns web assets for swagger-ui.
-func GetSwaggerUIAssetsFS() (fs.FS, error) {
-	if swaggerAssetsFS != nil {
-		return swaggerAssetsFS, nil
-	}
-	// If client assets were not set, we are in the development environment.
-	path := filepath.Join("swagger-ui")
-	_, err := os.Stat(path)
-	if err != nil {
-		return nil, err
-	}
-	SetSwaggerUIAssetsFS(os.DirFS(path))
-	return swaggerAssetsFS, nil
+func GetSwaggerUIAssetsFS() fs.FS {
+	return swaggerAssetsFS
 }
