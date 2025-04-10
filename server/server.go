@@ -37,8 +37,7 @@ type RunOptions struct {
 	Addr string
 	// APIPrefix specifies subpath where Api is served.
 	APIPrefix string
-	// SwaggerJSON enables serving of swagger.json for swagger ui.
-	SwaggerJSON bool
+	// SwaggerUIFS enables serving of swagger.json for swagger ui if set.
 	SwaggerUIFS fs.FS
 	// Client server.
 	ClientFS          fs.FS
@@ -100,7 +99,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	app.GetService(&store.cfg)
 
 	// Provide Swagger UI.
-	if opts.SwaggerJSON {
+	if opts.SwaggerUIFS != nil {
 		serveSwaggerUI(swagger, r, opts)
 	}
 
@@ -132,7 +131,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	// @todo remove all stopped containers when stopped
 	// @todo add special prefix for web run containers.
 	store.baseURL = opts.BaseURL()
-	if opts.SwaggerJSON {
+	if opts.SwaggerUIFS != nil {
 		launchr.Term().Info().
 			Printfln("Swagger UI: %s\nswagger.json: %s", store.basePath()+swaggerUIPath, store.basePath()+swaggerJSONPath)
 	}
@@ -188,6 +187,7 @@ func spaHandler(opts *RunOptions) http.HandlerFunc {
 	launchr.Log().Debug("serving assets from path", "path", realpath)
 	fileServer := http.FileServer(http.FS(opts.ClientFS))
 	return func(w http.ResponseWriter, r *http.Request) {
+		// @todo prevent directory listing in case of missing index.html
 		f, err := opts.ClientFS.Open(strings.TrimPrefix(path.Clean(r.URL.Path), "/"))
 		if err == nil {
 			defer f.Close()
@@ -202,6 +202,7 @@ func spaHandler(opts *RunOptions) http.HandlerFunc {
 func serveSwaggerUI(swagger *openapi3.T, r chi.Router, opts *RunOptions) {
 	pathUI := opts.APIPrefix + swaggerUIPath
 	r.Route(pathUI, func(r chi.Router) {
+		// @todo prevent directory listing in case of missing index.html
 		r.Handle("/*", http.StripPrefix(pathUI, http.FileServer(http.FS(opts.SwaggerUIFS))))
 	})
 	r.Get(pathUI, func(w http.ResponseWriter, r *http.Request) {

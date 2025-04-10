@@ -36,10 +36,10 @@ action:
       type: string
       default: ""
     - name: swagger-ui
-      title: Swagger UI
-      description: Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui
-      type: boolean
-      default: false
+      title: Swagger UI Directory
+      description: Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui from specified directory.
+      type: string
+      default: ""
     - name: vars-file
       title: Variables filepath
       description: Path to variables file
