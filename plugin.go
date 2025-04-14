@@ -53,7 +53,6 @@ type webFlags struct {
 	Port              int
 	IsPortSet         bool
 	ProxyClient       string
-	UseSwaggerUI      bool
 	PluginDir         string
 	FrontendCustomize server.FrontendCustomize
 }
@@ -66,11 +65,10 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 		webPidFile := filepath.Join(pluginTmpDir, pidFile)
 		input := a.Input()
 		webRunFlags := webFlags{
-			PluginDir:    pluginTmpDir,
-			Port:         input.Opt("port").(int),
-			IsPortSet:    input.IsOptChanged("port"),
-			UseSwaggerUI: input.Opt("swagger-ui").(bool),
-			ProxyClient:  input.Opt("proxy-client").(string),
+			PluginDir:   pluginTmpDir,
+			Port:        input.Opt("port").(int),
+			IsPortSet:   input.IsOptChanged("port"),
+			ProxyClient: input.Opt("proxy-client").(string),
 			FrontendCustomize: server.FrontendCustomize{
 				VarsFile:  input.Opt("vars-file").(string),
 				Variables: action.InputOptSlice[string](input, "variables"),
@@ -86,6 +84,17 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 				return fmt.Errorf("ui assets are not available on path: %s", path)
 			}
 			SetClientAssetsFS(os.DirFS(path))
+		}
+
+		swaggerUI := input.Opt("swagger-ui").(string)
+		if swaggerUI != "" {
+			path := launchr.MustAbs(swaggerUI)
+			_, err := os.Stat(path)
+			if os.IsNotExist(err) {
+				return fmt.Errorf("swagger UI is not available on path: %s", path)
+			}
+
+			SetSwaggerUIAssetsFS(os.DirFS(path))
 		}
 
 		// If 'stop' arg passed, try to interrupt process and remove PID file.
