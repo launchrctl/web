@@ -352,13 +352,6 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	// Generate custom runID.
 	runID := strconv.FormatInt(time.Now().Unix(), 10) + "-" + a.ID
 
-	// Prepare action for run.
-	// Can we fetch directly json?
-	streams, err := createFileStreams(l.logsDirPath, runID, l.app)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, "Error preparing streams")
-	}
-
 	defer func() {
 		//if err != nil {
 		//	streams.Close()
@@ -366,8 +359,25 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	}()
 
 	params = convertUserInput(a, params)
+	quiet := isQuietModeEnabled(params.Globals)
+
+	// Prepare action for run.
+	// Can we fetch directly json?
+	streams, err := createFileStreams(l.logsDirPath, runID, l.app, quiet)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "Error preparing streams")
+	}
+
 	input := action.NewInput(a, params.Arguments, params.Options, streams)
 
+	for k, v := range *params.Runtime {
+		input.SetRuntimeOpt(k, v)
+	}
+
+	for k, v := range *params.Globals {
+		input.SetGlobalOpt(k, v)
+	}
+	
 	err = a.SetInput(input)
 	if err != nil {
 		// @todo validate must have info about which fields failed.
@@ -451,15 +461,31 @@ func sendError(w http.ResponseWriter, code int, message string) {
 func convertUserInput(a *action.Action, params ActionRunParams) ActionRunParams {
 	changedArgs := make(map[string]bool)
 	changedOpts := make(map[string]bool)
+	changedRuntime := make(map[string]bool)
+	changedGlobal := make(map[string]bool)
 	args := make(action.InputParams)
 	opts := make(action.InputParams)
+	runtime := make(action.InputParams)
+	globals := make(action.InputParams)
+
+	categoryMaps := map[string]map[string]bool{
+		"arguments": changedArgs,
+		"options":   changedOpts,
+		"runtime":   changedRuntime,
+		"globals":   changedGlobal,
+	}
 
 	for _, p := range *params.Changed {
 		split := strings.Split(p, "____")
-		if split[1] == "arguments" {
-			changedArgs[split[2]] = true
-		} else if split[1] == "options" {
-			changedOpts[split[2]] = true
+		if len(split) < 3 {
+			continue
+		}
+
+		category := split[1]
+		name := split[2]
+
+		if targetMap, exists := categoryMaps[category]; exists {
+			targetMap[name] = true
 		}
 	}
 
@@ -477,8 +503,26 @@ func convertUserInput(a *action.Action, params ActionRunParams) ActionRunParams 
 		}
 	}
 
+	if r, ok := a.Runtime().(action.RuntimeFlags); ok && params.Runtime != nil {
+		for _, rf := range r.FlagsDefinition() {
+			if changedRuntime[rf.Name] {
+				runtime[rf.Name] = (*params.Runtime)[rf.Name]
+			}
+		}
+	}
+
+	if params.Globals != nil {
+		for _, gf := range a.GlobalsDef() {
+			if changedGlobal[gf.Name] {
+				globals[gf.Name] = (*params.Globals)[gf.Name]
+			}
+		}
+	}
+
 	params.Arguments = args
 	params.Options = opts
+	params.Runtime = &runtime
+	params.Globals = &globals
 
 	return params
 }
