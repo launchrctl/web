@@ -104,7 +104,7 @@ const RecursiveDirectory = ({ actions, id }: RecursiveDirectoryProps) => {
                   }`}
                 >
                   <ListItemText
-                    primary={action.title}
+                    primary= {sentenceCase(action.id.split(':').pop() || action.id)}
                     secondary={action.description}
                     slotProps={{
                       primary: { noWrap: true },
