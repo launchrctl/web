@@ -64,7 +64,7 @@ export const ThemedHeaderV2: FC<RefineThemedLayoutV2HeaderProps> = () => {
           </Tooltip>
 
           <Tooltip title="Actions list">
-            <IconButton href="/actions" size="small" color="inherit">
+            <IconButton href="/list" size="small" color="inherit">
               <ListIcon />
             </IconButton>
           </Tooltip>
