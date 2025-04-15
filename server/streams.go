@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/launchrctl/launchr"
+	"github.com/launchrctl/launchr/pkg/action"
 )
 
 type fileStreams interface {
@@ -78,7 +79,7 @@ func (w *wrappedWriter) Close() error {
 	return nil
 }
 
-func createFileStreams(streamsDir, runId string, app launchr.App) (*webCli, error) {
+func createFileStreams(streamsDir, runId string, app launchr.App, quiet bool) (*webCli, error) {
 	outfile, err := os.Create(filepath.Join(streamsDir, runId+"-out.txt"))
 	if err != nil {
 		return nil, fmt.Errorf("error creating output file: %w", err)
@@ -99,9 +100,28 @@ func createFileStreams(streamsDir, runId string, app launchr.App) (*webCli, erro
 		w: errfile,
 	}
 
+	if quiet {
+		out.w = io.Discard
+		errWriter.w = io.Discard
+	}
+
 	// Build and return webCli
 	return &webCli{
 		Streams: launchr.NewBasicStreams(nil, app.SensitiveWriter(out), app.SensitiveWriter(errWriter)),
 		files:   []*os.File{outfile, errfile},
 	}, nil
+}
+
+func isQuietModeEnabled(persistent action.InputParams) bool {
+	if persistent == nil {
+		return false
+	}
+
+	quietValue, exists := persistent["quiet"]
+	if !exists {
+		return false
+	}
+
+	quietBool, ok := quietValue.(bool)
+	return ok && quietBool
 }

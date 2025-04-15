@@ -50,8 +50,11 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 		ClientFS:          GetClientAssetsFS(),
 		SwaggerUIFS:       GetSwaggerUIAssetsFS(),
 		FrontendCustomize: webOpts.FrontendCustomize,
+		DefaultUISchema:   webOpts.DefaultUISchema,
 		LogsDirPath:       filepath.Join(webOpts.PluginDir, "logs"),
 	}
+	serverOpts.SetLogger(webOpts.Log())
+	serverOpts.SetTerm(webOpts.Term())
 	go func() {
 		time.Sleep(time.Second)
 		err := openInBrowserWhenReady(serverOpts.BaseURL())
@@ -70,7 +73,7 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 
 func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile string) error {
 	if isBackGroundEnv() {
-		err := redirectOutputs(p.app, flags.PluginDir)
+		err := redirectOutputs(p.app, flags)
 		if err != nil {
 			return err
 		}
@@ -113,7 +116,7 @@ func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile s
 	}
 }
 
-func stopWeb(pidFile, pluginDir string) (err error) {
+func stopWeb(pidFile string, webOpts webFlags) (err error) {
 	onSuccess := "The web UI has been successfully shut down."
 
 	// Try to finish the background process.
@@ -130,7 +133,7 @@ func stopWeb(pidFile, pluginDir string) (err error) {
 
 	// If we don't have pid, probably there is a server running in foreground.
 	// We may also not have access to the pid file, prompt user the same.
-	serverRunInfo, err := getServerInfo(pluginDir)
+	serverRunInfo, err := getServerInfo(webOpts.PluginDir)
 	if err != nil {
 		return err
 	}
@@ -143,7 +146,7 @@ func stopWeb(pidFile, pluginDir string) (err error) {
 	if err = checkHealth(serverRunInfo.URL); err == nil {
 		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
-	cleanupPluginTemp(pluginDir)
+	cleanupPluginTemp(webOpts.PluginDir)
 	launchr.Term().Success().Println(onSuccess)
 	return nil
 }
@@ -174,13 +177,13 @@ func runBackgroundCmd(pidFile string) (int, error) {
 	return command.Process.Pid, nil
 }
 
-func redirectOutputs(app launchr.App, dir string) error {
-	err := launchr.EnsurePath(dir)
+func redirectOutputs(app launchr.App, webOpts webFlags) error {
+	err := launchr.EnsurePath(webOpts.PluginDir)
 	if err != nil {
 		return fmt.Errorf("can't create plugin temporary directory")
 	}
 
-	outLog, err := os.Create(filepath.Join(dir, "out.log")) //nolint G304 // Path is clean.
+	outLog, err := os.Create(filepath.Join(webOpts.PluginDir, "out.log")) //nolint G304 // Path is clean.
 	if err != nil {
 		return err
 	}
@@ -270,7 +273,6 @@ func getExistingWeb(pidFile string, pluginDir string) (string, error) {
 
 	serverRunInfo, err := getServerInfo(pluginDir)
 	if err != nil {
-		launchr.Log().Warn("error on getting server run info", "error", err)
 		return "", err
 	}
 	if serverRunInfo == nil || serverRunInfo.URL == "" {
@@ -300,7 +302,6 @@ func getAvailablePort(port int) (int, error) {
 
 	// Check available port from pool.
 	for !isAvailablePort(newPort) && newPort < maxPort {
-		launchr.Log().Debug("port is not available", "port", newPort)
 		newPort++
 	}
 
@@ -339,7 +340,7 @@ func openInBrowserWhenReady(url string) error {
 	launchr.Term().Info().Printfln("You can reach the web server at this URL: %s", url)
 	if err := openBrowser(url); err != nil {
 		launchr.Log().Error("failed to open browser", "error", err)
-		return fmt.Errorf("Failed to open browser: %w", err)
+		return fmt.Errorf("failed to open browser: %w", err)
 	}
 	return nil
 }

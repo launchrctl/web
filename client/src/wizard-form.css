@@ -6,6 +6,8 @@
 }
 
 .MuiGrid-item:has(#root____arguments__title + div:empty),
-.MuiGrid-item:has(#root____options__title + div:empty) {
+.MuiGrid-item:has(#root____options__title + div:empty),
+.MuiGrid-item:has(#root____runtime__title + div:empty),
+.MuiGrid-item:has(#root____persistent__title + div:empty) {
   display: none;
 }

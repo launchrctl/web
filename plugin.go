@@ -26,6 +26,9 @@ const (
 //go:embed action.yaml
 var actionYaml []byte
 
+//go:embed ui-schema.default.yaml
+var defaultUISchema []byte
+
 func init() {
 	launchr.RegisterPlugin(&Plugin{})
 }
@@ -50,11 +53,15 @@ func (p *Plugin) OnAppInit(app launchr.App) error {
 }
 
 type webFlags struct {
+	action.WithLogger
+	action.WithTerm
+
 	Port              int
 	IsPortSet         bool
 	ProxyClient       string
 	PluginDir         string
 	FrontendCustomize server.FrontendCustomize
+	DefaultUISchema   []byte
 }
 
 // DiscoverActions implements [launchr.ActionDiscoveryPlugin] interface.
@@ -73,7 +80,22 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 				VarsFile:  input.Opt("vars-file").(string),
 				Variables: action.InputOptSlice[string](input, "variables"),
 			},
+			DefaultUISchema: defaultUISchema,
 		}
+
+		// Set action logger. Fallback to default launchr logger.
+		log := launchr.Log()
+		if rt, ok := a.Runtime().(action.RuntimeLoggerAware); ok {
+			log = rt.LogWith()
+		}
+		webRunFlags.SetLogger(log)
+		// Set action term. Fallback to default launchr term.
+		term := launchr.Term()
+		if rt, ok := a.Runtime().(action.RuntimeTermAware); ok {
+			term = rt.Term()
+		}
+		webRunFlags.SetTerm(term)
+
 		foreground := input.Opt("foreground").(bool)
 		// Override client assets.
 		clientAssets := input.Opt("ui-assets").(string)
@@ -101,10 +123,15 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 		op := input.Arg("op")
 		switch op {
 		case stopArg:
-			return stopWeb(webPidFile, webRunFlags.PluginDir)
+			return stopWeb(webPidFile, webRunFlags)
 		}
 
-		if url, _ := getExistingWeb(webPidFile, webRunFlags.PluginDir); url != "" {
+		url, err := getExistingWeb(webPidFile, webRunFlags.PluginDir)
+		if err != nil {
+			launchr.Log().Debug("error on getting server run info", "error", err)
+		}
+
+		if url != "" {
 			return fmt.Errorf("another web UI is already running at %s\nPlease stop the existing server before starting a new one", url)
 		}
 
