@@ -62,7 +62,7 @@ export function App() {
             resources={[
               {
                 name: 'actions',
-                list: '/actions',
+                list: '/list',
                 show: '/actions/:id/show',
                 meta: {
                   canDelete: false,
@@ -87,8 +87,10 @@ export function App() {
                   }
                 >
                   <Route index element={<Navigate to="/flow" replace />} />
-                  <Route path="/actions">
+                  <Route path="/list">
                     <Route index element={<ActionList />} />
+                  </Route>
+                  <Route path="/actions">
                     <Route path=":id/show" element={<ActionShow />} />
                   </Route>
                   <Route path="/wizard">
