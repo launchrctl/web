@@ -20,6 +20,10 @@ export type IActionsGroup = {
 
 const isAction = (id: string) => id.split(':')[1]?.length
 
+const isNodeAction = (id: string, actionsList: components['schemas']['ActionShort'][] ) => {
+  return isAction(id) || actionsList.some(action => action.id === id);
+}
+
 export const SecondSidebarFlow: FC<{
   actions: GetListResponse
 }> = ({ actions }) => {
@@ -34,16 +38,14 @@ export const SecondSidebarFlow: FC<{
 
 
   useEffect(() => {
-    if (actions.data && nodeId && !isAction(nodeId)) {
+    if (actions.data && nodeId && !isNodeAction(nodeId, actionsGroup.list)) {
       setActionsGroup({
         id: nodeId,
         list: Object.values(actions.data)
           .filter(
             (a) =>
               a.id &&
-              typeof a.id === 'string' &&
-              a.id.includes(':') &&
-              a.id.startsWith(`${nodeId}`)
+              typeof a.id === 'string' && ((a.id.includes(':') && a.id.startsWith(`${nodeId}`)) || a.id == nodeId)
           )
           .map((a) => ({
             id: String(a.id),
@@ -101,7 +103,7 @@ export const SecondSidebarFlow: FC<{
       >
         {expand === '25vw' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
       </IconButton>
-      {isAction(nodeId) ? (
+      {isNodeAction(nodeId, actionsGroup.list) ? (
         <Box
           sx={{
             px: 2,

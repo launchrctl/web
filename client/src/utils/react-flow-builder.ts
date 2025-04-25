@@ -15,6 +15,7 @@ export const getRootNodes = (actions: GetListResponse | undefined) => {
     }
     const { levels } = splitActionId(item.id)
     if (levels.length < 1) {
+      roots.add(item.id)
       continue
     }
     roots.add(levels[0])
