@@ -267,6 +267,8 @@ components:
           required:
             - arguments
             - options
+            - runtime
+            - globals
           properties:
             arguments:
               type: object
