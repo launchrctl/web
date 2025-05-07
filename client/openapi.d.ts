@@ -231,7 +231,7 @@ export interface components {
             status: components["schemas"]["ActionRunStatus"];
         };
         /** @enum {string} */
-        ActionRunStatus: "created" | "running" | "finished" | "error";
+        ActionRunStatus: "created" | "running" | "finished" | "error" | "canceled";
         ActionRunStreamData: {
             /** @enum {string} */
             type: "stdOut" | "stdIn" | "stdErr";

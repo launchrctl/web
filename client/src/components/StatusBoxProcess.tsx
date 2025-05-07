@@ -102,7 +102,6 @@ const StatusBoxProcess: FC<IStatusBoxProcessProps> = ({ ri, actionId }) => {
       {ri.status === 'running' && (
         <Fab
           variant="extended"
-          color="error"
           aria-label="stop"
           size="small"
           sx={{ position: 'absolute', top: 16, right: 16 }}

@@ -91,7 +91,7 @@ const StatusBox: FC = () => {
               <TabPanel
                 value={(index + 1).toString()}
                 key={action}
-                sx={{ padding: 0, height: 'calc(100% - 50px)' }}
+                sx={{ padding: 0, height: 'calc(100% - 50px)', width: '100vw' }}
               >
                 <StatusBoxAction action={action} />
               </TabPanel>
