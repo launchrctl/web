@@ -91,3 +91,7 @@ button.flow-directory__header-button .MuiButton-icon {
 .react-flow__node-rootDirectory:nth-child(4n + 3) {
   --primary-color: 47, 216, 161;
 }
+
+.MuiSpeedDialAction-staticTooltipLabel {
+  white-space: nowrap;
+}

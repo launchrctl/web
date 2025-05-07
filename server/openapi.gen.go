@@ -22,6 +22,7 @@ import (
 
 // Defines values for ActionRunStatus.
 const (
+	ActionRunStatusCanceled ActionRunStatus = "canceled"
 	ActionRunStatusCreated  ActionRunStatus = "created"
 	ActionRunStatusError    ActionRunStatus = "error"
 	ActionRunStatusFinished ActionRunStatus = "finished"
@@ -161,6 +162,9 @@ type ServerInterface interface {
 	// Returns action run info
 	// (GET /actions/{id}/running/{runId})
 	GetOneRunningActionByID(w http.ResponseWriter, r *http.Request, id ActionId, runId ActionRunInfoId)
+	// Cancels running action
+	// (POST /actions/{id}/running/{runId}/cancel)
+	CancelRunningAction(w http.ResponseWriter, r *http.Request, id ActionId, runId ActionRunInfoId)
 	// Returns running action streams
 	// (GET /actions/{id}/running/{runId}/streams)
 	GetRunningActionStreams(w http.ResponseWriter, r *http.Request, id ActionId, runId ActionRunInfoId, params GetRunningActionStreamsParams)
@@ -209,6 +213,12 @@ func (_ Unimplemented) GetRunningActionsByID(w http.ResponseWriter, r *http.Requ
 // Returns action run info
 // (GET /actions/{id}/running/{runId})
 func (_ Unimplemented) GetOneRunningActionByID(w http.ResponseWriter, r *http.Request, id ActionId, runId ActionRunInfoId) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Cancels running action
+// (POST /actions/{id}/running/{runId}/cancel)
+func (_ Unimplemented) CancelRunningAction(w http.ResponseWriter, r *http.Request, id ActionId, runId ActionRunInfoId) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -365,6 +375,40 @@ func (siw *ServerInterfaceWrapper) GetOneRunningActionByID(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetOneRunningActionByID(w, r, id, runId)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelRunningAction operation middleware
+func (siw *ServerInterfaceWrapper) CancelRunningAction(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id ActionId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "runId" -------------
+	var runId ActionRunInfoId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runId", chi.URLParam(r, "runId"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelRunningAction(w, r, id, runId)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -634,6 +678,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/actions/{id}/running/{runId}", wrapper.GetOneRunningActionByID)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/actions/{id}/running/{runId}/cancel", wrapper.CancelRunningAction)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/actions/{id}/running/{runId}/streams", wrapper.GetRunningActionStreams)
 	})
 	r.Group(func(r chi.Router) {
@@ -655,30 +702,31 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"leQo8mebkT30yrIs/w8AAP//Tr7co7gfAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

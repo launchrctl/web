@@ -146,6 +146,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/actions/{id}/running/{runId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancels running action
+         * @description Cancels running action
+         */
+        post: operations["cancelRunningAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/wizard": {
         parameters: {
             query?: never;
@@ -211,7 +231,7 @@ export interface components {
             status: components["schemas"]["ActionRunStatus"];
         };
         /** @enum {string} */
-        ActionRunStatus: "created" | "running" | "finished" | "error";
+        ActionRunStatus: "created" | "running" | "finished" | "error" | "canceled";
         ActionRunStreamData: {
             /** @enum {string} */
             type: "stdOut" | "stdIn" | "stdErr";
@@ -465,6 +485,30 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ActionRunStreamData"][];
                 };
+            };
+            default: components["responses"]["DefaultError"];
+        };
+    };
+    cancelRunningAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID of action to fetch */
+                id: components["parameters"]["ActionId"];
+                /** @description ID of the running action */
+                runId: components["parameters"]["ActionRunInfoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful operation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["DefaultError"];
         };

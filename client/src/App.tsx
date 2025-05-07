@@ -34,45 +34,46 @@ const apiUrl = getApiUrl()
 export function App() {
   const [isLoading, setLoading] = useState(true)
 
-  const setTitle = useDocumentTitle();
+  const setTitle = useDocumentTitle()
   useEffect(() => {
-    (async () => {
-      const data = await setCustomisation();
-      const customisation: { plasmactl_web_ui_platform_page_name?: string } = data;
-      setTitle(customisation?.plasmactl_web_ui_platform_page_name ?? 'Platform');
-      setLoading(false);
-    })();
+    ;(async () => {
+      const data = await setCustomisation()
+      const customisation: { plasmactl_web_ui_platform_page_name?: string } =
+        data
+      setTitle(customisation?.plasmactl_web_ui_platform_page_name ?? 'Platform')
+      setLoading(false)
+    })()
   }, [])
 
   if (isLoading) {
-    return null;
+    return null
   }
 
   return (
-    <ActionProvider>
-      <BrowserRouter>
-        <ThemeProvider>
-          <Refine
-            dataProvider={{
-              default: launchrDataProvider(apiUrl),
-            }}
-            liveProvider={liveProvider}
-            notificationProvider={useNotificationProvider}
-            routerProvider={routerBindings}
-            resources={[
-              {
-                name: 'actions',
-                list: '/list',
-                show: '/actions/:id/show',
-                meta: {
-                  canDelete: false,
-                },
+    <BrowserRouter>
+      <ThemeProvider>
+        <Refine
+          dataProvider={{
+            default: launchrDataProvider(apiUrl),
+          }}
+          liveProvider={liveProvider}
+          notificationProvider={useNotificationProvider}
+          routerProvider={routerBindings}
+          resources={[
+            {
+              name: 'actions',
+              list: '/list',
+              show: '/actions/:id/show',
+              meta: {
+                canDelete: false,
               },
-            ]}
-            options={{
-              liveMode: 'manual',
-            }}
-          >
+            },
+          ]}
+          options={{
+            liveMode: 'manual',
+          }}
+        >
+          <ActionProvider>
             <GlobalKBarProvider>
               <Routes>
                 <Route
@@ -107,9 +108,9 @@ export function App() {
               <UnsavedChangesNotifier />
               <RefineKbar />
             </GlobalKBarProvider>
-          </Refine>
-        </ThemeProvider>
-      </BrowserRouter>
-    </ActionProvider>
+          </ActionProvider>
+        </Refine>
+      </ThemeProvider>
+    </BrowserRouter>
   )
 }

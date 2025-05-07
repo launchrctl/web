@@ -94,6 +94,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		customize:   opts.FrontendCustomize,
 		logsDirPath: opts.LogsDirPath,
 		app:         app,
+		stateMngr:   NewStateManager(),
 	}
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
@@ -372,6 +373,7 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 			"message": "send-process",
 			"action":  msg.Action,
 			"data":    sd,
+			"status":  ri.Status,
 		}
 
 		resp, err := json.Marshal(msgAllProcesses)
@@ -387,12 +389,14 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 		l.wsMutex.Unlock()
 	}
 
+	ri, _ := l.actionMngr.RunInfoByID(msg.Action)
 	// Send the final message indicating streams have finished with the last stream data
 	msgFinished := map[string]interface{}{
 		"channel": "process",
 		"message": "send-process-finished",
 		"action":  msg.Action,
 		"data":    lastStreamData,
+		"status":  ri.Status,
 	}
 
 	finalResponse, err := json.Marshal(msgFinished)

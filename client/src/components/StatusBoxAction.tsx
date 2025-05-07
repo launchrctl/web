@@ -4,7 +4,7 @@ import { FC, SyntheticEvent, useCallback, useEffect, useState } from 'react'
 
 import { components } from '../../openapi'
 import { ACTION_STATE_COLORS } from '../constants'
-import { extractDateTimeFromId } from '../utils/helpers'
+import { extractDateTimeFromId, splitRunId } from '../utils/helpers'
 import StatusBoxProcess from './StatusBoxProcess'
 
 interface IStatusBoxActionProps {
@@ -70,7 +70,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
         setRunning(data.reverse())
         if (data.filter((a) => a.status === 'running').length === 0) {
           setRunningTab(false)
-          related = data.find((a) => ['error', 'finished'].includes(a.status))
+          related = data.find((a) => ['error', 'finished', 'canceled'].includes(a.status))
           if (related && related.id) {
             setArchiveTab({
               index: 0,
@@ -99,7 +99,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
         setRunningTab(false)
 
         const filterOfArchivedProcess = running.filter((a) =>
-          ['error', 'finished'].includes(a.status)
+          ['error', 'finished', 'canceled'].includes(a.status)
         )
 
         setArchiveTab({
@@ -204,12 +204,12 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
           activeRunningTab.index
         )
       } else if (
-        running.some((a) => ['error', 'finished'].includes(a.status)) &&
+        running.some((a) => ['error', 'finished', 'canceled'].includes(a.status)) &&
         typeof activeArchiveTab === 'object' &&
         activeArchiveTab.index >= 0
       ) {
         return TabPanelContent(
-          running.filter((a) => ['error', 'finished'].includes(a.status)),
+          running.filter((a) => ['error', 'finished', 'canceled'].includes(a.status)),
           activeArchiveTab.index
         )
       }
@@ -289,7 +289,7 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
                       }}
                       color={ACTION_STATE_COLORS[info.status]}
                     >
-                      {info.id.split('-')[0]}
+                      { splitRunId(info.id).id }
                       <Chip
                         variant="outlined"
                         label={info.status}
@@ -341,14 +341,15 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
     return ProcessesSection({
       title: 'Finished actions',
       noMessage: 'No finished actions',
-      list: running.filter((a) => ['error', 'finished'].includes(a.status)),
+      list: running.filter((a) => ['error', 'finished', 'canceled'].includes(a.status)),
       activeTab: activeArchiveTab,
       onChangeHandler: handleArchiveTabChange,
     })
   }
 
   return (
-    <Box
+    <Stack
+      direction={'row'}
       sx={{
         flexGrow: 1,
         bgcolor: 'background.paper',
@@ -356,14 +357,14 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
         height: '100%',
       }}
     >
+
       <Box
         sx={{
-          flexGrow: 1,
-          display: 'grid',
-          overflow: 'scroll',
+          width: '80vw',
           whiteSpace: 'pre-line',
           fontFamily: 'mono',
           backgroundColor: '#1e1e1e',
+          overflow: 'auto',
           color: '#fff',
           fontSize: '12px',
           lineHeight: '1.5',
@@ -372,19 +373,20 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
       >
         {TabPanels()}
       </Box>
+
       <Stack
         spacing={2}
         sx={{
           flexGrow: 0,
           height: 'calc(62.5vh - 48px)',
-          flexBasis: '20vw',
+          width: '20vw',
           overflow: 'auto',
         }}
       >
         {RunningActions()}
         {FinishedActions()}
       </Stack>
-    </Box>
+    </Stack>
   )
 }
 

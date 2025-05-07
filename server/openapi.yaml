@@ -149,6 +149,20 @@ paths:
                   $ref: '#/components/schemas/ActionRunStreamData'
         default:
           $ref: '#/components/responses/DefaultError'
+  /actions/{id}/running/{runId}/cancel:
+    post:
+      summary: Cancels running action
+      description: Cancels running action
+      operationId: cancelRunningAction
+      parameters:
+        - $ref: '#/components/parameters/ActionId'
+        - $ref: '#/components/parameters/ActionRunInfoId'
+      responses:
+        '200':
+          description: Successful operation
+          content: {}
+        default:
+          $ref: '#/components/responses/DefaultError'
   /wizard:
     get:
       summary: Lists all wizards
@@ -301,6 +315,7 @@ components:
         - running
         - finished
         - error
+        - canceled
     ActionRunStreamData:
       allOf:
         - type: object
