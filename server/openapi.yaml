@@ -267,6 +267,8 @@ components:
           required:
             - arguments
             - options
+            - runtime
+            - globals
           properties:
             arguments:
               type: object
@@ -274,6 +276,16 @@ components:
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/action"
             options:
+              type: object
+              x-go-type: "action.InputParams"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/action"
+            runtime:
+              type: object
+              x-go-type: "action.InputParams"
+              x-go-type-import:
+                path: "github.com/launchrctl/launchr/pkg/action"
+            globals:
               type: object
               x-go-type: "action.InputParams"
               x-go-type-import:
