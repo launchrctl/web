@@ -25,7 +25,6 @@ import {
   useEffect,
   useState,
 } from 'react'
-import { useDebouncedCallback } from 'use-debounce'
 
 import ActionIcon from '/images/action.svg'
 import AppIcon from '/images/app.svg'
@@ -220,28 +219,6 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
 
   const expandable = isExpandable(children)
   const icon = getIconFromFileType(item.fileType)
-  const dispatch = useActionDispatch()
-
-  const debounced = useDebouncedCallback((id = false) => {
-    if (id) {
-      dispatch?.({
-        type: 'set-hover-action',
-        id,
-      })
-    } else {
-      dispatch?.({
-        type: 'set-hover-action',
-      })
-    }
-  }, 25)
-
-  const wrappedHandleMouseEnter = (id: string) => {
-    debounced(id)
-  }
-
-  const wrappedHandleMouseLeave = () => {
-    debounced()
-  }
 
   return (
     <CustomTreeItem2Root
@@ -253,8 +230,6 @@ const CustomTreeItem = forwardRef(function CustomTreeItem(
       })}
     >
       <CustomTreeItemContent
-        onMouseEnter={() => wrappedHandleMouseEnter(itemId)}
-        onMouseLeave={() => wrappedHandleMouseLeave()}
         {...getContentProps({
           depth: item.depth,
           className: clsx('content', {

@@ -1,5 +1,5 @@
-import { GetListResponse } from '@refinedev/core'
 import type { GenericObjectType, UiSchema } from '@rjsf/utils'
+import { components } from '../../openapi'
 
 export const sentenceCase = (a: string) => {
   const b = a.replaceAll(/[_-]/g, ' ')
@@ -17,15 +17,9 @@ export const splitActionId = (actionId: string) => {
   return { levels, id, isRoot: false, isAction }
 }
 
-// Returns array of ids of duplicated actions
-export const checkIfDuplicatedActions = (actions: GetListResponse) => {
-  const mapCountIds = new Map()
-
-  actions.data.forEach(({ id }) => {
-    mapCountIds.set(id, (mapCountIds.get(id) || 0) + 1)
-  })
-
-  return [...mapCountIds].filter(([, value]) => value > 1).map(([id]) => id)
+export const splitRunId = (runId: string) => {
+  const [timestamp, id] = runId.split('___')
+  return { id, timestamp }
 }
 
 // If field label contains word password or passphrase
@@ -55,10 +49,10 @@ export const customizeUiSchema = (
   return uiSchema
 }
 
-export const extractDateTimeFromId = (id: string) => {
+export const extractDateTimeFromId = (id: string) : string => {
   const timestampStr = id.split('-')[0]?.toString()
   if (!timestampStr) {
-    return null
+    return ''
   }
 
   const timestamp = Number.parseInt(timestampStr, 10)
@@ -75,4 +69,17 @@ export const svgToBase64 = (svg: string) => {
     )
   )
   return `data:image/svg+xml;base64,${base64}`
+}
+
+
+export const getStorageItem = (key: string) => {
+  const item = sessionStorage.getItem(key)
+  if (item) {
+    return JSON.parse(item)
+  }
+  return null
+}
+
+export const setStorageItem = (key: string, value: components['schemas']['ActionRunInfo']) => {
+  sessionStorage.setItem(key, JSON.stringify(value))
 }

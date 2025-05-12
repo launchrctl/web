@@ -22,6 +22,7 @@ import (
 
 type launchrServer struct {
 	actionMngr  action.Manager
+	stateMngr   *StateManager
 	cfg         launchr.Config
 	ctx         context.Context
 	baseURL     string
@@ -93,6 +94,31 @@ func (l *launchrServer) GetOneRunningActionByID(w http.ResponseWriter, _ *http.R
 		ID:     ri.ID,
 		Status: ActionRunStatus(ri.Status),
 	})
+}
+
+func (l *launchrServer) CancelRunningAction(w http.ResponseWriter, _ *http.Request, id ActionId, runID ActionRunInfoId) {
+	ri, ok := l.actionMngr.RunInfoByID(runID)
+	if !ok {
+		sendError(w, http.StatusNotFound, fmt.Sprintf("action run info with id %q is not found", id))
+		return
+	}
+
+	if ri.Status != "running" {
+		sendError(w, http.StatusNotFound, fmt.Sprintf("action %q is not running", id))
+		return
+	}
+
+	as, ok := l.stateMngr.actionStateByID(runID)
+	if !ok {
+		sendError(w, http.StatusNotFound, fmt.Sprintf("action state info with id %q is not found", id))
+		return
+	}
+
+	// Cancel context
+	as.cancelSwitch()
+
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(struct{}{})
 }
 
 func (l *launchrServer) GetRunningActionStreams(w http.ResponseWriter, _ *http.Request, id ActionId, runID ActionRunInfoId, params GetRunningActionStreamsParams) {
@@ -350,7 +376,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	}
 
 	// Generate custom runID.
-	runID := strconv.FormatInt(time.Now().Unix(), 10) + "-" + a.ID
+	runID := strconv.FormatInt(time.Now().Unix(), 10) + "___" + a.ID
 
 	// Prepare action for run.
 	// Can we fetch directly json?
@@ -376,7 +402,8 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 		return
 	}
 
-	ri, chErr := l.actionMngr.RunBackground(l.ctx, a, runID)
+	state := l.stateMngr.registerState(runID)
+	ri, chErr := l.actionMngr.RunBackground(state.context, a, runID)
 
 	go func() {
 		err := <-chErr
@@ -386,6 +413,8 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 			if _, writeErr := streams.Err().Write([]byte(err.Error())); writeErr != nil {
 				launchr.Log().Error("Failed to write error to stream", "error", writeErr)
 			}
+
+			l.stateMngr.removeActionState(runID)
 		}
 	}()
 

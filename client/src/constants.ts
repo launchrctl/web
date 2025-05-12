@@ -5,4 +5,5 @@ export const ACTION_STATE_COLORS = {
   running: yellow[700],
   finished: green[500],
   error: red[500],
+  canceled: grey[500],
 }
