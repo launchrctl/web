@@ -286,31 +286,35 @@ const StatusBoxAction: FC<IStatusBoxActionProps> = ({ action }) => {
                         fontFamily: 'monospace',
                         textTransform: 'lowercase',
                         pb: 0.5,
+                        textAlign: 'start',
                       }}
                       color={ACTION_STATE_COLORS[info.status]}
                     >
                       { splitRunId(info.id).id }
+                    </Typography>
+                    <Stack direction={'row'} spacing={1} alignItems="center">
+                      <Typography
+                        sx={{
+                          fontSize: '10px',
+                          fontFamily: 'monospace',
+                          textTransform: 'lowercase',
+                          textAlign: 'start',
+                        }}
+                      >
+                        started: {extractDateTimeFromId(info.id)}
+                      </Typography>
                       <Chip
                         variant="outlined"
                         label={info.status}
                         size="small"
                         sx={{
-                          mx: 1,
+                          fontSize: '10px',
                           color: ACTION_STATE_COLORS[info.status],
                           borderColor: ACTION_STATE_COLORS[info.status],
                         }}
                       />
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: '10px',
-                        fontFamily: 'monospace',
-                        textTransform: 'lowercase',
-                        textAlign: 'start',
-                      }}
-                    >
-                      started: {extractDateTimeFromId(info.id)}
-                    </Typography>
+                    </Stack>
+
                   </>
                 }
                 sx={{

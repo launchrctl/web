@@ -2,14 +2,14 @@ import CloseIcon from '@mui/icons-material/Close'
 import { TabContext, TabList, TabPanel } from '@mui/lab'
 import { Box, IconButton, Modal, Tab } from '@mui/material'
 import { useTheme } from '@mui/material/styles'
-import { FC, SyntheticEvent, useState } from 'react'
+import { FC, SyntheticEvent, useEffect, useState } from 'react'
 
 import { AnimatedFab } from '../components/AnimatedFab'
 import { useAction } from '../hooks/ActionHooks'
 import StatusBoxAction from './StatusBoxAction'
 
 const StatusBox: FC = () => {
-  const { started, processes } = useAction()
+  const { started, processes, running } = useAction()
   const renderAnimatedFab = started && started.size > 0
 
   const [open, setOpen] = useState(false)
@@ -21,6 +21,24 @@ const StatusBox: FC = () => {
   const handleChange = (event: SyntheticEvent, newValue: string) => {
     setSelectedActionIndex(newValue)
   }
+
+  useEffect(() => {
+    if (!started || started.size === 0) return
+
+    const startedArr = [...started]
+    const runningArr = [...running ?? []]
+
+    let newIndex = 0
+    if (runningArr.length > 0) {
+      const lastRunning = runningArr[runningArr.length - 1]
+      const runningIndex = lastRunning ? startedArr.indexOf(lastRunning) : -1
+      if (runningIndex !== -1) {
+        newIndex = runningIndex
+      }
+    }
+    setSelectedActionIndex((newIndex + 1).toString())
+    setOpen(true)
+  }, [started])
 
   if (!started || started.size === 0) {
     return null
