@@ -112,12 +112,12 @@ func createFileStreams(streamsDir, runId string, app launchr.App, quiet bool) (*
 	}, nil
 }
 
-func isQuietModeEnabled(globals action.InputParams) bool {
-	if globals == nil {
+func isQuietModeEnabled(persistent action.InputParams) bool {
+	if persistent == nil {
 		return false
 	}
 
-	quietValue, exists := globals["quiet"]
+	quietValue, exists := persistent["quiet"]
 	if !exists {
 		return false
 	}

@@ -43,7 +43,11 @@ type RunOptions struct {
 	ClientFS          fs.FS
 	ProxyClient       string
 	FrontendCustomize FrontendCustomize
+	DefaultUISchema   []byte
 	LogsDirPath       string
+
+	Log  *launchr.Logger
+	Term *launchr.Terminal
 }
 
 // BaseURL returns base url for run options.
@@ -88,12 +92,15 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 	store := &launchrServer{
-		ctx:         ctx,
-		baseURL:     opts.BaseURL(),
-		apiPrefix:   opts.APIPrefix,
-		customize:   opts.FrontendCustomize,
-		logsDirPath: opts.LogsDirPath,
-		app:         app,
+		ctx:          ctx,
+		baseURL:      opts.BaseURL(),
+		apiPrefix:    opts.APIPrefix,
+		customize:    opts.FrontendCustomize,
+		logsDirPath:  opts.LogsDirPath,
+		uiSchemaBase: opts.DefaultUISchema,
+		app:          app,
+		log:          opts.Log,
+		term:         opts.Term,
 	}
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
@@ -132,7 +139,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	// @todo add special prefix for web run containers.
 	store.baseURL = opts.BaseURL()
 	if opts.SwaggerUIFS != nil {
-		launchr.Term().Info().
+		store.term.Info().
 			Printfln("Swagger UI: %s\nswagger.json: %s", store.basePath()+swaggerUIPath, store.basePath()+swaggerJSONPath)
 	}
 
@@ -141,14 +148,14 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 	go func() {
 		sig := <-signals
-		launchr.Log().Debug("shutting down on signal", "signal", sig)
+		store.log.Debug("shutting down on signal", "signal", sig)
 		cancel()
 	}()
 
 	var errShutdown error
 	go func() {
 		<-ctx.Done()
-		launchr.Term().Info().Println("Shutting down...")
+		store.term.Info().Println("Shutting down...")
 		ctxShut, cancelShut := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancelShut()
 		errShutdown = s.Shutdown(ctxShut)
@@ -163,7 +170,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	}
 
 	if errShutdown != nil {
-		launchr.Log().Error("error on shutting down", "error", err)
+		store.log.Error("error on shutting down", "error", err)
 		return errShutdown
 	}
 
@@ -172,7 +179,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 func spaHandler(opts *RunOptions) http.HandlerFunc {
 	if opts.ProxyClient != "" {
-		launchr.Log().Debug("serving assets from proxy", "proxy", opts.ProxyClient)
+		opts.Log.Debug("serving assets from proxy", "proxy", opts.ProxyClient)
 		target, _ := url.Parse(opts.ProxyClient)
 		proxy := httputil.NewSingleHostReverseProxy(target)
 
@@ -184,7 +191,7 @@ func spaHandler(opts *RunOptions) http.HandlerFunc {
 	if realpath == "" {
 		realpath = "[embed]"
 	}
-	launchr.Log().Debug("serving assets from path", "path", realpath)
+	opts.Log.Debug("serving assets from path", "path", realpath)
 	fileServer := http.FileServer(http.FS(opts.ClientFS))
 	return func(w http.ResponseWriter, r *http.Request) {
 		// @todo prevent directory listing in case of missing index.html
@@ -237,7 +244,7 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			launchr.Log().Error("failed to upgrade to websocket", "error", err)
+			l.log.Error("failed to upgrade to websocket", "error", err)
 			return
 		}
 		defer ws.Close()
@@ -246,17 +253,17 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 		for {
 			_, message, err = ws.ReadMessage()
 			if err != nil {
-				launchr.Log().Error("failed to read ws message", "error", err)
+				l.log.Error("failed to read ws message", "error", err)
 				return
 			}
 
 			var msg messageType
 			if err = json.Unmarshal(message, &msg); err != nil {
-				launchr.Log().Error("error unmarshalling ws command", "error", err)
+				l.log.Error("error unmarshalling ws command", "error", err)
 				continue
 			}
 
-			launchr.Log().Debug("received ws command", "command", msg.Message, "params", msg.Action)
+			l.log.Debug("received ws command", "command", msg.Message, "params", msg.Action)
 
 			switch msg.Message {
 			case "get-processes":
@@ -264,7 +271,7 @@ func wsHandler(l *launchrServer) http.HandlerFunc {
 			case "get-process":
 				go getStreams(msg, ws, l)
 			default:
-				launchr.Log().Info("unknown command", "command", msg.Message)
+				l.log.Info("unknown command", "command", msg.Message)
 			}
 		}
 	}
@@ -300,13 +307,13 @@ func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 		resp, err := json.Marshal(msgAllProcesses)
 		if err != nil {
-			launchr.Log().Error("error on marshaling the response", "error", err)
+			l.log.Error("error on marshaling the response", "error", err)
 			return
 		}
 
 		l.wsMutex.Lock()
 		if writeErr := ws.WriteMessage(websocket.TextMessage, resp); writeErr != nil {
-			launchr.Log().Error("error on writing ws all processes", "error", writeErr)
+			l.log.Error("error on writing ws all processes", "error", writeErr)
 		}
 		l.wsMutex.Unlock()
 
@@ -325,14 +332,14 @@ func getProcesses(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 		resp, err = json.Marshal(msgFinished)
 		if err != nil {
-			launchr.Log().Error("error on marshaling the finished processes response", "error", err)
+			l.log.Error("error on marshaling the finished processes response", "error", err)
 			return
 		}
 
 		if !anyProccessRunning {
 			l.wsMutex.Lock()
 			if err = ws.WriteMessage(websocket.TextMessage, resp); err != nil {
-				launchr.Log().Error("error on writing ws finished processes", "error", err)
+				l.log.Error("error on writing ws finished processes", "error", err)
 			}
 			l.wsMutex.Unlock()
 			break
@@ -376,13 +383,13 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 		resp, err := json.Marshal(msgAllProcesses)
 		if err != nil {
-			launchr.Log().Error("error on marshaling the response", "error", err)
+			l.log.Error("error on marshaling the response", "error", err)
 			return
 		}
 
 		l.wsMutex.Lock()
 		if err = ws.WriteMessage(websocket.TextMessage, resp); err != nil {
-			launchr.Log().Error("error on writing ws all streams", "error", err)
+			l.log.Error("error on writing ws all streams", "error", err)
 		}
 		l.wsMutex.Unlock()
 	}
@@ -397,13 +404,13 @@ func getStreams(msg messageType, ws *websocket.Conn, l *launchrServer) {
 
 	finalResponse, err := json.Marshal(msgFinished)
 	if err != nil {
-		launchr.Log().Error("error on marshaling the finished streams response", "error", err)
+		l.log.Error("error on marshaling the finished streams response", "error", err)
 		return
 	}
 
 	l.wsMutex.Lock()
 	if err = ws.WriteMessage(websocket.TextMessage, finalResponse); err != nil {
-		launchr.Log().Error("error on writing ws finished streams", "error", err)
+		l.log.Error("error on writing ws finished streams", "error", err)
 	}
 	l.wsMutex.Unlock()
 }

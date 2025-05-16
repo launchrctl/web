@@ -268,7 +268,7 @@ components:
             - arguments
             - options
             - runtime
-            - globals
+            - persistent
           properties:
             arguments:
               type: object
@@ -285,7 +285,7 @@ components:
               x-go-type: "action.InputParams"
               x-go-type-import:
                 path: "github.com/launchrctl/launchr/pkg/action"
-            globals:
+            persistent:
               type: object
               x-go-type: "action.InputParams"
               x-go-type-import:

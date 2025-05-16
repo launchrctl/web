@@ -1,0 +1,2 @@
+uiSchema:
+  "ui:order": ["arguments", "options", "runtime", "persistent", "*"]

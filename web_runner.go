@@ -37,7 +37,7 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 		if webOpts.IsPortSet {
 			return fmt.Errorf("requested port %d is not available", port)
 		}
-		port, err = getAvailablePort(port)
+		port, err = getAvailablePort(port, webOpts.log)
 		if err != nil {
 			return err
 		}
@@ -50,13 +50,17 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 		ClientFS:          GetClientAssetsFS(),
 		SwaggerUIFS:       GetSwaggerUIAssetsFS(),
 		FrontendCustomize: webOpts.FrontendCustomize,
+		DefaultUISchema:   webOpts.DefaultUISchema,
 		LogsDirPath:       filepath.Join(webOpts.PluginDir, "logs"),
+
+		Log:  webOpts.log,
+		Term: webOpts.term,
 	}
 	go func() {
 		time.Sleep(time.Second)
-		err := openInBrowserWhenReady(serverOpts.BaseURL())
+		err := openInBrowserWhenReady(serverOpts.BaseURL(), webOpts)
 		if err != nil {
-			launchr.Term().Error().Println(err)
+			webOpts.term.Error().Println(err)
 		}
 	}()
 
@@ -64,13 +68,13 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 	if err != nil {
 		return err
 	}
-	defer cleanupPluginTemp(webOpts.PluginDir)
+	defer cleanupPluginTemp(webOpts.PluginDir, webOpts.log)
 	return server.Run(ctx, p.app, serverOpts)
 }
 
 func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile string) error {
 	if isBackGroundEnv() {
-		err := redirectOutputs(p.app, flags.PluginDir)
+		err := redirectOutputs(p.app, flags)
 		if err != nil {
 			return err
 		}
@@ -99,7 +103,7 @@ func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile s
 			_ = killProcess(pid)
 
 			// Cleanup temp dir
-			cleanupPluginTemp(flags.PluginDir)
+			cleanupPluginTemp(flags.PluginDir, flags.log)
 			return errors.New("couldn't start background process")
 		case <-ticker.C:
 			info, _ := getServerInfo(flags.PluginDir)
@@ -107,13 +111,13 @@ func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile s
 				continue
 			}
 
-			launchr.Term().Info().Printfln("Web is running in the background (pid: %d)\nURL: %s", pid, info.URL)
+			flags.term.Info().Printfln("Web is running in the background (pid: %d)\nURL: %s", pid, info.URL)
 			return nil
 		}
 	}
 }
 
-func stopWeb(pidFile, pluginDir string) (err error) {
+func stopWeb(pidFile string, webOpts webFlags) (err error) {
 	onSuccess := "The web UI has been successfully shut down."
 
 	// Try to finish the background process.
@@ -124,27 +128,27 @@ func stopWeb(pidFile, pluginDir string) (err error) {
 			return err
 		}
 
-		launchr.Term().Success().Println(onSuccess)
+		webOpts.term.Success().Println(onSuccess)
 		return nil
 	}
 
 	// If we don't have pid, probably there is a server running in foreground.
 	// We may also not have access to the pid file, prompt user the same.
-	serverRunInfo, err := getServerInfo(pluginDir)
+	serverRunInfo, err := getServerInfo(webOpts.PluginDir)
 	if err != nil {
 		return err
 	}
 
 	if serverRunInfo == nil || serverRunInfo.URL == "" {
-		launchr.Term().Warning().Println("There is no active Web UI that can be stopped.")
+		webOpts.term.Warning().Println("There is no active Web UI that can be stopped.")
 		return nil
 	}
 
 	if err = checkHealth(serverRunInfo.URL); err == nil {
 		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
-	cleanupPluginTemp(pluginDir)
-	launchr.Term().Success().Println(onSuccess)
+	cleanupPluginTemp(webOpts.PluginDir, webOpts.log)
+	webOpts.term.Success().Println(onSuccess)
 	return nil
 }
 
@@ -174,21 +178,21 @@ func runBackgroundCmd(pidFile string) (int, error) {
 	return command.Process.Pid, nil
 }
 
-func redirectOutputs(app launchr.App, dir string) error {
-	err := launchr.EnsurePath(dir)
+func redirectOutputs(app launchr.App, webOpts webFlags) error {
+	err := launchr.EnsurePath(webOpts.PluginDir)
 	if err != nil {
 		return fmt.Errorf("can't create plugin temporary directory")
 	}
 
-	outLog, err := os.Create(filepath.Join(dir, "out.log")) //nolint G304 // Path is clean.
+	outLog, err := os.Create(filepath.Join(webOpts.PluginDir, "out.log")) //nolint G304 // Path is clean.
 	if err != nil {
 		return err
 	}
 
 	// Redirect log messages to a file.
-	launchr.Log().SetOutput(app.SensitiveWriter(outLog))
+	webOpts.log.SetOutput(app.SensitiveWriter(outLog))
 	// Discard console output because it's intended for user interaction.
-	launchr.Term().SetOutput(io.Discard)
+	webOpts.term.SetOutput(io.Discard)
 
 	return nil
 }
@@ -217,10 +221,10 @@ func storeServerInfo(ri serverInfo, storePath string) error {
 	return nil
 }
 
-func cleanupPluginTemp(dir string) {
+func cleanupPluginTemp(dir string, log *launchr.Logger) {
 	err := os.RemoveAll(dir)
 	if err != nil {
-		launchr.Log().Warn("error on server info cleanup", "error", err)
+		log.Warn("error on server info cleanup", "error", err)
 	}
 }
 
@@ -270,7 +274,6 @@ func getExistingWeb(pidFile string, pluginDir string) (string, error) {
 
 	serverRunInfo, err := getServerInfo(pluginDir)
 	if err != nil {
-		launchr.Log().Warn("error on getting server run info", "error", err)
 		return "", err
 	}
 	if serverRunInfo == nil || serverRunInfo.URL == "" {
@@ -289,7 +292,7 @@ func getExistingWeb(pidFile string, pluginDir string) (string, error) {
 	return serverRunInfo.URL, nil
 }
 
-func getAvailablePort(port int) (int, error) {
+func getAvailablePort(port int, log *launchr.Logger) (int, error) {
 	// Quick check if port available and return if yes.
 	if isAvailablePort(port) {
 		return port, nil
@@ -300,7 +303,7 @@ func getAvailablePort(port int) (int, error) {
 
 	// Check available port from pool.
 	for !isAvailablePort(newPort) && newPort < maxPort {
-		launchr.Log().Debug("port is not available", "port", newPort)
+		log.Debug("port is not available", "port", newPort)
 		newPort++
 	}
 
@@ -321,7 +324,7 @@ func isAvailablePort(port int) bool {
 	return true
 }
 
-func openInBrowserWhenReady(url string) error {
+func openInBrowserWhenReady(url string, opts webFlags) error {
 	// Wait until the service is healthy.
 	retries := 0
 	for err := checkHealth(url); err != nil; {
@@ -331,15 +334,15 @@ func openInBrowserWhenReady(url string) error {
 		}
 		retries++
 		if retries == 3 {
-			launchr.Term().Info().Println("The server isn't ready yet, please standby...")
+			opts.term.Info().Println("The server isn't ready yet, please standby...")
 		}
-		launchr.Log().Debug("waiting for server to start", "retries", retries)
+		opts.log.Debug("waiting for server to start", "retries", retries)
 	}
 	// Open the browser
-	launchr.Term().Info().Printfln("You can reach the web server at this URL: %s", url)
+	opts.term.Info().Printfln("You can reach the web server at this URL: %s", url)
 	if err := openBrowser(url); err != nil {
-		launchr.Log().Error("failed to open browser", "error", err)
-		return fmt.Errorf("Failed to open browser: %w", err)
+		opts.log.Error("failed to open browser", "error", err)
+		return fmt.Errorf("failed to open browser: %w", err)
 	}
 	return nil
 }
