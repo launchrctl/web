@@ -53,15 +53,15 @@ func (p *Plugin) OnAppInit(app launchr.App) error {
 }
 
 type webFlags struct {
+	action.WithLogger
+	action.WithTerm
+
 	Port              int
 	IsPortSet         bool
 	ProxyClient       string
 	PluginDir         string
 	FrontendCustomize server.FrontendCustomize
 	DefaultUISchema   []byte
-
-	log  *launchr.Logger
-	term *launchr.Terminal
 }
 
 // DiscoverActions implements [launchr.ActionDiscoveryPlugin] interface.
@@ -71,16 +71,6 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 		pluginTmpDir := p.cfg.Path(pluginName)
 		webPidFile := filepath.Join(pluginTmpDir, pidFile)
 		input := a.Input()
-
-		log := launchr.Log()
-		if rt, ok := a.Runtime().(action.RuntimeLoggerAware); ok {
-			log = rt.Log()
-		}
-
-		term := launchr.Term()
-		if rt, ok := a.Runtime().(action.RuntimeTermAware); ok {
-			term = rt.Term()
-		}
 
 		webRunFlags := webFlags{
 			PluginDir:   pluginTmpDir,
@@ -92,10 +82,20 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 				Variables: action.InputOptSlice[string](input, "variables"),
 			},
 			DefaultUISchema: defaultUISchema,
-
-			log:  log,
-			term: term,
 		}
+
+		log := launchr.Log()
+		if rt, ok := a.Runtime().(action.RuntimeLoggerAware); ok {
+			log = rt.LogWith()
+		}
+		webRunFlags.WithLogger.SetLogger(log)
+
+		term := launchr.Term()
+		if rt, ok := a.Runtime().(action.RuntimeTermAware); ok {
+			term = rt.Term()
+		}
+		webRunFlags.WithTerm.SetTerm(term)
+
 		foreground := input.Opt("foreground").(bool)
 		// Override client assets.
 		clientAssets := input.Opt("ui-assets").(string)

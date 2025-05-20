@@ -37,7 +37,7 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 		if webOpts.IsPortSet {
 			return fmt.Errorf("requested port %d is not available", port)
 		}
-		port, err = getAvailablePort(port, webOpts.log)
+		port, err = getAvailablePort(port, webOpts.WithLogger.Log())
 		if err != nil {
 			return err
 		}
@@ -52,15 +52,14 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 		FrontendCustomize: webOpts.FrontendCustomize,
 		DefaultUISchema:   webOpts.DefaultUISchema,
 		LogsDirPath:       filepath.Join(webOpts.PluginDir, "logs"),
-
-		Log:  webOpts.log,
-		Term: webOpts.term,
+		WithLogger:        webOpts.WithLogger,
+		WithTerm:          webOpts.WithTerm,
 	}
 	go func() {
 		time.Sleep(time.Second)
 		err := openInBrowserWhenReady(serverOpts.BaseURL(), webOpts)
 		if err != nil {
-			webOpts.term.Error().Println(err)
+			webOpts.WithTerm.Term().Error().Println(err)
 		}
 	}()
 
@@ -68,7 +67,7 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 	if err != nil {
 		return err
 	}
-	defer cleanupPluginTemp(webOpts.PluginDir, webOpts.log)
+	defer cleanupPluginTemp(webOpts.PluginDir, webOpts.WithLogger.Log())
 	return server.Run(ctx, p.app, serverOpts)
 }
 
@@ -103,7 +102,7 @@ func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile s
 			_ = killProcess(pid)
 
 			// Cleanup temp dir
-			cleanupPluginTemp(flags.PluginDir, flags.log)
+			cleanupPluginTemp(flags.PluginDir, flags.WithLogger.Log())
 			return errors.New("couldn't start background process")
 		case <-ticker.C:
 			info, _ := getServerInfo(flags.PluginDir)
@@ -111,7 +110,7 @@ func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile s
 				continue
 			}
 
-			flags.term.Info().Printfln("Web is running in the background (pid: %d)\nURL: %s", pid, info.URL)
+			flags.WithTerm.Term().Info().Printfln("Web is running in the background (pid: %d)\nURL: %s", pid, info.URL)
 			return nil
 		}
 	}
@@ -128,7 +127,7 @@ func stopWeb(pidFile string, webOpts webFlags) (err error) {
 			return err
 		}
 
-		webOpts.term.Success().Println(onSuccess)
+		webOpts.WithTerm.Term().Success().Println(onSuccess)
 		return nil
 	}
 
@@ -140,15 +139,15 @@ func stopWeb(pidFile string, webOpts webFlags) (err error) {
 	}
 
 	if serverRunInfo == nil || serverRunInfo.URL == "" {
-		webOpts.term.Warning().Println("There is no active Web UI that can be stopped.")
+		webOpts.WithTerm.Term().Warning().Println("There is no active Web UI that can be stopped.")
 		return nil
 	}
 
 	if err = checkHealth(serverRunInfo.URL); err == nil {
 		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
-	cleanupPluginTemp(webOpts.PluginDir, webOpts.log)
-	webOpts.term.Success().Println(onSuccess)
+	cleanupPluginTemp(webOpts.PluginDir, webOpts.WithLogger.Log())
+	webOpts.WithTerm.Term().Success().Println(onSuccess)
 	return nil
 }
 
@@ -190,9 +189,9 @@ func redirectOutputs(app launchr.App, webOpts webFlags) error {
 	}
 
 	// Redirect log messages to a file.
-	webOpts.log.SetOutput(app.SensitiveWriter(outLog))
+	webOpts.WithLogger.Log().SetOutput(app.SensitiveWriter(outLog))
 	// Discard console output because it's intended for user interaction.
-	webOpts.term.SetOutput(io.Discard)
+	webOpts.WithTerm.Term().SetOutput(io.Discard)
 
 	return nil
 }
@@ -334,14 +333,14 @@ func openInBrowserWhenReady(url string, opts webFlags) error {
 		}
 		retries++
 		if retries == 3 {
-			opts.term.Info().Println("The server isn't ready yet, please standby...")
+			opts.WithTerm.Term().Info().Println("The server isn't ready yet, please standby...")
 		}
-		opts.log.Debug("waiting for server to start", "retries", retries)
+		opts.WithLogger.Log().Debug("waiting for server to start", "retries", retries)
 	}
 	// Open the browser
-	opts.term.Info().Printfln("You can reach the web server at this URL: %s", url)
+	opts.WithTerm.Term().Info().Printfln("You can reach the web server at this URL: %s", url)
 	if err := openBrowser(url); err != nil {
-		opts.log.Error("failed to open browser", "error", err)
+		opts.WithLogger.Log().Error("failed to open browser", "error", err)
 		return fmt.Errorf("failed to open browser: %w", err)
 	}
 	return nil

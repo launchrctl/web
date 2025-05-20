@@ -25,6 +25,9 @@ import (
 )
 
 type launchrServer struct {
+	withLogger action.WithLogger
+	withTerm   action.WithTerm
+
 	actionMngr   action.Manager
 	cfg          launchr.Config
 	ctx          context.Context
@@ -35,8 +38,6 @@ type launchrServer struct {
 	uiSchemaBase []byte
 	logsDirPath  string
 	app          launchr.App
-	log          *launchr.Logger
-	term         *launchr.Terminal
 }
 
 // FrontendCustomize stores variables to customize web appearance.
@@ -379,7 +380,7 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	err = setInput(a, persistentFlags, params, streams)
 	if err != nil {
 		// @todo validate must have info about which fields failed.
-		l.log.Error("invalid actions input", "error", err)
+		l.withLogger.Log().Error("invalid actions input", "error", err)
 		sendError(w, http.StatusBadRequest, fmt.Sprintf("invalid actions input: %q", err))
 		return
 	}
@@ -390,10 +391,10 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	go func() {
 		err := <-chErr
 		if err != nil {
-			l.log.Error("Action execution failed", "runID", runID, "error", err)
+			l.withLogger.Log().Error("Action execution failed", "runID", runID, "error", err)
 			// save error to error file
 			if _, writeErr := streams.Err().Write([]byte(err.Error())); writeErr != nil {
-				l.log.Error("Failed to write error to stream", "error", writeErr)
+				l.withLogger.Log().Error("Failed to write error to stream", "error", writeErr)
 			}
 		}
 	}()
@@ -442,7 +443,7 @@ func (l *launchrServer) apiActionFull(a *action.Action) (ActionFull, error) {
 		if !os.IsNotExist(err) {
 			return ActionFull{}, err
 		}
-		l.log.Debug("ui-schema.default.yaml is not present")
+		l.withLogger.Log().Debug("ui-schema.default.yaml is not present")
 	}
 
 	// Merge custom schema with higher priority
@@ -450,7 +451,7 @@ func (l *launchrServer) apiActionFull(a *action.Action) (ActionFull, error) {
 		if !os.IsNotExist(err) {
 			return ActionFull{}, err
 		}
-		l.log.Debug("ui-schema.yaml not found, using empty ui-schema", "action_id", a.ID)
+		l.withLogger.Log().Debug("ui-schema.yaml not found, using default ui-schema", "action_id", a.ID)
 	}
 
 	return ActionFull{
@@ -556,7 +557,7 @@ func setInput(a *action.Action, persistentFlags *action.PersistentFlags, params 
 			return err
 		}
 
-		if err = r.SetInput(a, input, params.Runtime); err != nil {
+		if err = r.SetFlags(a, input, params.Runtime); err != nil {
 			return err
 		}
 	}
