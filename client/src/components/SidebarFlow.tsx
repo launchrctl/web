@@ -16,7 +16,9 @@ const getKeyboardShortcut = () =>
 export const SidebarFlow: FC<ISidebarFlowProps> = ({ actions }) => {
   return (
     <Stack sx={{ height: '100%' }}>
-      <SidebarTree actions={actions} />
+      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+        <SidebarTree actions={actions} />
+      </Box>
 
       <Box sx={{ marginBlockStart: 'auto', padding: 3 }}>
         <Typography variant="body2">
