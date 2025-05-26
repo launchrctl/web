@@ -57,13 +57,17 @@ const reducer = (state: State, action: Action): State => {
     }
     case 'start-action': {
       const running = state.running ? new Set(state.running) : new Set<string>()
+      const started = state.started ? new Set(state.started) : new Set<string>()
       if (action.id && !running.has(action.id)) {
         running.add(action.id)
+      }
+      if (action.id && !started.has(action.id)) {
+        started.add(action.id)
       }
       return {
         ...state,
         running,
-        started: action.id ? state.started?.add(action.id) : state.started,
+        started,
       }
     }
     case 'stop-action': {
