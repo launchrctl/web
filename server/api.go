@@ -20,6 +20,9 @@ import (
 	"github.com/launchrctl/launchr/pkg/action"
 )
 
+// customizationPlatformNameKey used to set the layout-flow root name
+const customizationPlatformNameKey = "plasmactl_web_ui_platform_name"
+
 type launchrServer struct {
 	actionMngr  action.Manager
 	stateMngr   *StateManager
@@ -58,6 +61,11 @@ func parseVarsFile(path string) (map[string]interface{}, error) {
 
 func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Request) {
 	customisation := make(CustomisationConfig)
+	currentDir, err := os.Getwd()
+	if err == nil {
+		customisation[customizationPlatformNameKey] = filepath.Base(currentDir)
+	}
+
 	if l.customize.VarsFile != "" {
 		vars := make(map[string]bool)
 		for _, item := range l.customize.Variables {
