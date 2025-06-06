@@ -43,8 +43,9 @@ type launchrServer struct {
 
 // FrontendCustomize stores variables to customize web appearance.
 type FrontendCustomize struct {
-	VarsFile  string   `yaml:"vars_file"`
-	Variables []string `yaml:"variables"`
+	VarsFile        string
+	Variables       []string
+	ExcludedActions map[string]bool
 }
 
 func parseVarsFile(path string) (map[string]interface{}, error) {
@@ -157,6 +158,11 @@ func (l *launchrServer) GetActions(w http.ResponseWriter, _ *http.Request) {
 	actions := l.actionMngr.All()
 	var result = make([]ActionShort, 0, len(actions))
 	for _, a := range actions {
+		// skip excluded actions
+		if _, ok := l.customize.ExcludedActions[a.ID]; ok {
+			continue
+		}
+
 		ab, err := l.apiActionShort(a)
 		if err != nil {
 			continue
@@ -371,7 +377,8 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	// @todo error if action is already running. We need some pool of running processes with its io.
 	var err error
 	a, ok := l.actionMngr.Get(id)
-	if !ok {
+	_, excluded := l.customize.ExcludedActions[a.ID]
+	if !ok || excluded {
 		sendError(w, http.StatusNotFound, fmt.Sprintf("action with id %q is not found", id))
 		return
 	}
