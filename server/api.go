@@ -14,6 +14,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/knadh/koanf"
+	yamlparser "github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/providers/rawbytes"
 	"gopkg.in/yaml.v3"
 
 	"github.com/launchrctl/launchr"
@@ -21,16 +25,20 @@ import (
 )
 
 type launchrServer struct {
-	actionMngr  action.Manager
-	stateMngr   *StateManager
-	cfg         launchr.Config
-	ctx         context.Context
-	baseURL     string
-	apiPrefix   string
-	wsMutex     sync.Mutex
-	customize   FrontendCustomize
-	logsDirPath string
-	app         launchr.App
+	action.WithLogger
+	action.WithTerm
+
+	actionMngr   action.Manager
+	stateMngr    *StateManager
+	cfg          launchr.Config
+	ctx          context.Context
+	baseURL      string
+	apiPrefix    string
+	wsMutex      sync.Mutex
+	customize    FrontendCustomize
+	uiSchemaBase []byte
+	logsDirPath  string
+	app          launchr.App
 }
 
 // FrontendCustomize stores variables to customize web appearance.
@@ -149,7 +157,7 @@ func (l *launchrServer) GetActions(w http.ResponseWriter, _ *http.Request) {
 	actions := l.actionMngr.All()
 	var result = make([]ActionShort, 0, len(actions))
 	for _, a := range actions {
-		ab, err := apiActionShort(a)
+		ab, err := l.apiActionShort(a)
 		if err != nil {
 			continue
 		}
@@ -172,7 +180,7 @@ func (l *launchrServer) GetActionByID(w http.ResponseWriter, _ *http.Request, id
 		return
 	}
 
-	afull, err := apiActionFull(l.basePath(), a)
+	afull, err := l.apiActionFull(a)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on building actionFull %q", id))
 		return
@@ -189,7 +197,7 @@ func (l *launchrServer) GetActionJSONSchema(w http.ResponseWriter, _ *http.Reque
 		return
 	}
 
-	afull, err := apiActionFull(l.basePath(), a)
+	afull, err := l.apiActionFull(a)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, fmt.Sprintf("error on building actionFull %q", id))
 		return
@@ -328,7 +336,7 @@ func (l *launchrServer) GetWizardByID(w http.ResponseWriter, _ *http.Request, id
 				return
 			}
 
-			afull, err := apiActionFull(l.basePath(), a)
+			afull, err := l.apiActionFull(a)
 			if err != nil {
 				sendError(w, http.StatusInternalServerError, fmt.Sprintf("Error building ActionFull for %q", actionID))
 				return
@@ -378,40 +386,72 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	// Generate custom runID.
 	runID := strconv.FormatInt(time.Now().Unix(), 10) + "___" + a.ID
 
-	// Prepare action for run.
-	// Can we fetch directly json?
-	streams, err := createFileStreams(l.logsDirPath, runID, l.app)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, "Error preparing streams")
-	}
-
 	defer func() {
 		//if err != nil {
 		//	streams.Close()
 		//}
 	}()
 
-	params = convertUserInput(a, params)
+	persistentFlags := l.actionMngr.GetPersistentFlags()
+	params = convertUserInput(a, persistentFlags.GetDefinitions(), params)
+
+	// early peak for `quiet` flag.
+	// @todo would be great to move this check into core, but it will require recreating streams on manager.decorate.
+	quiet := isQuietModeEnabled(params.Persistent)
+
+	// Prepare action for run.
+	// Can we fetch directly json?
+	streams, err := createFileStreams(l.logsDirPath, runID, l.app, quiet)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "Error preparing streams")
+	}
+
 	input := action.NewInput(a, params.Arguments, params.Options, streams)
 
-	err = a.SetInput(input)
+	// set runtime flags if any.
+	if rt, ok := a.Runtime().(action.RuntimeFlags); ok {
+		group := rt.GetFlags().GetName()
+		for k, v := range params.Runtime {
+			input.SetFlagInGroup(group, k, v)
+		}
+	}
+	// set persistent flags
+	for k, v := range persistentFlags.GetAll() {
+		if _, ok := params.Persistent[k]; ok {
+			input.SetFlagInGroup(persistentFlags.GetName(), k, params.Persistent[k])
+		} else {
+			input.SetFlagInGroup(persistentFlags.GetName(), k, v)
+		}
+	}
+
+	err = l.actionMngr.ValidateInput(a, input)
 	if err != nil {
 		// @todo validate must have info about which fields failed.
-		launchr.Log().Error("invalid actions input", "error", err)
-		sendError(w, http.StatusBadRequest, fmt.Sprintf("invalid actions input: %q", err))
+		// @todo change to json
+		l.Log().Warn("Failed to validate input", "error", err)
+		sendError(w, http.StatusBadRequest, "The input provided is invalid. Please check your form values and try again.")
+
 		return
 	}
 
+	err = a.SetInput(input)
+	if err != nil {
+		l.Log().Error("Failed to set input", "error", err)
+		sendError(w, http.StatusBadRequest, fmt.Sprintf("Failed to set input: %q", err))
+		return
+	}
+
+	l.actionMngr.Decorate(a)
 	state := l.stateMngr.registerState(runID)
 	ri, chErr := l.actionMngr.RunBackground(state.context, a, runID)
 
 	go func() {
 		err := <-chErr
 		if err != nil {
-			launchr.Log().Error("Action execution failed", "runID", runID, "error", err)
-			// save error to error file)
+			l.Log().Error("Action execution failed", "runID", runID, "error", err)
+			// save error to error file
 			if _, writeErr := streams.Err().Write([]byte(err.Error())); writeErr != nil {
-				launchr.Log().Error("Failed to write error to stream", "error", writeErr)
+				l.Log().Error("Failed to write error to stream", "error", writeErr)
 			}
 
 			l.stateMngr.removeActionState(runID)
@@ -425,40 +465,52 @@ func (l *launchrServer) RunAction(w http.ResponseWriter, r *http.Request, id str
 	})
 }
 
-func apiActionFull(baseURL string, a *action.Action) (ActionFull, error) {
-	short, err := apiActionShort(a)
+func (l *launchrServer) apiActionFull(a *action.Action) (ActionFull, error) {
+	short, err := l.apiActionShort(a)
 	if err != nil {
 		return ActionFull{}, err
 	}
-	jsonschema := a.JSONSchema()
-	jsonschema.ID = fmt.Sprintf("%s/actions/%s/schema.json", baseURL, url.QueryEscape(a.ID))
+	actionSchema := a.JSONSchema()
+	actionSchema.ID = fmt.Sprintf("%s/actions/%s/schema.json", l.basePath(), url.QueryEscape(a.ID))
 
-	var uiSchema map[string]interface{}
+	// As we don't have a full JSON schema from action. Need to populate it with runtime and persistent flags.
+	if rt, ok := a.Runtime().(action.RuntimeFlags); ok {
+		runtimeFlagsSchema := rt.GetFlags().JSONSchema()
+		actionSchema.Properties["runtime"] = runtimeFlagsSchema.Properties["runtime"]
+	}
 
-	yamlData, err := os.ReadFile(filepath.Join(a.Dir(), "ui-schema.yaml"))
-	if err != nil {
+	// Add persistent flags into the action schema.
+	persistentFlagsSchema := l.actionMngr.GetPersistentFlags().JSONSchema()
+	actionSchema.Properties["persistent"] = persistentFlagsSchema.Properties["persistent"]
+
+	uiSchema := koanf.New(".")
+
+	// Load default schema
+	if err = uiSchema.Load(rawbytes.Provider(l.uiSchemaBase), yamlparser.Parser()); err != nil {
 		if !os.IsNotExist(err) {
 			return ActionFull{}, err
 		}
-		launchr.Log().Debug("ui-schema.yaml not found, using empty ui-schema", "action_id", a.ID)
-		uiSchema = map[string]interface{}{}
-	} else {
-		err = yaml.Unmarshal(yamlData, &uiSchema)
-		if err != nil {
+		l.Log().Debug("ui-schema.default.yaml is not present")
+	}
+
+	// Merge custom schema with higher priority
+	if err = uiSchema.Load(file.Provider(filepath.Join(a.Dir(), "ui-schema.yaml")), yamlparser.Parser()); err != nil {
+		if !os.IsNotExist(err) {
 			return ActionFull{}, err
 		}
+		l.Log().Debug("ui-schema.yaml not found, using default ui-schema", "action_id", a.ID)
 	}
 
 	return ActionFull{
 		ID:          a.ID,
 		Title:       short.Title,
 		Description: short.Description,
-		JSONSchema:  jsonschema,
-		UISchema:    uiSchema,
+		JSONSchema:  actionSchema,
+		UISchema:    uiSchema.Raw(),
 	}, nil
 }
 
-func apiActionShort(a *action.Action) (ActionShort, error) {
+func (l *launchrServer) apiActionShort(a *action.Action) (ActionShort, error) {
 	def := a.ActionDef()
 	return ActionShort{
 		ID:          a.ID,
@@ -477,18 +529,34 @@ func sendError(w http.ResponseWriter, code int, message string) {
 }
 
 // Use front-end changed property to filter out default arguments and options.
-func convertUserInput(a *action.Action, params ActionRunParams) ActionRunParams {
+func convertUserInput(a *action.Action, persistentFlagsDef action.ParametersList, params ActionRunParams) ActionRunParams {
 	changedArgs := make(map[string]bool)
 	changedOpts := make(map[string]bool)
+	changedRuntime := make(map[string]bool)
+	changedPersistent := make(map[string]bool)
 	args := make(action.InputParams)
 	opts := make(action.InputParams)
+	runtime := make(action.InputParams)
+	persistent := make(action.InputParams)
+
+	categoryMaps := map[string]map[string]bool{
+		"arguments":  changedArgs,
+		"options":    changedOpts,
+		"runtime":    changedRuntime,
+		"persistent": changedPersistent,
+	}
 
 	for _, p := range *params.Changed {
 		split := strings.Split(p, "____")
-		if split[1] == "arguments" {
-			changedArgs[split[2]] = true
-		} else if split[1] == "options" {
-			changedOpts[split[2]] = true
+		if len(split) < 3 {
+			continue
+		}
+
+		category := split[1]
+		name := split[2]
+
+		if targetMap, exists := categoryMaps[category]; exists {
+			targetMap[name] = true
 		}
 	}
 
@@ -506,8 +574,27 @@ func convertUserInput(a *action.Action, params ActionRunParams) ActionRunParams 
 		}
 	}
 
+	// Store changed runtime flags
+	if rt, ok := a.Runtime().(action.RuntimeFlags); ok {
+		flags := rt.GetFlags().GetDefinitions()
+		for _, flag := range flags {
+			if changedRuntime[flag.Name] {
+				runtime[flag.Name] = params.Runtime[flag.Name]
+			}
+		}
+	}
+
+	// Store changed persistent flags
+	for _, flag := range persistentFlagsDef {
+		if changedPersistent[flag.Name] {
+			persistent[flag.Name] = params.Persistent[flag.Name]
+		}
+	}
+
 	params.Arguments = args
 	params.Options = opts
+	params.Runtime = runtime
+	params.Persistent = persistent
 
 	return params
 }
