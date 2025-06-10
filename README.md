@@ -7,6 +7,7 @@ The plugin consists of a Backend API and a Frontend client.
 
 * [Usage](#usage)
 * [Development](#development)
+* [Web UI Customization](#web-ui-customization)
 
 ## Usage
 
@@ -97,3 +98,27 @@ git tag v0.0.X
 git push --tags
 ```
 and wait for github action will finished.
+
+## Web UI Customization
+
+Launchr provides several options to customize the web user interface according to your needs.
+
+You can customize the web UI by adding a `web` section to your `.binary/config.yaml` file with the following options:
+
+```yaml
+web:
+  # Exclude specific actions from appearing in the web interface
+  excluded_actions:
+    - web
+    - other-action-to-hide
+
+  # Path to a YAML file containing variables to be passed to the frontend
+  vars_file: path/to/vars.yaml
+
+  # List of variable names that should be exposed to the UI
+  variables:
+    - plasmactl_web_ui_platform_name
+    - plasmactl_web_ui_platform_page_name
+    - plasmactl_web_ui_platform_header_name
+    - plasmactl_web_ui_platform_favicon
+```

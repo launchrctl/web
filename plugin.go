@@ -77,10 +77,21 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 			IsPortSet:   input.IsOptChanged("port"),
 			ProxyClient: input.Opt("proxy-client").(string),
 			FrontendCustomize: server.FrontendCustomize{
-				VarsFile:  input.Opt("vars-file").(string),
-				Variables: action.InputOptSlice[string](input, "variables"),
+				VarsFile:        input.Opt("vars-file").(string),
+				Variables:       action.InputOptSlice[string](input, "variables"),
+				ExcludedActions: make(map[string]bool),
 			},
 			DefaultUISchema: defaultUISchema,
+		}
+
+		// Retrieve a list of excluded actions from config.
+		var excludedActions []string
+		err := p.cfg.Get("web.excluded_actions", &excludedActions)
+		if err != nil {
+			return err
+		}
+		for _, ea := range excludedActions {
+			webRunFlags.FrontendCustomize.ExcludedActions[ea] = true
 		}
 
 		// Set action logger. Fallback to default launchr logger.
