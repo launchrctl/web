@@ -14,6 +14,7 @@ import {
   Background,
   BackgroundVariant,
 } from '@xyflow/react'
+import { sentenceCase } from "../utils/helpers";
 import { getCustomisation } from '../utils/page-customisation'
 import { GetListResponse } from '@refinedev/core'
 import { FC } from 'react'
@@ -30,7 +31,7 @@ const nameText =
 const initialRoots: Node[] = [
   {
     id: 'start',
-    data: { label: nameText },
+    data: { label: sentenceCase(nameText) },
     position: { x: 0, y: 0 },
     sourcePosition: Position.Right,
     targetPosition: Position.Right,
