@@ -25,7 +25,7 @@ import (
 )
 
 // customizationPlatformNameKey used to set the layout-flow root name
-const customizationPlatformNameKey = "plasmactl_web_ui_platform_name"
+const customizationPlatformNameKey = "root_name"
 
 type launchrServer struct {
 	action.WithLogger
@@ -46,54 +46,16 @@ type launchrServer struct {
 
 // FrontendCustomize stores variables to customize web appearance.
 type FrontendCustomize struct {
-	VarsFile        string
-	Variables       []string
+	Variables       map[string]any
 	ExcludedActions map[string]bool
 }
 
-func parseVarsFile(path string) (map[string]interface{}, error) {
-	var data map[string]interface{}
-	var rawData []byte
-
-	rawData, err := os.ReadFile(filepath.Clean(path))
-	if err != nil {
-		return data, err
-	}
-
-	err = yaml.Unmarshal(rawData, &data)
-	if err != nil {
-		return data, err
-	}
-
-	return data, nil
-}
-
 func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Request) {
-	customisation := make(CustomisationConfig)
+	customisation := l.customize.Variables
 	currentDir, err := os.Getwd()
-	if err == nil {
+	_, ok := customisation[customizationPlatformNameKey]
+	if err == nil && !ok {
 		customisation[customizationPlatformNameKey] = filepath.Base(currentDir)
-	}
-
-	if l.customize.VarsFile != "" {
-		vars := make(map[string]bool)
-		for _, item := range l.customize.Variables {
-			vars[item] = true
-		}
-
-		gvFile, err := parseVarsFile(l.customize.VarsFile)
-		if err != nil {
-			sendError(w, http.StatusInternalServerError, "error getting group vars file")
-			return
-		}
-
-		if len(l.customize.Variables) > 0 {
-			for key, value := range gvFile {
-				if _, ok := vars[key]; ok {
-					customisation[key] = value
-				}
-			}
-		}
 	}
 
 	w.WriteHeader(http.StatusOK)
