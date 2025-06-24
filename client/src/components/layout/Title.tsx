@@ -20,8 +20,8 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
   const ActiveLink = routerType === 'legacy' ? LegacyLink : Link
 
   interface Customisation {
-    plasmactl_web_ui_platform_logo?: string;
-    plasmactl_web_ui_platform_header_name?: string;
+    logo?: string;
+    header_title?: string;
   }
 
   const [customisation, setCustomisation] = useState<Customisation | null>(null);
@@ -35,9 +35,9 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
     fetchCustomisation();
   }, []);
 
-  const logoUrl = customisation?.plasmactl_web_ui_platform_logo ?? Logo;
+  const logoUrl = customisation?.logo ?? Logo;
   const logoText =
-    customisation?.plasmactl_web_ui_platform_header_name ?? 'Launchr Web UI';
+    customisation?.header_title ?? 'Launchr Web UI';
 
   return (
     <MuiLink
