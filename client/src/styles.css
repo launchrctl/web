@@ -16,12 +16,12 @@ div.flow-directory__action {
 }
 
 div.flow-directory__action:hover {
-  color: white;
+  /* color: white; */
   background-color: rgb(var(--primary-color));
 }
 
 div.flow-directory__action--active {
-  color: white;
+  /* color: white; */
   background-color: rgb(var(--primary-color));
 }
 
