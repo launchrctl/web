@@ -59,7 +59,6 @@ export const ThemedTitleV2: FC<RefineLayoutThemedTitleProps> = ({
         fontSize="15px"
         textOverflow="ellipsis"
         overflow="hidden"
-        sx={{ textTransform: 'uppercase' }}
       >
         {logoText}
       </Typography>

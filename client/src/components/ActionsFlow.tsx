@@ -35,7 +35,6 @@ const initialRoots: Node[] = [
     position: { x: 0, y: 0 },
     sourcePosition: Position.Right,
     targetPosition: Position.Right,
-    width: 300,
     height: 60,
     className: 'flow-action flow-action--start',
     draggable: false,

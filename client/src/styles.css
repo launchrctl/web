@@ -41,6 +41,7 @@ div.flow-directory__action--active {
   justify-content: space-between;
   display: flex;
   align-items: center;
+  width: auto;
 }
 
 div.flow-directory {
