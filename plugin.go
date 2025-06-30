@@ -77,8 +77,7 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 			IsPortSet:   input.IsOptChanged("port"),
 			ProxyClient: input.Opt("proxy-client").(string),
 			FrontendCustomize: server.FrontendCustomize{
-				VarsFile:        input.Opt("vars-file").(string),
-				Variables:       action.InputOptSlice[string](input, "variables"),
+				Variables:       make(map[string]any),
 				ExcludedActions: make(map[string]bool),
 			},
 			DefaultUISchema: defaultUISchema,
@@ -92,6 +91,15 @@ func (p *Plugin) DiscoverActions(_ context.Context) ([]*action.Action, error) {
 		}
 		for _, ea := range excludedActions {
 			webRunFlags.FrontendCustomize.ExcludedActions[ea] = true
+		}
+
+		var variables map[string]any
+		err = p.cfg.Get("web.variables", &variables)
+		if err != nil {
+			return err
+		}
+		if variables != nil {
+			webRunFlags.FrontendCustomize.Variables = variables
 		}
 
 		// Set action logger. Fallback to default launchr logger.

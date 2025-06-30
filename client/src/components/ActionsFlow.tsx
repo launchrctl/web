@@ -26,7 +26,7 @@ const nodeTypes = {
 }
 
 const nameText =
-    getCustomisation()?.plasmactl_web_ui_platform_name ?? 'Platform'
+    getCustomisation()?.root_name ?? 'Project'
 
 const initialRoots: Node[] = [
   {
