@@ -38,9 +38,9 @@ export function App() {
   useEffect(() => {
     ;(async () => {
       const data = await setCustomisation()
-      const customisation: { plasmactl_web_ui_platform_page_name?: string } =
+      const customisation: { tab_title?: string } =
         data
-      setTitle(customisation?.plasmactl_web_ui_platform_page_name ?? 'Platform')
+      setTitle(customisation?.tab_title ?? 'Launchr Web UI')
       setLoading(false)
     })()
   }, [])

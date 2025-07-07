@@ -40,22 +40,3 @@ action:
       description: Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui from specified directory.
       type: string
       default: ""
-    - name: vars-file
-      title: Variables filepath
-      description: Path to variables file
-      type: string
-      process:
-        - processor: config.GetValue
-          options:
-            path: web.vars_file
-      default: ""
-    - name: variables
-      title: Variables list
-      type: array
-      items:
-        type: string
-      process:
-        - processor: config.GetValue
-          options:
-            path: web.variables
-      default: []

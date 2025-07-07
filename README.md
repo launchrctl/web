@@ -112,13 +112,11 @@ web:
     - web
     - other-action-to-hide
 
-  # Path to a YAML file containing variables to be passed to the frontend
-  vars_file: path/to/vars.yaml
-
   # List of variable names that should be exposed to the UI
   variables:
-    - plasmactl_web_ui_platform_name
-    - plasmactl_web_ui_platform_page_name
-    - plasmactl_web_ui_platform_header_name
-    - plasmactl_web_ui_platform_favicon
+    root_name: value
+    tab_title: value
+    header_title: value
+    favicon: value
+    logo: value
 ```

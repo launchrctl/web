@@ -19,14 +19,14 @@ export const getCustomisation = () => {
   if (customisation) {
     const parsed = JSON.parse(customisation)
     if (parsed) {
-      if (parsed.plasmactl_web_ui_platform_favicon) {
-        parsed.plasmactl_web_ui_platform_favicon = svgToBase64(
-          parsed.plasmactl_web_ui_platform_favicon
+      if (parsed.favicon) {
+        parsed.favicon = svgToBase64(
+          parsed.favicon
         )
       }
-      if (parsed.plasmactl_web_ui_platform_logo) {
-        parsed.plasmactl_web_ui_platform_logo = svgToBase64(
-          parsed.plasmactl_web_ui_platform_logo
+      if (parsed.logo) {
+        parsed.logo = svgToBase64(
+          parsed.logo
         )
       }
       return parsed
@@ -36,7 +36,7 @@ export const getCustomisation = () => {
 }
 
 export const setFavicon = () => {
-  const favicon = getCustomisation()?.plasmactl_web_ui_platform_favicon
+  const favicon = getCustomisation()?.favicon
   if (favicon) {
     const link: HTMLLinkElement =
       (document.querySelector("link[rel*='icon']") as HTMLLinkElement) ||
