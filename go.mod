@@ -11,7 +11,7 @@ require (
 	github.com/go-chi/render v1.0.3
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/knadh/koanf v1.5.0
-	github.com/launchrctl/launchr v0.21.0
+	github.com/launchrctl/launchr v0.21.2
 	github.com/oapi-codegen/nethttp-middleware v1.0.2
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 	github.com/oapi-codegen/runtime v1.1.1
