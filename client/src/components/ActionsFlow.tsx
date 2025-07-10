@@ -1,56 +1,42 @@
 import Dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useTheme } from '@mui/material/styles'
 import {
   Controls,
   ReactFlow,
-  ReactFlowProvider,
   useNodesState,
   useEdgesState,
-  type Node,
-  type Edge,
-  Position,
   Background,
   BackgroundVariant,
+  ReactFlowProvider,
+  type Node,
+  type Edge,
+  type ReactFlowInstance,
 } from '@xyflow/react'
-import { sentenceCase } from "../utils/helpers";
 import { getCustomisation } from '../utils/page-customisation'
 import { GetListResponse } from '@refinedev/core'
 import { FC } from 'react'
-import { getRootNodes } from '../utils/react-flow-builder'
+import { getAllNodesAndEdges } from '../utils/react-flow-builder'
 import RootDirectory from './flow/RootDirectory'
+import ActionNode from './flow/ActionNode'
 
 const nodeTypes = {
   rootDirectory: RootDirectory,
+  action: ActionNode,
 }
 
 const nameText =
     getCustomisation()?.root_name ?? 'Project'
 
-const initialRoots: Node[] = [
-  {
-    id: 'start',
-    data: { label: sentenceCase(nameText) },
-    position: { x: 0, y: 0 },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Right,
-    width: 300,
-    height: 60,
-    className: 'flow-action flow-action--start',
-    draggable: false,
-  },
-]
-
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}))
-  g.setGraph({ rankdir: 'LR' })
+  g.setGraph({ rankdir: 'TB' })
 
   nodes.forEach((node) => {
     g.setNode(node.id, {
-      ...node,
-      width: node.measured?.width ?? 0,
-      height: node.measured?.height ?? 0,
+      width: node.measured?.width ?? 300,
+      height: node.measured?.height ?? 80,
     })
   })
 
@@ -60,83 +46,67 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 
   return {
     nodes: nodes.map((node) => {
-      const position = g.node(node.id)
-      const x =
-        node?.type === 'rootDirectory'
-          ? 400
-          : position.x - (node.measured?.width ?? 0) / 2
-      const y = position.y - (node.measured?.height ?? 0) / 2
-      return { ...node, position: { x, y } }
+      const pos = g.node(node.id)
+      return {
+        ...node,
+        position: {
+          x: node.type === 'rootDirectory' ? 400 : pos.x - 100,
+          y: pos.y - 40,
+        },
+      }
     }),
     edges,
   }
 }
 
-const LayoutFlow = ({ rootNodes }: { rootNodes: Node[] | undefined }) => {
-  const { palette } = useTheme()
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([
-    ...initialRoots,
-    ...(rootNodes || []),
-  ])
-  const edgesDependencies = useMemo(() => [rootNodes], [rootNodes])
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(
-    useMemo(
-      () =>
-        rootNodes?.map((node) => ({
-          id: `${node.id}-start`,
-          source: 'start',
-          target: node.id,
-          type: 'smoothstep',
-          style: { strokeWidth: 2 },
-          pathOptions: { borderRadius: 20 },
-        })) || [],
-      edgesDependencies
-    )
-  )
+export const LayoutFlow = ({
+  startNodes,
+  startEdges,
+}: {
+  startNodes?: Node[]
+  startEdges?: Edge[]
+}) => {
+  const theme = useTheme()
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null)
 
   useEffect(() => {
-    if (!rootNodes) return
-    const layouted = getLayoutedElements(nodes, edges)
+    if (!startNodes || !startEdges) return
+    const layouted = getLayoutedElements(startNodes, startEdges)
     setNodes(layouted.nodes)
     setEdges(layouted.edges)
-  }, [rootNodes])
+  }, [startNodes, startEdges])
 
-  const backgroundCrossColor = palette?.mode === 'dark' ? '#272727' : '#C8C9CD'
+  useEffect(() => {
+    if (rfInstance && nodes.length > 0) {
+      rfInstance.fitView({ padding: 0.3, duration: 0 }) // 🔥 no animation, just centering
+    }
+  }, [rfInstance, nodes.length, edges.length])
+
+  const backgroundCrossColor = theme.palette.mode === 'dark' ? '#272727' : '#C8C9CD'
 
   return (
     <ReactFlow
       nodes={nodes}
       edges={edges}
+      onInit={setRfInstance}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
-      colorMode={palette?.mode === 'dark' ? 'dark' : 'light'}
       nodeTypes={nodeTypes}
-      fitView
+      fitView={false}
       selectNodesOnDrag={false}
       nodesConnectable={false}
       nodesFocusable={false}
       edgesFocusable={false}
       zoomOnDoubleClick={false}
       elementsSelectable={false}
-      defaultViewport={{
-        x: 50,
-        y: 50,
-        zoom: 0.6,
-      }}
+      colorMode={theme.palette.mode === 'dark' ? 'dark' : 'light'}
+      defaultViewport={{ x: 50, y: 50, zoom: 0.6 }}
     >
-      <Background
-        id="1"
-        gap={10}
-        color="#f1f1f1"
-        variant={BackgroundVariant.Lines}
-      />
+      <Background id="1" gap={10} color="#f1f1f1" variant={BackgroundVariant.Lines} />
       <Background id="2" gap={100} variant={BackgroundVariant.Lines} />
-      <Background
-        id="3"
-        gap={100}
-        color={backgroundCrossColor}
-        variant={BackgroundVariant.Cross}
-      />
+      <Background id="3" gap={100} color={backgroundCrossColor} variant={BackgroundVariant.Cross} />
       <Controls showInteractive={false} />
     </ReactFlow>
   )
@@ -145,11 +115,11 @@ const LayoutFlow = ({ rootNodes }: { rootNodes: Node[] | undefined }) => {
 export const ActionsFlow: FC<{
   actions: GetListResponse | undefined
 }> = ({ actions }) => {
-  const rootNodes = getRootNodes(actions)
+  const { nodes, edges } = getAllNodesAndEdges(actions, nameText)
 
   return (
     <ReactFlowProvider>
-      <LayoutFlow rootNodes={rootNodes} />
+      <LayoutFlow startNodes={nodes} startEdges={edges} />
     </ReactFlowProvider>
   )
 }
