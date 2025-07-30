@@ -44,30 +44,48 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 	}
 
 	serverOpts := &server.RunOptions{
-		Addr:              fmt.Sprintf(":%d", port), // @todo use proper addr
-		APIPrefix:         APIPrefix,
-		ProxyClient:       webOpts.ProxyClient,
-		ClientFS:          GetClientAssetsFS(),
-		SwaggerUIFS:       GetSwaggerUIAssetsFS(),
-		FrontendCustomize: webOpts.FrontendCustomize,
-		DefaultUISchema:   webOpts.DefaultUISchema,
-		LogsDirPath:       filepath.Join(webOpts.PluginDir, "logs"),
+		Addr:            fmt.Sprintf(":%d", port), // @todo use proper addr
+		APIPrefix:       APIPrefix,
+		NoUI:            webOpts.NoUI,
+		ProxyClient:     webOpts.ProxyClient,
+		SwaggerUIFS:     GetSwaggerUIAssetsFS(),
+		Customize:       webOpts.WebCustomize,
+		DefaultUISchema: webOpts.DefaultUISchema,
+		LogsDirPath:     filepath.Join(webOpts.InstanceDir, "logs"),
 	}
 	serverOpts.SetLogger(webOpts.Log())
 	serverOpts.SetTerm(webOpts.Term())
-	go func() {
-		time.Sleep(time.Second)
-		err := openInBrowserWhenReady(serverOpts.BaseURL())
-		if err != nil {
-			launchr.Term().Error().Println(err)
-		}
-	}()
 
-	err = storeServerInfo(serverInfo{URL: serverOpts.BaseURL()}, webOpts.PluginDir)
+	err = storeServerInfo(serverInfo{URL: serverOpts.BaseURL()}, webOpts.InstanceDir)
 	if err != nil {
 		return err
 	}
-	defer cleanupPluginTemp(webOpts.PluginDir)
+	defer cleanupPluginTemp(webOpts.InstanceDir)
+
+	if serverOpts.NoUI {
+		ts, err := server.NewTokenStore(webOpts.TokensDir, webOpts.TokensPassphrase)
+		if err != nil {
+			return fmt.Errorf("failed to initialize token store: %w", err)
+		}
+		ts.SetLogger(webOpts.Log())
+		serverOpts.TokenStore = ts
+
+		go func() {
+			<-ctx.Done()
+			_ = ts.Close()
+		}()
+	} else {
+		go func() {
+			time.Sleep(time.Second)
+			err = openInBrowserWhenReady(serverOpts.BaseURL())
+			if err != nil {
+				launchr.Term().Error().Println(err)
+			}
+		}()
+
+		serverOpts.ClientFS = GetClientAssetsFS()
+	}
+
 	return server.Run(ctx, p.app, serverOpts)
 }
 
@@ -102,10 +120,10 @@ func (p *Plugin) runBackgroundWeb(ctx context.Context, flags webFlags, pidFile s
 			_ = killProcess(pid)
 
 			// Cleanup temp dir
-			cleanupPluginTemp(flags.PluginDir)
+			cleanupPluginTemp(flags.InstanceDir)
 			return errors.New("couldn't start background process")
 		case <-ticker.C:
-			info, _ := getServerInfo(flags.PluginDir)
+			info, _ := getServerInfo(flags.InstanceDir)
 			if info == nil {
 				continue
 			}
@@ -133,7 +151,7 @@ func stopWeb(pidFile string, webOpts webFlags) (err error) {
 
 	// If we don't have pid, probably there is a server running in foreground.
 	// We may also not have access to the pid file, prompt user the same.
-	serverRunInfo, err := getServerInfo(webOpts.PluginDir)
+	serverRunInfo, err := getServerInfo(webOpts.InstanceDir)
 	if err != nil {
 		return err
 	}
@@ -146,7 +164,7 @@ func stopWeb(pidFile string, webOpts webFlags) (err error) {
 	if err = checkHealth(serverRunInfo.URL); err == nil {
 		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
-	cleanupPluginTemp(webOpts.PluginDir)
+	cleanupPluginTemp(webOpts.InstanceDir)
 	launchr.Term().Success().Println(onSuccess)
 	return nil
 }
@@ -178,12 +196,12 @@ func runBackgroundCmd(pidFile string) (int, error) {
 }
 
 func redirectOutputs(app launchr.App, webOpts webFlags) error {
-	err := launchr.EnsurePath(webOpts.PluginDir)
+	err := launchr.EnsurePath(webOpts.InstanceDir)
 	if err != nil {
 		return fmt.Errorf("can't create plugin temporary directory")
 	}
 
-	outLog, err := os.Create(filepath.Join(webOpts.PluginDir, "out.log")) //nolint G304 // Path is clean.
+	outLog, err := os.Create(filepath.Join(webOpts.InstanceDir, "out.log")) //nolint G304 // Path is clean.
 	if err != nil {
 		return err
 	}

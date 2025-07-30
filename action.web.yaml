@@ -40,3 +40,18 @@ action:
       description: Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui from specified directory.
       type: string
       default: ""
+    - name: no-ui
+      title: No UI
+      description: run server without UI
+      type: boolean
+      default: false
+    - name: tokens-dir
+      title: Tokens Dir
+      description: Directory to store auth tokens
+      type: string
+      default: ""
+    - name: passphrase
+      title: Tokens Passphrase
+      description: Passphrase to encrypt tokens file
+      type: string
+      default: ""
