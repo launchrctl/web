@@ -35,20 +35,22 @@ import (
 type RunOptions struct {
 	action.WithLogger
 	action.WithTerm
+	TokenStore *TokenStore
 
 	// Addr optionally specifies the TCP address in form "host:port" for the server to listen on.
 	// If empty, :80 is used.
 	Addr string
 	// APIPrefix specifies subpath where Api is served.
 	APIPrefix string
+	NoUI      bool
 	// SwaggerUIFS enables serving of swagger.json for swagger ui if set.
 	SwaggerUIFS fs.FS
 	// Client server.
-	ClientFS          fs.FS
-	ProxyClient       string
-	FrontendCustomize FrontendCustomize
-	DefaultUISchema   []byte
-	LogsDirPath       string
+	ClientFS        fs.FS
+	ProxyClient     string
+	Customize       WebCustomize
+	DefaultUISchema []byte
+	LogsDirPath     string
 }
 
 // BaseURL returns base url for run options.
@@ -77,7 +79,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 
 	err = os.MkdirAll(opts.LogsDirPath, 0750)
 	if err != nil {
-		return fmt.Errorf("can't create logs dir")
+		return fmt.Errorf("can't create logs dir: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -96,41 +98,31 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		ctx:          ctx,
 		baseURL:      opts.BaseURL(),
 		apiPrefix:    opts.APIPrefix,
-		customize:    opts.FrontendCustomize,
+		customize:    opts.Customize,
 		logsDirPath:  opts.LogsDirPath,
 		uiSchemaBase: opts.DefaultUISchema,
 		app:          app,
 		stateMngr:    NewStateManager(),
+		tokenStore:   opts.TokenStore,
 	}
 	store.SetLogger(opts.Log())
 	store.SetTerm(opts.Term())
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
 
+	// Mode-specific setup
+	if opts.NoUI {
+		setupAPIOnlyMode(r, store, opts, swagger)
+	} else {
+		setupFullUIMode(r, store, opts, cancel, swagger)
+	}
+
 	// Provide Swagger UI.
 	if opts.SwaggerUIFS != nil {
+		store.Term().Info().Println("Serving Swagger UI")
 		serveSwaggerUI(swagger, r, opts)
 	}
 
-	r.HandleFunc("/ws", wsHandler(store))
-
-	// Serve frontend files.
-	r.HandleFunc("/*", spaHandler(opts))
-
-	// Use the validation middleware to check all requests against the OpenAPI schema on Api subroutes.
-	r.Route(opts.APIPrefix, func(r chi.Router) {
-		r.Use(
-			middleware.OapiRequestValidator(swagger),
-		)
-	})
-
-	r.Post("/api/shutdown", func(w http.ResponseWriter, _ *http.Request) {
-		cancel()
-		_, _ = w.Write([]byte("Server is shutting down..."))
-	})
-
-	// Register router in openapi and start the server.
-	HandlerFromMuxWithBaseURL(store, r, opts.APIPrefix)
 	s := &http.Server{
 		Handler:           r,
 		Addr:              opts.Addr,
@@ -140,11 +132,57 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	// @todo remove all stopped containers when stopped
 	// @todo add special prefix for web run containers.
 	store.baseURL = opts.BaseURL()
-	if opts.SwaggerUIFS != nil {
-		store.Term().Info().
-			Printfln("Swagger UI: %s\nswagger.json: %s", store.basePath()+swaggerUIPath, store.basePath()+swaggerJSONPath)
+
+	// Mode-specific logging
+	if opts.NoUI {
+		store.Term().Info().Printfln("API Server running at: %s%s", store.baseURL, opts.APIPrefix)
+	} else {
+		store.Term().Info().Printfln("Web Server running at: %s", store.baseURL)
 	}
 
+	if opts.SwaggerUIFS != nil {
+		store.Term().Info().Printfln("Swagger UI: %s%s", store.basePath(), swaggerUIPath)
+	}
+
+	return handleServerLifecycle(ctx, cancel, s, store)
+}
+
+func setupAPIOnlyMode(r chi.Router, store *launchrServer, opts *RunOptions, swagger *openapi3.T) {
+	// Apply authMiddleware to all routes.
+	r.Use(store.authMiddleware)
+
+	// API routes with validation
+	r.Route(opts.APIPrefix, func(r chi.Router) {
+		r.Use(middleware.OapiRequestValidator(swagger))
+	})
+
+	// Register API handlers
+	HandlerFromMuxWithBaseURL(store, r, opts.APIPrefix)
+}
+
+func setupFullUIMode(r chi.Router, store *launchrServer, opts *RunOptions, cancel context.CancelFunc, swagger *openapi3.T) {
+	// Frontend file serving
+	r.HandleFunc("/*", spaHandler(opts))
+
+	// WebSocket endpoint
+	r.HandleFunc("/ws", wsHandler(store))
+
+	// API routes with validation
+	r.Route(opts.APIPrefix, func(r chi.Router) {
+		r.Use(middleware.OapiRequestValidator(swagger))
+	})
+
+	// Shutdown endpoint for UI
+	r.Post("/api/shutdown", func(w http.ResponseWriter, _ *http.Request) {
+		cancel() // This needs to be passed in somehow
+		_, _ = w.Write([]byte("Server is shutting down..."))
+	})
+
+	// Register API handlers
+	HandlerFromMuxWithBaseURL(store, r, opts.APIPrefix)
+}
+
+func handleServerLifecycle(ctx context.Context, cancel context.CancelFunc, s *http.Server, store *launchrServer) error {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
@@ -161,18 +199,17 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		ctxShut, cancelShut := context.WithTimeout(context.Background(), time.Second*10)
 		defer cancelShut()
 		errShutdown = s.Shutdown(ctxShut)
-		// Force shutdown.
 		if errShutdown != nil {
 			errShutdown = s.Close()
 		}
 	}()
 
-	if err = s.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+	if err := s.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 
 	if errShutdown != nil {
-		store.Log().Error("error on shutting down", "error", err)
+		store.Log().Error("error on shutting down", "error", errShutdown)
 		return errShutdown
 	}
 

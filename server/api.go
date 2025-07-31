@@ -27,27 +27,58 @@ import (
 // customizationPlatformNameKey used to set the layout-flow root name
 const customizationPlatformNameKey = "root_name"
 
+// WebCustomize stores variables to customize web appearance.
+type WebCustomize struct {
+	Variables       map[string]any
+	ExcludedActions map[string]bool
+}
+
 type launchrServer struct {
 	action.WithLogger
 	action.WithTerm
 
 	actionMngr   action.Manager
 	stateMngr    *StateManager
+	tokenStore   *TokenStore
 	cfg          launchr.Config
 	ctx          context.Context
 	baseURL      string
 	apiPrefix    string
 	wsMutex      sync.Mutex
-	customize    FrontendCustomize
+	customize    WebCustomize
 	uiSchemaBase []byte
 	logsDirPath  string
 	app          launchr.App
 }
 
-// FrontendCustomize stores variables to customize web appearance.
-type FrontendCustomize struct {
-	Variables       map[string]any
-	ExcludedActions map[string]bool
+func (l *launchrServer) authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip auth for Swagger UI endpoints
+		if strings.HasPrefix(r.URL.Path, l.apiPrefix+"/swagger-ui") || r.URL.Path == l.apiPrefix+"/swagger.json" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Extract token from the Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+			return
+		}
+
+		// Support both "Bearer token" and "token" formats
+		token := authHeader
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		}
+
+		if !l.tokenStore.ValidateToken(token) {
+			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Request) {
