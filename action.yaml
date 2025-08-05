@@ -45,13 +45,17 @@ action:
       description: run server without UI
       type: boolean
       default: false
-    - name: tokens-dir
-      title: Tokens Dir
-      description: Directory to store auth tokens
-      type: string
+    - name: auth_user
+      title: HTTP Auth User
       default: ""
-    - name: passphrase
-      title: Tokens Passphrase
-      description: Passphrase to encrypt tokens file
-      type: string
+      process:
+        - processor: keyring.GetKeyValue
+          options:
+            key: web_auth_user
+    - name: auth_password
+      title: HTTP Auth Password
       default: ""
+      process:
+        - processor: keyring.GetKeyValue
+          options:
+            key: web_auth_password

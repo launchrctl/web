@@ -20,6 +20,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/launchrctl/keyring"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -35,13 +37,13 @@ import (
 type RunOptions struct {
 	action.WithLogger
 	action.WithTerm
-	TokenStore *TokenStore
 
 	// Addr optionally specifies the TCP address in form "host:port" for the server to listen on.
 	// If empty, :80 is used.
 	Addr string
 	// APIPrefix specifies subpath where Api is served.
 	APIPrefix string
+	Auth      keyring.CredentialsItem
 	NoUI      bool
 	// SwaggerUIFS enables serving of swagger.json for swagger ui if set.
 	SwaggerUIFS fs.FS
@@ -96,6 +98,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	}))
 	store := &launchrServer{
 		ctx:          ctx,
+		auth:         opts.Auth,
 		baseURL:      opts.BaseURL(),
 		apiPrefix:    opts.APIPrefix,
 		customize:    opts.Customize,
@@ -103,13 +106,14 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		uiSchemaBase: opts.DefaultUISchema,
 		app:          app,
 		stateMngr:    NewStateManager(),
-		tokenStore:   opts.TokenStore,
 	}
 	store.SetLogger(opts.Log())
 	store.SetTerm(opts.Term())
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
 
+	// Apply authMiddleware to all routes.
+	r.Use(store.authMiddleware)
 	// Mode-specific setup
 	if opts.NoUI {
 		setupAPIOnlyMode(r, store, opts, swagger)
@@ -132,13 +136,7 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	// @todo remove all stopped containers when stopped
 	// @todo add special prefix for web run containers.
 	store.baseURL = opts.BaseURL()
-
-	// Mode-specific logging
-	if opts.NoUI {
-		store.Term().Info().Printfln("API Server running at: %s%s", store.baseURL, opts.APIPrefix)
-	} else {
-		store.Term().Info().Printfln("Web Server running at: %s", store.baseURL)
-	}
+	store.Term().Info().Printfln("Web Server running at: %s", store.baseURL)
 
 	if opts.SwaggerUIFS != nil {
 		store.Term().Info().Printfln("Swagger UI: %s%s", store.basePath(), swaggerUIPath)
@@ -148,9 +146,6 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 }
 
 func setupAPIOnlyMode(r chi.Router, store *launchrServer, opts *RunOptions, swagger *openapi3.T) {
-	// Apply authMiddleware to all routes.
-	r.Use(store.authMiddleware)
-
 	// API routes with validation
 	r.Route(opts.APIPrefix, func(r chi.Router) {
 		r.Use(middleware.OapiRequestValidator(swagger))

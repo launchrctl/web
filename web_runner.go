@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/launchrctl/keyring"
+
 	"github.com/launchrctl/launchr"
 
 	"github.com/launchrctl/web/server"
@@ -46,6 +48,7 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 	serverOpts := &server.RunOptions{
 		Addr:            fmt.Sprintf(":%d", port), // @todo use proper addr
 		APIPrefix:       APIPrefix,
+		Auth:            webOpts.Auth,
 		NoUI:            webOpts.NoUI,
 		ProxyClient:     webOpts.ProxyClient,
 		SwaggerUIFS:     GetSwaggerUIAssetsFS(),
@@ -62,22 +65,10 @@ func (p *Plugin) runWeb(ctx context.Context, webOpts webFlags) error {
 	}
 	defer cleanupPluginTemp(webOpts.InstanceDir)
 
-	if serverOpts.NoUI {
-		ts, err := server.NewTokenStore(webOpts.TokensDir, webOpts.TokensPassphrase)
-		if err != nil {
-			return fmt.Errorf("failed to initialize token store: %w", err)
-		}
-		ts.SetLogger(webOpts.Log())
-		serverOpts.TokenStore = ts
-
-		go func() {
-			<-ctx.Done()
-			_ = ts.Close()
-		}()
-	} else {
+	if !serverOpts.NoUI {
 		go func() {
 			time.Sleep(time.Second)
-			err = openInBrowserWhenReady(serverOpts.BaseURL())
+			err = openInBrowserWhenReady(serverOpts.BaseURL(), webOpts.Auth)
 			if err != nil {
 				launchr.Term().Error().Println(err)
 			}
@@ -161,7 +152,7 @@ func stopWeb(pidFile string, webOpts webFlags) (err error) {
 		return nil
 	}
 
-	if err = checkHealth(serverRunInfo.URL); err == nil {
+	if err = checkHealth(serverRunInfo.URL, webOpts.Auth); err == nil {
 		return fmt.Errorf("the web UI is currently running at %s\nPlease stop it through the user interface or terminate the process", serverRunInfo.URL)
 	}
 	cleanupPluginTemp(webOpts.InstanceDir)
@@ -246,8 +237,17 @@ func cleanupPluginTemp(dir string) {
 }
 
 // checkHealth helper to check if server is available by request.
-func checkHealth(url string) error {
-	resp, err := http.Head(url) //nolint G107 // @todo URL may come from user input, potential vulnerability.
+func checkHealth(url string, auth keyring.CredentialsItem) error {
+	req, err := http.NewRequest(http.MethodHead, url, nil) //nolint G107 // @todo URL may come from user input, potential vulnerability.
+	if err != nil {
+		return err
+	}
+
+	if auth.Password != "" && auth.Username != "" {
+		req.SetBasicAuth(auth.Username, auth.Password)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -283,7 +283,7 @@ func getServerInfo(dir string) (*serverInfo, error) {
 	return &info, nil
 }
 
-func getExistingWeb(pidFile string, pluginDir string) (string, error) {
+func getExistingWeb(pidFile string, pluginDir string, auth keyring.CredentialsItem) (string, error) {
 	if isBackGroundEnv() {
 		// The case was checked on the init step.
 		return "", nil
@@ -302,7 +302,7 @@ func getExistingWeb(pidFile string, pluginDir string) (string, error) {
 		return serverRunInfo.URL, nil
 	}
 
-	if err = checkHealth(serverRunInfo.URL); err != nil {
+	if err = checkHealth(serverRunInfo.URL, auth); err != nil {
 		return serverRunInfo.URL, fmt.Errorf("web unhealthy response: %w", err)
 	}
 
@@ -340,10 +340,10 @@ func isAvailablePort(port int) bool {
 	return true
 }
 
-func openInBrowserWhenReady(url string) error {
+func openInBrowserWhenReady(url string, auth keyring.CredentialsItem) error {
 	// Wait until the service is healthy.
 	retries := 0
-	for err := checkHealth(url); err != nil; {
+	for err := checkHealth(url, auth); err != nil; {
 		time.Sleep(time.Second)
 		if retries == 10 {
 			return fmt.Errorf("web is unhealthy: %w", err)
