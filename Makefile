@@ -64,7 +64,7 @@ build:
 # Application related information available on build time.
 	$(eval LDFLAGS:=-X '$(GOPKG).name=launchr' -X '$(GOPKG).version=$(APP_VERSION)' $(LDFLAGS_EXTRA))
 	$(eval BIN?=$(LOCAL_BIN)/launchr)
-	#go generate ./...
+	go generate ./...
 	$(BUILD_ENVPARMS) go build -ldflags "$(LDFLAGS)" $(BUILD_OPTS) -o $(BIN) ./cmd/launchr
 
 # Install launchr

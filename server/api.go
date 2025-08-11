@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,7 +18,6 @@ import (
 	yamlparser "github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/providers/rawbytes"
-	"github.com/launchrctl/keyring"
 	"gopkg.in/yaml.v3"
 
 	"github.com/launchrctl/launchr"
@@ -41,6 +39,7 @@ type launchrServer struct {
 
 	actionMngr   action.Manager
 	stateMngr    *StateManager
+	tokenStore   *TokenStore
 	cfg          launchr.Config
 	ctx          context.Context
 	baseURL      string
@@ -50,20 +49,15 @@ type launchrServer struct {
 	uiSchemaBase []byte
 	logsDirPath  string
 	app          launchr.App
-	auth         keyring.CredentialsItem
 }
 
 func (l *launchrServer) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// skip in case of empty auth creds
-		if l.auth.Username == "" && l.auth.Password != "" {
-			next.ServeHTTP(w, r)
-		}
-
 		// Use basic HTTP auth for all requests.
-		user, pass, ok := r.BasicAuth()
-		if !ok || subtle.ConstantTimeCompare([]byte(l.auth.Username), []byte(user)) != 1 || subtle.ConstantTimeCompare([]byte(l.auth.Password), []byte(pass)) != 1 {
-			w.Header().Set("WWW-Authenticate", `Basic realm="test"`)
+		_, token, ok := r.BasicAuth()
+		if !ok || !l.tokenStore.ValidateToken(token) {
+			// @todo replace launchr in realm.
+			w.Header().Set("WWW-Authenticate", `Basic realm="launchr web"`)
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -545,17 +539,19 @@ func convertUserInput(a *action.Action, persistentFlagsDef action.ParametersList
 		"persistent": changedPersistent,
 	}
 
-	for _, p := range *params.Changed {
-		split := strings.Split(p, "____")
-		if len(split) < 3 {
-			continue
-		}
+	if params.Changed != nil {
+		for _, p := range *params.Changed {
+			split := strings.Split(p, "____")
+			if len(split) < 3 {
+				continue
+			}
 
-		category := split[1]
-		name := split[2]
+			category := split[1]
+			name := split[2]
 
-		if targetMap, exists := categoryMaps[category]; exists {
-			targetMap[name] = true
+			if targetMap, exists := categoryMaps[category]; exists {
+				targetMap[name] = true
+			}
 		}
 	}
 

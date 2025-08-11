@@ -1,0 +1,28 @@
+runtime: plugin
+action:
+  title: Web Token Management
+  description: Manage tokens for web server authentication
+  arguments:
+    - name: operation
+      title: Operation
+      description: "Token operation: create, list, revoke, delete, purge"
+      type: string
+      enum: [ create, list, revoke, delete, purge ]
+      required: true
+    - name: name
+      title: Token name
+      description: Token name to create/revoke/delete
+      type: string
+      default: ""
+    - name: size
+      title: Hash size (bytes)
+      description: Token hash size used in creation
+      type: integer
+      enum: [ 16, 24, 32, 48, 64 ]
+      default: 32
+  options:
+    - name: expires-in
+      title: Expires In
+      description: Token expiration duration (e.g., 24h, 7d, 30d), 0 for forever. Empty for 30d.
+      type: string
+      default: ""

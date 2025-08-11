@@ -43,7 +43,6 @@ type RunOptions struct {
 	Addr string
 	// APIPrefix specifies subpath where Api is served.
 	APIPrefix string
-	Auth      keyring.CredentialsItem
 	NoUI      bool
 	// SwaggerUIFS enables serving of swagger.json for swagger ui if set.
 	SwaggerUIFS fs.FS
@@ -84,21 +83,8 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 		return fmt.Errorf("can't create logs dir: %w", err)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-
-	// Prepare router and openapi.
-	r := chi.NewRouter()
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"}, // @todo be more specific
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
-	}))
 	store := &launchrServer{
 		ctx:          ctx,
-		auth:         opts.Auth,
 		baseURL:      opts.BaseURL(),
 		apiPrefix:    opts.APIPrefix,
 		customize:    opts.Customize,
@@ -111,6 +97,26 @@ func Run(ctx context.Context, app launchr.App, opts *RunOptions) error {
 	store.SetTerm(opts.Term())
 	app.GetService(&store.actionMngr)
 	app.GetService(&store.cfg)
+
+	var k keyring.Keyring
+	app.GetService(&k)
+	store.tokenStore, err = NewTokenStore(k)
+	if err != nil {
+		return fmt.Errorf("can't create token store: %w", err)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+
+	// Prepare router and openapi.
+	r := chi.NewRouter()
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"}, // @todo be more specific
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
 
 	// Apply authMiddleware to all routes.
 	r.Use(store.authMiddleware)
