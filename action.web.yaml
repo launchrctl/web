@@ -40,3 +40,8 @@ action:
       description: Serve swagger.json on /api/swagger.json and Swagger UI on /api/swagger-ui from specified directory.
       type: string
       default: ""
+    - name: no-ui
+      title: Headless Mode
+      description: Run server without web interface (API-only mode)
+      type: boolean
+      default: false

@@ -1,0 +1,28 @@
+runtime: plugin
+action:
+  title: Web Token Management
+  description: Manage tokens for web server authentication
+  arguments:
+    - name: operation
+      title: Operation
+      description: "Token operation: create, list, delete, purge"
+      type: string
+      enum: [ create, list, delete, purge ]
+      required: true
+    - name: name
+      title: Token name
+      description: Token name to create/delete
+      type: string
+      default: ""
+    - name: size
+      title: Token Entropy Size
+      description: Number of random bytes used to generate the token
+      type: integer
+      enum: [ 16, 24, 32, 48, 64 ]
+      default: 32
+  options:
+    - name: expires-in
+      title: Expires In
+      description: Token expiration duration (e.g., 24h, 7d, 30d), 0 for forever. Empty for 30d.
+      type: string
+      default: ""
