@@ -56,8 +56,7 @@ func (l *launchrServer) authMiddleware(next http.Handler) http.Handler {
 		// Use basic HTTP auth for all requests.
 		_, token, ok := r.BasicAuth()
 		if !ok || !l.tokenStore.ValidateToken(token) {
-			// @todo replace launchr in realm.
-			w.Header().Set("WWW-Authenticate", `Basic realm="launchr web"`)
+			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s web"`, launchr.Version().Name))
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}

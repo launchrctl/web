@@ -11,10 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/launchrctl/keyring"
-
 	"github.com/launchrctl/launchr/pkg/action"
 )
 
@@ -33,16 +30,15 @@ type TokenStore struct {
 
 // TokenInfo represents metadata associated with an web token.
 type TokenInfo struct {
-	TokenHash string     `yaml:"token_hash"`
-	Name      string     `yaml:"name"`
-	CreatedAt time.Time  `yaml:"created_at"`
-	ExpiresAt *time.Time `yaml:"expires_at,omitempty"`
-	Active    bool       `yaml:"active"`
+	TokenHash string
+	Name      string
+	Created   time.Time
+	Expires   *time.Time
 }
 
 // Tokens represent the format of the token file.
 type Tokens struct {
-	Items []*TokenInfo `yaml:"items"`
+	Items []*TokenInfo
 }
 
 // NewTokenStore creates a new TokenStore.
@@ -88,23 +84,92 @@ func (ts *TokenStore) Load() error {
 		return err
 	}
 
-	yamlBytes, err := yaml.Marshal(item.Value)
-	if err != nil {
-		return fmt.Errorf("failed to marshal item value: %w", err)
+	if mapData, ok := item.Value.(map[string]any); ok {
+		data, err := ts.convertMapToTokens(mapData)
+		if err != nil {
+			return err
+		}
+
+		ts.loaded = true
+		ts.tokens = make(map[string]*TokenInfo)
+		for _, token := range data.Items {
+			ts.tokens[token.TokenHash] = token
+		}
+		return nil
 	}
 
-	var data Tokens
-	if err = yaml.Unmarshal(yamlBytes, &data); err != nil {
-		return fmt.Errorf("failed to unmarshal Tokens: %w", err)
+	return fmt.Errorf("failed to retrieve tokens from storage")
+}
+
+func (ts *TokenStore) convertMapToTokens(mapData map[string]any) (*Tokens, error) {
+	itemsAny, exists := mapData["items"]
+	if !exists {
+		return &Tokens{Items: []*TokenInfo{}}, nil
 	}
 
-	ts.loaded = true
-	ts.tokens = make(map[string]*TokenInfo)
-	for _, token := range data.Items {
-		ts.tokens[token.TokenHash] = token
+	itemsSlice, ok := itemsAny.([]any)
+	if !ok {
+		return nil, fmt.Errorf("items field is not a slice, got %T", itemsAny)
 	}
 
-	return nil
+	var tokens []*TokenInfo
+	for i, item := range itemsSlice {
+		itemMap, ok := item.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("item at index %d is not a map, got %T", i, item)
+		}
+
+		tokenInfo, err := ts.convertMapToTokenInfo(itemMap)
+		if err != nil {
+			return nil, fmt.Errorf("can't convert item at index %d: %w", i, err)
+		}
+
+		tokens = append(tokens, tokenInfo)
+	}
+
+	return &Tokens{Items: tokens}, nil
+}
+
+func (ts *TokenStore) convertMapToTokenInfo(itemMap map[string]any) (*TokenInfo, error) {
+	tokenInfo := &TokenInfo{}
+
+	// Convert token_hash
+	if tokenHash, exists := itemMap["tokenhash"]; exists {
+		if str, ok := tokenHash.(string); ok {
+			tokenInfo.TokenHash = str
+		} else {
+			return nil, fmt.Errorf("token_hash is not a string, got %T", tokenHash)
+		}
+	}
+
+	// Convert name
+	if name, exists := itemMap["name"]; exists {
+		if str, ok := name.(string); ok {
+			tokenInfo.Name = str
+		} else {
+			return nil, fmt.Errorf("name is not a string, got %T", name)
+		}
+	}
+
+	// Convert created_at
+	if created, exists := itemMap["created"]; exists {
+		if t, ok := created.(time.Time); ok {
+			tokenInfo.Created = t
+		} else {
+			return nil, fmt.Errorf("created_at is not a time.Time, got %T", created)
+		}
+	}
+
+	// Convert expires_at (optional)
+	if expires, exists := itemMap["expires"]; exists && expires != nil {
+		if t, ok := expires.(time.Time); ok {
+			tokenInfo.Expires = &t
+		} else {
+			return nil, fmt.Errorf("expires_at is not a string, got %T", expires)
+		}
+	}
+
+	return tokenInfo, nil
 }
 
 func (ts *TokenStore) save() error {
@@ -113,17 +178,24 @@ func (ts *TokenStore) save() error {
 		tokens = append(tokens, token)
 	}
 
-	item := keyring.KeyValueItem{
-		Value: Tokens{Items: tokens},
-		Key:   tokensKey,
+	if len(tokens) > 0 {
+		item := keyring.KeyValueItem{
+			Value: Tokens{Items: tokens},
+			Key:   tokensKey,
+		}
+
+		err := ts.k.AddItem(item)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := ts.k.RemoveByKey(tokensKey)
+		if err != nil && !errors.Is(err, keyring.ErrNotFound) {
+			return err
+		}
 	}
 
-	err := ts.k.AddItem(item)
-	if err != nil {
-		return err
-	}
-
-	err = ts.k.Save()
+	err := ts.k.Save()
 	if err != nil {
 		return err
 	}
@@ -135,7 +207,7 @@ func (ts *TokenStore) save() error {
 }
 
 // CreateToken generates a new web token and persists the data to a file.
-func (ts *TokenStore) CreateToken(name string, size int, expiresIn *time.Duration) (string, *TokenInfo, error) {
+func (ts *TokenStore) CreateToken(name string, size int, expires time.Duration) (string, *TokenInfo, error) {
 	ts.mutex.Lock()
 	defer ts.mutex.Unlock()
 
@@ -162,13 +234,12 @@ func (ts *TokenStore) CreateToken(name string, size int, expiresIn *time.Duratio
 	tokenInfo := &TokenInfo{
 		TokenHash: tokenHash,
 		Name:      name,
-		CreatedAt: time.Now(),
-		Active:    true,
+		Created:   time.Now(),
 	}
 
-	if expiresIn != nil {
-		expiresAt := time.Now().Add(*expiresIn)
-		tokenInfo.ExpiresAt = &expiresAt
+	if expires != 0 {
+		expiresAt := time.Now().Add(expires)
+		tokenInfo.Expires = &expiresAt
 	}
 
 	ts.tokens[tokenHash] = tokenInfo
@@ -187,40 +258,11 @@ func (ts *TokenStore) ValidateToken(token string) bool {
 
 	hashedToken := ts.hashToken(token)
 	tokenInfo, exists := ts.tokens[hashedToken]
-	if !exists || !tokenInfo.Active {
+	if !exists {
 		return false
 	}
 
 	return !ts.isTokenExpired(tokenInfo)
-}
-
-// RevokeToken marks a token as inactive and persists the data to a file.
-func (ts *TokenStore) RevokeToken(name string) bool {
-	ts.mutex.Lock()
-	defer ts.mutex.Unlock()
-
-	// Try to find a token by name
-	var targetToken *TokenInfo
-	for _, token := range ts.tokens {
-		if token.Name == name {
-			targetToken = token
-			break
-		}
-	}
-
-	if targetToken == nil {
-		return false
-	}
-
-	targetToken.Active = false
-	err := ts.save()
-	if err != nil {
-		logger := ts.Log()
-		if logger != nil {
-			logger.Error(fmt.Sprintf("Failed to save token: %v", err))
-		}
-	}
-	return true
 }
 
 // ListTokens returns a list of all tokens in the store.
@@ -256,49 +298,39 @@ func (ts *TokenStore) DeleteToken(name string) bool {
 	err := ts.save()
 	if err != nil {
 		logger := ts.Log()
-		if logger != nil {
-			logger.Error(fmt.Sprintf("Failed to save token: %v", err))
-		}
+		logger.Error(fmt.Sprintf("Failed to save token: %v", err))
 	}
 	return true
 }
 
 func (ts *TokenStore) isTokenExpired(tokenInfo *TokenInfo) bool {
-	return tokenInfo.ExpiresAt != nil && time.Now().After(*tokenInfo.ExpiresAt)
+	return tokenInfo.Expires != nil && time.Now().After(*tokenInfo.Expires)
 }
 
-// PurgeInactiveTokens marks expired tokens as inactive and removes all inactive tokens from storage
-func (ts *TokenStore) PurgeInactiveTokens() (expired int, removed int) {
+// PurgeInactiveTokens removes all expired tokens from storage
+func (ts *TokenStore) PurgeInactiveTokens() (expired int) {
 	ts.mutex.Lock()
 	defer ts.mutex.Unlock()
 
 	// mark expired tokens as inactive
-	for _, tokenInfo := range ts.tokens {
-		if ts.isTokenExpired(tokenInfo) && tokenInfo.Active {
-			tokenInfo.Active = false
+	for hash, tokenInfo := range ts.tokens {
+		if ts.isTokenExpired(tokenInfo) {
+			delete(ts.tokens, hash)
 			expired++
 		}
 	}
 
-	// remove all inactive tokens
-	for name, tokenInfo := range ts.tokens {
-		if !tokenInfo.Active {
-			delete(ts.tokens, name)
-			removed++
-		}
+	if expired < 1 {
+		return 0
 	}
 
-	// Save changes if any cleanup occurred
-	if expired > 0 || removed > 0 {
-		if err := ts.save(); err != nil {
-			logger := ts.Log()
-			if logger != nil {
-				logger.Error(fmt.Sprintf("Failed to save token: %v", err))
-			}
-		}
+	// Save changes if tokens were removed
+	if err := ts.save(); err != nil {
+		logger := ts.Log()
+		logger.Error(fmt.Sprintf("Failed to save token: %v", err))
 	}
 
-	return expired, removed
+	return expired
 }
 
 // ParseDurationWithDays parses a string with token date formats into a time.Duration.

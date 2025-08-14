@@ -5,18 +5,18 @@ action:
   arguments:
     - name: operation
       title: Operation
-      description: "Token operation: create, list, revoke, delete, purge"
+      description: "Token operation: create, list, delete, purge"
       type: string
-      enum: [ create, list, revoke, delete, purge ]
+      enum: [ create, list, delete, purge ]
       required: true
     - name: name
       title: Token name
-      description: Token name to create/revoke/delete
+      description: Token name to create/delete
       type: string
       default: ""
     - name: size
-      title: Hash size (bytes)
-      description: Token hash size used in creation
+      title: Token Entropy Size
+      description: Number of random bytes used to generate the token
       type: integer
       enum: [ 16, 24, 32, 48, 64 ]
       default: 32

@@ -11,7 +11,7 @@ require (
 	github.com/go-chi/render v1.0.3
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/knadh/koanf v1.5.0
-	github.com/launchrctl/keyring v0.6.3-0.20250811105348-f5735b4d823c
+	github.com/launchrctl/keyring v0.6.3-0.20250814103308-36d2bd12b1d0
 	github.com/launchrctl/launchr v0.21.3-0.20250807105427-96aecdf3b402
 	github.com/oapi-codegen/nethttp-middleware v1.0.2
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1

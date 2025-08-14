@@ -41,7 +41,7 @@ action:
       type: string
       default: ""
     - name: no-ui
-      title: No UI
-      description: run server without UI
+      title: Headless Mode
+      description: Run server without web interface (API-only mode)
       type: boolean
       default: false
