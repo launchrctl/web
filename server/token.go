@@ -36,11 +36,6 @@ type TokenInfo struct {
 	Expires   *time.Time
 }
 
-// Tokens represent the format of the token file.
-type Tokens struct {
-	Items []*TokenInfo
-}
-
 // NewTokenStore creates a new TokenStore.
 func NewTokenStore(k keyring.Keyring) (*TokenStore, error) {
 	store := &TokenStore{
@@ -84,50 +79,31 @@ func (ts *TokenStore) Load() error {
 		return err
 	}
 
-	if mapData, ok := item.Value.(map[string]any); ok {
-		data, err := ts.convertMapToTokens(mapData)
-		if err != nil {
-			return err
+	if data, ok := item.Value.([]any); ok {
+		var tokens []*TokenInfo
+		for i, tokenData := range data {
+			tokenMap, okToken := tokenData.(map[string]any)
+			if !okToken {
+				return fmt.Errorf("item at index %d is not a map, got %T", i, item)
+			}
+
+			tokenInfo, err := ts.convertMapToTokenInfo(tokenMap)
+			if err != nil {
+				return fmt.Errorf("can't convert item at index %d: %w", i, err)
+			}
+
+			tokens = append(tokens, tokenInfo)
 		}
 
 		ts.loaded = true
 		ts.tokens = make(map[string]*TokenInfo)
-		for _, token := range data.Items {
+		for _, token := range tokens {
 			ts.tokens[token.TokenHash] = token
 		}
 		return nil
 	}
 
 	return fmt.Errorf("failed to retrieve tokens from storage")
-}
-
-func (ts *TokenStore) convertMapToTokens(mapData map[string]any) (*Tokens, error) {
-	itemsAny, exists := mapData["items"]
-	if !exists {
-		return &Tokens{Items: []*TokenInfo{}}, nil
-	}
-
-	itemsSlice, ok := itemsAny.([]any)
-	if !ok {
-		return nil, fmt.Errorf("items field is not a slice, got %T", itemsAny)
-	}
-
-	var tokens []*TokenInfo
-	for i, item := range itemsSlice {
-		itemMap, ok := item.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("item at index %d is not a map, got %T", i, item)
-		}
-
-		tokenInfo, err := ts.convertMapToTokenInfo(itemMap)
-		if err != nil {
-			return nil, fmt.Errorf("can't convert item at index %d: %w", i, err)
-		}
-
-		tokens = append(tokens, tokenInfo)
-	}
-
-	return &Tokens{Items: tokens}, nil
 }
 
 func (ts *TokenStore) convertMapToTokenInfo(itemMap map[string]any) (*TokenInfo, error) {
@@ -160,12 +136,12 @@ func (ts *TokenStore) convertMapToTokenInfo(itemMap map[string]any) (*TokenInfo,
 		}
 	}
 
-	// Convert expires_at (optional)
+	// Convert expires (optional)
 	if expires, exists := itemMap["expires"]; exists && expires != nil {
 		if t, ok := expires.(time.Time); ok {
 			tokenInfo.Expires = &t
 		} else {
-			return nil, fmt.Errorf("expires_at is not a string, got %T", expires)
+			return nil, fmt.Errorf("expires is not a string, got %T", expires)
 		}
 	}
 
@@ -180,7 +156,7 @@ func (ts *TokenStore) save() error {
 
 	if len(tokens) > 0 {
 		item := keyring.KeyValueItem{
-			Value: Tokens{Items: tokens},
+			Value: tokens,
 			Key:   tokensKey,
 		}
 
@@ -297,8 +273,7 @@ func (ts *TokenStore) DeleteToken(name string) bool {
 	delete(ts.tokens, ti.TokenHash)
 	err := ts.save()
 	if err != nil {
-		logger := ts.Log()
-		logger.Error(fmt.Sprintf("Failed to save token: %v", err))
+		ts.Log().Error("failed to save token", "error", err)
 	}
 	return true
 }
@@ -326,8 +301,7 @@ func (ts *TokenStore) PurgeInactiveTokens() (expired int) {
 
 	// Save changes if tokens were removed
 	if err := ts.save(); err != nil {
-		logger := ts.Log()
-		logger.Error(fmt.Sprintf("Failed to save token: %v", err))
+		ts.Log().Error("failed to save token", "error", err)
 	}
 
 	return expired
