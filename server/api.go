@@ -27,27 +27,42 @@ import (
 // customizationPlatformNameKey used to set the layout-flow root name
 const customizationPlatformNameKey = "root_name"
 
+// WebCustomize stores variables to customize web appearance.
+type WebCustomize struct {
+	Variables       map[string]any
+	ExcludedActions map[string]bool
+}
+
 type launchrServer struct {
 	action.WithLogger
 	action.WithTerm
 
 	actionMngr   action.Manager
 	stateMngr    *StateManager
+	tokenStore   *TokenStore
 	cfg          launchr.Config
 	ctx          context.Context
 	baseURL      string
 	apiPrefix    string
 	wsMutex      sync.Mutex
-	customize    FrontendCustomize
+	customize    WebCustomize
 	uiSchemaBase []byte
 	logsDirPath  string
 	app          launchr.App
 }
 
-// FrontendCustomize stores variables to customize web appearance.
-type FrontendCustomize struct {
-	Variables       map[string]any
-	ExcludedActions map[string]bool
+func (l *launchrServer) authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Use basic HTTP auth for all requests.
+		_, token, ok := r.BasicAuth()
+		if !ok || !l.tokenStore.ValidateToken(token) {
+			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm="%s web"`, launchr.Version().Name))
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (l *launchrServer) GetCustomisationConfig(w http.ResponseWriter, _ *http.Request) {
@@ -523,17 +538,19 @@ func convertUserInput(a *action.Action, persistentFlagsDef action.ParametersList
 		"persistent": changedPersistent,
 	}
 
-	for _, p := range *params.Changed {
-		split := strings.Split(p, "____")
-		if len(split) < 3 {
-			continue
-		}
+	if params.Changed != nil {
+		for _, p := range *params.Changed {
+			split := strings.Split(p, "____")
+			if len(split) < 3 {
+				continue
+			}
 
-		category := split[1]
-		name := split[2]
+			category := split[1]
+			name := split[2]
 
-		if targetMap, exists := categoryMaps[category]; exists {
-			targetMap[name] = true
+			if targetMap, exists := categoryMaps[category]; exists {
+				targetMap[name] = true
+			}
 		}
 	}
 
