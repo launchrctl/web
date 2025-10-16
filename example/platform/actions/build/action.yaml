@@ -32,8 +32,5 @@ action:
 
 runtime:
   type: container
-#  image: python:3.7-slim
-  image: ubuntu
-#  command: python3 {{ .opt4 }}
-#  command: ["sh", "-c", "for i in $(seq 60); do echo $$i; sleep 1; done"]
-  command: /bin/bash
+  image: python:3.7-slim
+  command: [pwd]

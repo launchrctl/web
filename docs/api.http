@@ -1,0 +1,88 @@
+## HTTP File for API Testing
+
+### Launchr Web API Testing
+### This file contains HTTP requests for testing the Launchr Web API
+### Replace the variables below with your actual values
+### Variables
+@baseUrl = http://localhost:8080
+@apiPrefix = /api
+@username = "user"
+@token = your-token
+### ==============================================
+### Authentication Testing
+### ==============================================
+
+### Test Authentication - Valid Token
+GET {{baseUrl}}{{apiPrefix}}/swagger-ui
+Authorization: Basic {{username}}:{{token}}
+
+###
+### Test Authentication - Invalid Token (should return 401)
+GET {{baseUrl}}{{apiPrefix}}/actions
+Authorization: Basic {{username}}:invalid-token-here
+
+###
+### Test Authentication - No Auth Header (should return 401)
+GET {{baseUrl}}{{apiPrefix}}/actions
+
+###
+### ==============================================
+### Actions API
+### ==============================================
+### Get All Available Actions
+GET {{baseUrl}}{{apiPrefix}}/actions
+Authorization: Basic {{username}}:{{token}}
+
+###
+### Get Specific Action Details
+GET {{baseUrl}}{{apiPrefix}}/actions/example.rjsf:strings
+Authorization: Basic {{username}}:{{token}}
+
+###
+### Run Action (example.rjsf:strings)
+POST {{baseUrl}}{{apiPrefix}}/actions/example.rjsf:strings
+Authorization: Basic {{username}}:{{token}}
+Content-Type: application/json
+
+{
+  "arguments": {
+    "color": "#4a90e2",
+    "simpleString": "With default value from schema"
+  },
+  "options": {},
+  "persistent": {
+    "log-format": "pretty",
+    "log-level": "NONE",
+    "quiet": false
+  },
+  "runtime": {
+    "entrypoint": "",
+    "exec": false,
+    "no-cache": false,
+    "rebuild-image": true,
+    "remote-copy-back": false,
+    "remote-runtime": false,
+    "remove-image": false
+  },
+  "changed": []
+}
+
+### Get Running Action Details
+GET {{baseUrl}}{{apiPrefix}}/actions/example.rjsf:strings/running
+Authorization: Basic {{username}}:{{token}}
+
+### Replace ID with real value
+@runID = 1754908323___example.rjsf:strings
+### Cancel Running Action
+POST {{baseUrl}}{{apiPrefix}}/actions/example.rjsf:strings/running/{{runID}}/cancel
+Authorization: Basic {{username}}:{{token}}
+
+{}
+
+### Get Action Streams (Logs)
+GET {{baseUrl}}{{apiPrefix}}/actions/example.rjsf:strings/running/{{runID}}/streams
+Authorization: Basic {{username}}:{{token}}
+
+### Test 404 - Non-existent Action
+GET {{baseUrl}}{{apiPrefix}}/actions/non-existent-action
+Authorization: Basic {{username}}:{{token}}

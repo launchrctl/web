@@ -79,13 +79,13 @@ func (w *wrappedWriter) Close() error {
 	return nil
 }
 
-func createFileStreams(streamsDir, runId string, app launchr.App, quiet bool) (*webCli, error) {
-	outfile, err := os.Create(filepath.Join(streamsDir, runId+"-out.txt"))
+func createFileStreams(streamsDir, runID string, app launchr.App, quiet bool) (*webCli, error) {
+	outfile, err := os.Create(filepath.Clean(filepath.Join(streamsDir, runID+"-out.txt")))
 	if err != nil {
 		return nil, fmt.Errorf("error creating output file: %w", err)
 	}
 
-	errfile, err := os.Create(filepath.Join(streamsDir, runId+"-err.txt"))
+	errfile, err := os.Create(filepath.Clean(filepath.Join(streamsDir, runID+"-err.txt")))
 	if err != nil {
 		return nil, fmt.Errorf("error creating error file: %w", err)
 	}
